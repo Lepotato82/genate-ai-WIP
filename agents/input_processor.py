@@ -81,6 +81,28 @@ _CSS_TOKEN_JS = """
 """
 
 # ---------------------------------------------------------------------------
+# Framework CSS token prefixes to strip (noise, not brand signals)
+# ---------------------------------------------------------------------------
+
+_FRAMEWORK_TOKEN_PREFIXES = (
+    "--mantine-",
+    "--chakra-",
+    "--radix-",
+    "--tw-",
+    "--rsuite-",
+    "--ant-",
+)
+
+
+def _filter_css_tokens(tokens: dict) -> dict:
+    return {
+        k: v
+        for k, v in tokens.items()
+        if not any(k.startswith(p) for p in _FRAMEWORK_TOKEN_PREFIXES)
+    }
+
+
+# ---------------------------------------------------------------------------
 # Mock data
 # ---------------------------------------------------------------------------
 
@@ -221,6 +243,10 @@ async def _scrape_async(
 
             # Dismiss cookie banners (best effort)
             for selector in [
+                "button[id*='accept']",
+                "button[id*='cookie']",
+                "[aria-label*='Accept']",
+                "[data-testid*='cookie-accept']",
                 "button:has-text('Accept')",
                 "button:has-text('Accept all')",
                 "button:has-text('I agree')",
@@ -235,10 +261,17 @@ async def _scrape_async(
                 except Exception:
                     pass
 
+            # Scroll to bottom to trigger lazy-loaded content (SPAs like Vercel, Linear)
+            try:
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await page.wait_for_timeout(2000)
+            except Exception:
+                pass
+
             # Extract CSS tokens
             try:
                 css_tokens = await page.evaluate(_CSS_TOKEN_JS)
-                result["css_tokens"] = css_tokens or {}
+                result["css_tokens"] = _filter_css_tokens(css_tokens or {})
             except Exception as exc:
                 logger.warning("CSS token extraction failed: %s", exc)
                 result["css_tokens"] = {}
