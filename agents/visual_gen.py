@@ -1,5 +1,9 @@
 """
-Step 7: Visual Gen.
+Step 7: Visual Gen Agent.
+
+Generates an image generation prompt using exact brand parameters (hex colors,
+font name, design category, OG image as style reference) and a suggested
+visual format. Video script is Phase 3 — always None in this version.
 """
 
 from __future__ import annotations
@@ -12,39 +16,72 @@ from schemas.strategy_brief import StrategyBrief
 from agents._utils import parse_json_object
 
 
-def _mock(brand: BrandProfile, brief: ContentBrief, strategy: StrategyBrief) -> dict:
+# ---------------------------------------------------------------------------
+# Mock
+# ---------------------------------------------------------------------------
+
+def _mock(
+    strategy_brief: StrategyBrief,
+    brand_profile: BrandProfile,
+    content_brief: ContentBrief,
+) -> dict:
+    suggested = "carousel" if content_brief.content_type == "carousel" else "static"
     return {
         "image_prompt": (
-            f"SaaS marketing visual, {brand.design_category} style, primary {brand.primary_color}, "
-            f"secondary {brand.secondary_color or brand.primary_color}, minimal layout, headline-led."
+            f"SaaS marketing visual for {brand_profile.design_category} brand. "
+            f"Primary color {brand_profile.primary_color}, "
+            f"secondary {brand_profile.secondary_color or brand_profile.primary_color}. "
+            f"Minimal layout, dark background, headline-led. "
+            f"Font: {brand_profile.font_family or 'Inter'}. "
+            f"Mood: {brand_profile.tone}. "
+            f"Visual concept: {strategy_brief.hook_direction}"
         ),
-        "suggested_format": "carousel" if brief.content_type == "carousel" else "static",
-        "video_script": (
-            f"Hook: {strategy.hook_direction}. Problem: {strategy.lead_pain_point}. "
-            "Solution: show product workflow. CTA: learn more."
-        ),
-        "video_hook": "Your team is publishing slower than your product ships.",
+        "suggested_format": suggested,
+        "video_script": None,
+        "video_hook": None,
     }
 
 
-def run(brand_profile: BrandProfile, content_brief: ContentBrief, strategy_brief: StrategyBrief) -> dict:
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+def run(
+    strategy_brief: StrategyBrief,
+    brand_profile: BrandProfile,
+    content_brief: ContentBrief,
+) -> dict:
     if settings.MOCK_MODE:
-        return _mock(brand_profile, content_brief, strategy_brief)
+        return _mock(strategy_brief, brand_profile, content_brief)
+
+    user_msg = (
+        f"brand: design_category={brand_profile.design_category}, "
+        f"primary_color={brand_profile.primary_color}, "
+        f"secondary_color={brand_profile.secondary_color}, "
+        f"font={brand_profile.font_family}, tone={brand_profile.tone}\n"
+        f"product: {strategy_brief.primary_claim}\n"
+        f"hook_direction: {strategy_brief.hook_direction}\n"
+        f"content_type: {content_brief.content_type}"
+    )
 
     raw = chat_completion(
         [
             {
                 "role": "system",
-                "content": "Return JSON with keys image_prompt,suggested_format,video_script,video_hook.",
-            },
-            {
-                "role": "user",
                 "content": (
-                    f"brand_profile={brand_profile.model_dump()}\n"
-                    f"content_brief={content_brief.model_dump()}\n"
-                    f"strategy_brief={strategy_brief.model_dump()}"
+                    "You are a visual direction agent for SaaS marketing. "
+                    "Return ONLY valid JSON with these keys:\n"
+                    "  image_prompt: detailed image generation prompt using exact brand colors and style\n"
+                    "  suggested_format: one of static, carousel, video, ugc\n"
+                    "  video_script: null\n"
+                    "  video_hook: null"
                 ),
             },
+            {"role": "user", "content": user_msg},
         ]
     )
-    return parse_json_object(raw)
+    data = parse_json_object(raw)
+    # video is Phase 3 — always null regardless of LLM output
+    data["video_script"] = None
+    data["video_hook"] = None
+    return data

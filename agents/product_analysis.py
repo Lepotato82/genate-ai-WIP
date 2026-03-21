@@ -238,10 +238,14 @@ def run(pkg: InputPackage) -> ProductKnowledge:
         "- Return the JSON object only — nothing before or after it"
     )
     user_message = pkg.get_primary_text()[:16000]
-    print(
-        f"[product_analysis] sending {len(user_message.split())} words to LLM\n"
-        f"[product_analysis] user message preview: {user_message[:300]!r}"
+    import sys
+    sys.stdout.buffer.write(
+        (
+            f"[product_analysis] sending {len(user_message.split())} words to LLM\n"
+            f"[product_analysis] user message preview: {user_message[:300]!r}\n"
+        ).encode("utf-8", errors="replace")
     )
+    sys.stdout.buffer.flush()
     raw = chat_completion(
         [
             {"role": "system", "content": prompt},

@@ -55,6 +55,76 @@ def _event(step: int, agent: str, status: str, started: float, message: str) -> 
     }
 
 
+# ---------------------------------------------------------------------------
+# run_linkedin — simple chain for LinkedIn end-to-end validation
+# ---------------------------------------------------------------------------
+
+def run_linkedin(
+    url: str,
+    run_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    """
+    Full LinkedIn pipeline: input → brand → product → plan → strategy →
+    copy → format → evaluate (with up to 2 retries).
+
+    Input layer uses MOCK_MODE setting. Generation agents (steps 4-9) always
+    call chat_completion (unless MOCK_MODE=true, which affects all agents).
+    """
+    run_id = run_id or str(uuid.uuid4())
+
+    # Steps 1-3: Input layer
+    pkg = input_processor.run(url=url, run_id=run_id, org_id=org_id)
+    brand = ui_analyzer.run(pkg)
+    product = product_analysis.run(pkg)
+
+    # Step 4: Planner
+    content_brief = planner.run(brand, product, platform="linkedin")
+
+    # Step 5: Strategy
+    strategy_brief = strategy.run(content_brief, product, brand)
+
+    # Step 6: Copywriter (Visual Gen skipped for LinkedIn — Phase 3)
+    raw_copy = copywriting.run(strategy_brief, content_brief, brand)
+
+    # Step 8: Formatter + Step 9: Evaluator with retry loop
+    formatted: FormattedContent | None = None
+    evaluation: EvaluatorOutput | None = None
+
+    for attempt in range(MAX_EVAL_RETRIES + 1):
+        revision_hint = evaluation.revision_hint if (evaluation and not evaluation.passes) else None
+        formatted = formatter.run(
+            raw_copy,
+            content_brief,
+            strategy_brief,
+            brand,
+            revision_hint=revision_hint,
+            retry_count=attempt,
+        )
+        evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
+        if evaluation.passes or attempt == MAX_EVAL_RETRIES:
+            break
+
+    assert formatted is not None and evaluation is not None
+
+    return {
+        "run_id": run_id,
+        "url": url,
+        "brand_profile": brand.model_dump(),
+        "product_knowledge": product.model_dump(),
+        "content_brief": content_brief.model_dump(),
+        "strategy_brief": strategy_brief.model_dump(),
+        "formatted_content": formatted.model_dump(),
+        "evaluation": evaluation.model_dump(),
+        "passes": evaluation.passes,
+        "overall_score": evaluation.overall_score,
+    }
+
+
+# ---------------------------------------------------------------------------
+# run_pipeline — blocking wrapper around run_stream
+# ---------------------------------------------------------------------------
+
 def run_pipeline(
     *,
     url: str,
@@ -79,6 +149,10 @@ def run_pipeline(
     return RUN_REGISTRY[run_id]
 
 
+# ---------------------------------------------------------------------------
+# run_stream — SSE generator, full pipeline with knowledge layer
+# ---------------------------------------------------------------------------
+
 def run_stream(
     *,
     url: str,
@@ -90,6 +164,7 @@ def run_stream(
     run_id = str(uuid.uuid4())
     started = perf_counter()
 
+    # Step 1 — Input Processor
     yield _event(1, "input_processor", "start", started, "Collecting inputs")
     input_pkg = input_processor.run(
         url=url,
@@ -100,6 +175,7 @@ def run_stream(
     )
     yield _event(1, "input_processor", "complete", started, "Input package ready")
 
+    # Steps 2+3 — UI Analyzer + Product Analysis (parallel)
     yield _event(2, "ui_analyzer", "start", started, "Analyzing brand visuals")
     yield _event(3, "product_analysis", "start", started, "Analyzing product text")
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -110,6 +186,7 @@ def run_stream(
     yield _event(2, "ui_analyzer", "complete", started, "Brand profile extracted")
     yield _event(3, "product_analysis", "complete", started, "Product knowledge extracted")
 
+    # Step K — Knowledge Layer query (optional)
     knowledge_context: KnowledgeContext | None = None
     if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
         yield _event(0, "knowledge_query", "start", started, "Querying memory")
@@ -117,49 +194,54 @@ def run_stream(
         knowledge_context = query_context(org_id=org_id, query_text=query_text)
         yield _event(0, "knowledge_query", "complete", started, "Memory query complete")
 
+    # Step 4 — Planner
     yield _event(4, "planner", "start", started, "Planning content")
-    content_brief = planner.run(platform=platform, product_knowledge=product, knowledge_context=knowledge_context)
+    content_brief = planner.run(brand, product, platform=platform)
     yield _event(4, "planner", "complete", started, "Content brief created")
 
+    # Step 5 — Strategy
     yield _event(5, "strategy", "start", started, "Building strategy")
-    strategy_brief = strategy.run(content_brief=content_brief, product_knowledge=product, knowledge_context=knowledge_context)
+    strategy_brief = strategy.run(content_brief, product, brand)
     yield _event(5, "strategy", "complete", started, "Strategy brief created")
 
+    # Steps 6+7 — Copywriter + Visual Gen (parallel)
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
     yield _event(7, "visual_gen", "start", started, "Generating visual directions")
     with ThreadPoolExecutor(max_workers=2) as pool:
-        f_copy = pool.submit(copywriting.run, content_brief, strategy_brief, brand)
-        f_visual = pool.submit(visual_gen.run, brand, content_brief, strategy_brief)
+        f_copy = pool.submit(copywriting.run, strategy_brief, content_brief, brand)
+        f_visual = pool.submit(visual_gen.run, strategy_brief, brand, content_brief)
         raw_copy = f_copy.result()
-        visual_payload = f_visual.result()
+        _visual_payload = f_visual.result()  # stored but not passed to formatter yet
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
     yield _event(7, "visual_gen", "complete", started, "Visual payload generated")
 
+    # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
-    revision_hint: str | None = None
     formatted: FormattedContent | None = None
     evaluated: EvaluatorOutput | None = None
+
     while True:
+        revision_hint = evaluated.revision_hint if (evaluated and not evaluated.passes) else None
         yield _event(8, "formatter", "start", started, "Applying platform formatting")
         formatted = formatter.run(
-            content_brief=content_brief,
-            strategy_brief=strategy_brief,
-            raw_copy=raw_copy,
-            visual_payload=visual_payload,
-            retry_count=retry,
+            raw_copy,
+            content_brief,
+            strategy_brief,
+            brand,
             revision_hint=revision_hint,
+            retry_count=retry,
         )
         yield _event(8, "formatter", "complete", started, "Formatting complete")
 
         yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
-        evaluated = evaluator.run(formatted, strategy_brief, brand)
+        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
         yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
+
         if evaluated.passes:
             break
         if retry >= MAX_EVAL_RETRIES:
             break
         retry += 1
-        revision_hint = evaluated.revision_hint
 
     assert formatted is not None and evaluated is not None
     artifacts = RunArtifacts(
@@ -174,6 +256,7 @@ def run_stream(
     )
     RUN_REGISTRY[run_id] = artifacts
 
+    # Step K (post) — Knowledge Layer persist
     if evaluated.passes and settings.KNOWLEDGE_LAYER_ENABLED and org_id:
         yield _event(0, "knowledge_persist", "start", started, "Persisting approved memory")
         persist_run(
