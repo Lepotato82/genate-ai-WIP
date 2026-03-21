@@ -52,3 +52,5 @@ dev = [
 [tool.pytest.ini_options]
 markers = ["integration: real network calls, run explicitly only"]
 testpaths = ["tests"]
+# Repo uses top-level packages (agents/, llm/, …) without src/; ensure imports resolve.
+pythonpath = ["."]

@@ -1,353 +1,263 @@
 """
-agents/input_processor.py
-Genate — Input Processor agent (Step 1)
-
-Renders the target URL in a real browser, extracts CSS tokens via
-getComputedStyle(), captures a full-page screenshot, downloads the OG
-image, and packages everything into an InputPackage.
-
-NEVER raises on scrape failure — returns a partial InputPackage with
-scrape_error populated so the pipeline can continue with user-provided
-data only.
+Step 1: Input Processor — Playwright scrape, CSS tokens, screenshots. No LLM.
 """
 
-import asyncio
+from __future__ import annotations
+
 import logging
-import os
 import re
-import urllib.request
+from urllib.parse import urljoin, urlparse
+
+import httpx
+from playwright.sync_api import sync_playwright
 
 from config import settings
 from schemas.input_package import InputPackage
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# JavaScript injected into the rendered page to extract CSS design tokens
-# ---------------------------------------------------------------------------
+_FRAMEWORK_PREFIXES = (
+    "--mantine-",
+    "--osano-",
+    "--chakra-",
+    "--radix-",
+    "--tw-",
+    "--rsuite-",
+    "--ant-",
+    "--sx-",
+)
 
-_CSS_TOKEN_JS = """
+_EXTRACT_CSS_TOKENS_JS = """
 () => {
-    const tokens = {};
-    // 1. Read CSS custom properties from :root computed style
-    const rootStyle = getComputedStyle(document.documentElement);
-    for (const sheet of document.styleSheets) {
-        try {
-            for (const rule of sheet.cssRules) {
-                if (rule.selectorText === ':root') {
-                    const text = rule.cssText;
-                    const matches = text.matchAll(/(-{2}[\\w-]+)\\s*:\\s*([^;]+);/g);
-                    for (const m of matches) {
-                        tokens[m[1].trim()] = m[2].trim();
-                    }
-                }
-            }
-        } catch (e) { /* cross-origin stylesheet — skip */ }
+  const out = {};
+  const style = getComputedStyle(document.documentElement);
+  for (let i = 0; i < style.length; i++) {
+    const name = style.item(i);
+    if (name && name.startsWith("--")) {
+      const v = style.getPropertyValue(name).trim();
+      if (v) out[name] = v;
     }
-    // 2. Also sample computed values for known custom properties found above
-    for (const key of Object.keys(tokens)) {
-        const computed = rootStyle.getPropertyValue(key).trim();
-        if (computed) tokens[key] = computed;
-    }
-    // 3. Typography signals from element styles
-    const elemSelectors = ['h1','h2','h3','p','a','button','code'];
-    for (const sel of elemSelectors) {
-        const el = document.querySelector(sel);
-        if (!el) continue;
-        const s = getComputedStyle(el);
-        tokens[`--_font-family-${sel}`] = s.fontFamily;
-        tokens[`--_font-weight-${sel}`] = s.fontWeight;
-        tokens[`--_font-size-${sel}`] = s.fontSize;
-        tokens[`--_color-${sel}`] = s.color;
-    }
-    // 4. Background of body/main
-    const bodyStyle = getComputedStyle(document.body);
-    tokens['--_bg-body'] = bodyStyle.backgroundColor;
-    // 5. Button variants (up to 10)
-    const buttons = document.querySelectorAll('button, [role=button], a.btn');
-    let btnCount = 0;
-    for (const btn of buttons) {
-        if (btnCount >= 10) break;
-        const s = getComputedStyle(btn);
-        const bg = s.backgroundColor;
-        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-            tokens[`--_btn-bg-${btnCount}`] = bg;
-            tokens[`--_btn-color-${btnCount}`] = s.color;
-            btnCount++;
-        }
-    }
-    return tokens;
+  }
+  return out;
 }
 """
 
-# ---------------------------------------------------------------------------
-# Mock data
-# ---------------------------------------------------------------------------
+_COOKIE_DISMISS_SELECTORS = [
+    "#onetrust-accept-btn-handler",
+    ".osano-cm-accept-all",
+    'button:has-text("Accept all")',
+    'button:has-text("Accept All")',
+    'button:has-text("Accept")',
+    'button:has-text("I agree")',
+    'button:has-text("Got it")',
+    '[data-testid="cookie-accept"]',
+]
 
-_MOCK_SCRAPED_TEXT = (
-    "Linear is the issue tracking tool built for high-performance teams. "
-    "Streamline software projects, sprints, tasks, and bug tracking. "
-    "Linear helps thousands of companies like Vercel, Raycast, and Loom "
-    "move faster with purpose-built tools for product development. "
-    "Keyboard-first interface. Real-time sync. Git integration. "
-    "Connect to GitHub, GitLab, Figma, Slack and 40+ integrations. "
-    "99.9% uptime. SOC 2 certified. Used by over 10,000 engineering teams."
-)
 
-_MOCK_CSS_TOKENS: dict[str, str] = {
-    "--color-brand-bg": "#5e6ad2",
-    "--color-accent": "#7170ff",
-    "--color-text-primary": "#1a1a2e",
-    "--color-text-secondary": "#6b7280",
-    "--color-border": "#e5e7eb",
-    "--color-surface": "#ffffff",
-    "--color-surface-raised": "#f9fafb",
-    "--font-family-sans": "Inter, system-ui, sans-serif",
-    "--font-family-mono": "JetBrains Mono, monospace",
-    "--font-weight-regular": "400",
-    "--font-weight-medium": "510",
-    "--font-weight-semibold": "590",
-    "--border-radius-sm": "4px",
-    "--border-radius-md": "6px",
-    "--spacing-unit": "4px",
-    "--_bg-body": "rgb(255, 255, 255)",
-    "--_font-family-h1": "Inter, system-ui, sans-serif",
-    "--_font-weight-h1": "590",
-    "--_font-size-h1": "48px",
-}
+def _filter_css_tokens(raw: dict) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for k, v in raw.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            continue
+        if any(k.startswith(p) for p in _FRAMEWORK_PREFIXES):
+            continue
+        if v.strip():
+            out[k] = v.strip()
+    return out
+
+
+def _word_count(text: str) -> int:
+    return len(text.split())
+
+
+def _og_image_url_from_html(html: str, base_url: str) -> str | None:
+    for m in re.finditer(
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        html,
+        re.I,
+    ):
+        return urljoin(base_url, m.group(1).strip())
+    for m in re.finditer(
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+        html,
+        re.I,
+    ):
+        return urljoin(base_url, m.group(1).strip())
+    return None
+
+
+def _fetch_og_image(url: str | None) -> tuple[bytes | None, str | None]:
+    if not url:
+        return None, None
+    try:
+        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+            r = client.get(url)
+            r.raise_for_status()
+            if len(r.content) > 6 * 1024 * 1024:
+                return None, url
+            return r.content, url
+    except Exception as exc:  # noqa: BLE001 — scrape must not raise
+        logger.debug("OG image fetch failed: %s", exc)
+        return None, url
+
+
+def _try_dismiss_cookies(page) -> None:
+    for sel in _COOKIE_DISMISS_SELECTORS:
+        try:
+            loc = page.locator(sel)
+            if loc.count() > 0:
+                loc.first.click(timeout=2000)
+                page.wait_for_timeout(300)
+                break
+        except Exception:  # noqa: BLE001
+            continue
+
+
+def _playwright_proxy() -> dict[str, str] | None:
+    """Return proxy config only when URL is valid; bad .env placeholders break new_context."""
+    raw = settings.BRIGHTDATA_PROXY_URL.strip()
+    if not raw:
+        return None
+    parsed = urlparse(raw)
+    if parsed.scheme not in ("http", "https", "socks5"):
+        logger.warning("BRIGHTDATA_PROXY_URL ignored (need http/https/socks5 URL): %s", raw[:80])
+        return None
+    if not parsed.netloc:
+        logger.warning("BRIGHTDATA_PROXY_URL ignored (missing host): %s", raw[:80])
+        return None
+    return {"server": raw}
+
+
+def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
+    timeout_ms = max(1000, int(timeout_seconds * 1000))
+    proxy = _playwright_proxy()
+
+    scraped_text = ""
+    css_tokens: dict[str, str] = {}
+    screenshot_bytes: bytes | None = None
+    og_image_url: str | None = None
+    og_image_bytes: bytes | None = None
+    scrape_error: str | None = None
+
+    with sync_playwright() as p:
+        browser = None
+        try:
+            if settings.BROWSERLESS_API_KEY.strip():
+                ws = (
+                    f"wss://chrome.browserless.io?token={settings.BROWSERLESS_API_KEY.strip()}"
+                )
+                browser = p.chromium.connect_over_cdp(ws)
+            else:
+                browser = p.chromium.launch(headless=True)
+
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                proxy=proxy,
+                ignore_https_errors=True,
+            )
+            page = context.new_page()
+            page.set_default_timeout(timeout_ms)
+
+            page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+            _try_dismiss_cookies(page)
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            page.wait_for_timeout(1500)
+
+            raw_html = page.content()
+            og_image_url = _og_image_url_from_html(raw_html, page.url)
+
+            scraped_text = page.inner_text("body", timeout=timeout_ms) or ""
+            raw_tokens = page.evaluate(_EXTRACT_CSS_TOKENS_JS)
+            if isinstance(raw_tokens, dict):
+                css_tokens = _filter_css_tokens(raw_tokens)
+
+            try:
+                screenshot_bytes = page.screenshot(full_page=True, type="png")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("Screenshot failed: %s", exc)
+
+            context.close()
+        except Exception as exc:  # noqa: BLE001
+            scrape_error = str(exc)
+        finally:
+            if browser is not None:
+                try:
+                    browser.close()
+                except Exception:  # noqa: BLE001
+                    pass
+
+    if og_image_url and scrape_error is None:
+        og_image_bytes, og_image_url = _fetch_og_image(og_image_url)
+
+    return {
+        "scraped_text": scraped_text,
+        "css_tokens": css_tokens,
+        "screenshot_bytes": screenshot_bytes,
+        "og_image_url": og_image_url,
+        "og_image_bytes": og_image_bytes,
+        "scrape_error": scrape_error,
+    }
+
+
+def _scrape_with_retry(url: str, timeout: int, max_retries: int) -> dict:
+    last: dict | None = None
+    attempts = max(0, max_retries) + 1
+    for _ in range(attempts):
+        last = _scrape_page_sync(url, timeout)
+        if last.get("scrape_error") is None and (
+            last.get("scraped_text") or last.get("css_tokens")
+        ):
+            return last
+        if last.get("scrape_error") is None and not last.get("scraped_text"):
+            last["scrape_error"] = "empty scrape result"
+    return last or {
+        "scraped_text": "",
+        "css_tokens": {},
+        "screenshot_bytes": None,
+        "og_image_url": None,
+        "og_image_bytes": None,
+        "scrape_error": "scrape failed",
+    }
 
 
 def _mock_input_package(
     url: str,
     run_id: str,
-    org_id: str | None,
-    user_image: bytes | None,
-    user_document: str | None,
+    org_id: str | None = None,
+    user_image: bytes | None = None,
+    user_document: str | None = None,
+    user_document_filename: str | None = None,
 ) -> InputPackage:
-    scraped_text = _MOCK_SCRAPED_TEXT
+    scraped = (
+        "Linear is a purpose-built issue tracking tool for planning and building "
+        "products. Streamline your workflow, collaborate across teams, and ship "
+        "faster with cycles, projects, and roadmaps. Modern software teams use "
+        "Linear to manage issues, track progress, and align engineering execution."
+    )
+    tokens = {
+        "--color-brand-bg": "#5e6ad2",
+        "--color-accent": "#7170ff",
+        "--foreground": "#111111",
+        "--background": "#ffffff",
+        "--border-radius-md": "6px",
+        "--spacing-unit": "4px",
+    }
     return InputPackage(
         url=url,
         run_id=run_id,
         org_id=org_id,
-        scraped_text=scraped_text,
-        css_tokens=dict(_MOCK_CSS_TOKENS),
-        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,  # minimal PNG stub
-        og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
-        og_image_url="https://linear.app/og.png",
+        scraped_text=scraped,
+        css_tokens=tokens,
+        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
+        og_image_bytes=None,
+        og_image_url=None,
         user_image=user_image,
         user_document=user_document,
+        user_document_filename=user_document_filename,
         scrape_error=None,
-        scrape_word_count=len(scraped_text.split()),
+        scrape_word_count=_word_count(scraped),
     )
 
-
-# ---------------------------------------------------------------------------
-# Real-mode helpers
-# ---------------------------------------------------------------------------
-
-def _download_image(url: str, timeout: int = 10) -> bytes | None:
-    """Download an image URL and return raw bytes, or None on failure."""
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
-            return resp.read()
-    except Exception as exc:
-        logger.debug("OG image download failed for %s: %s", url, exc)
-        return None
-
-
-async def _scrape_async(
-    url: str,
-    timeout_seconds: int,
-) -> dict:
-    """
-    Single Playwright session:
-    1. Connect (Browserless CDP or local Chromium).
-    2. Navigate and wait for networkidle.
-    3. Extract CSS tokens via JS.
-    4. Capture full-page screenshot.
-    5. Extract OG image URL.
-    6. Extract rendered text from body.
-
-    Returns a dict with keys:
-        scraped_text, css_tokens, screenshot_bytes,
-        og_image_url, og_image_bytes, scrape_error
-    """
-    from playwright.async_api import async_playwright
-
-    result: dict = {
-        "scraped_text": "",
-        "css_tokens": {},
-        "screenshot_bytes": None,
-        "og_image_url": None,
-        "og_image_bytes": None,
-        "scrape_error": None,
-    }
-
-    browserless_key = settings.BROWSERLESS_API_KEY
-
-    try:
-        async with async_playwright() as pw:
-            if browserless_key:
-                # Connect to Browserless hosted service via CDP
-                cdp_url = (
-                    f"wss://chrome.browserless.io?token={browserless_key}"
-                )
-                browser = await pw.chromium.connect_over_cdp(cdp_url)
-            else:
-                browser = await pw.chromium.launch(headless=True)
-
-            context = await browser.new_context(
-                viewport={"width": 1440, "height": 900},
-                user_agent=(
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                ),
-            )
-            page = await context.new_page()
-
-            try:
-                await page.goto(
-                    url,
-                    wait_until="networkidle",
-                    timeout=timeout_seconds * 1000,
-                )
-            except Exception:
-                # Fallback: domcontentloaded is more permissive
-                await page.goto(
-                    url,
-                    wait_until="domcontentloaded",
-                    timeout=timeout_seconds * 1000,
-                )
-
-            # Dismiss cookie banners (best effort)
-            for selector in [
-                "button:has-text('Accept')",
-                "button:has-text('Accept all')",
-                "button:has-text('I agree')",
-                "[id*='cookie'] button",
-            ]:
-                try:
-                    btn = page.locator(selector).first
-                    if await btn.is_visible(timeout=500):
-                        await btn.click()
-                        await page.wait_for_timeout(300)
-                        break
-                except Exception:
-                    pass
-
-            # Extract CSS tokens
-            try:
-                css_tokens = await page.evaluate(_CSS_TOKEN_JS)
-                result["css_tokens"] = css_tokens or {}
-            except Exception as exc:
-                logger.warning("CSS token extraction failed: %s", exc)
-                result["css_tokens"] = {}
-
-            # Full-page screenshot
-            try:
-                result["screenshot_bytes"] = await page.screenshot(full_page=True)
-            except Exception as exc:
-                logger.warning("Screenshot failed: %s", exc)
-
-            # OG image
-            try:
-                og_url = await page.get_attribute(
-                    'meta[property="og:image"]', "content"
-                )
-                if og_url:
-                    result["og_image_url"] = og_url
-                    result["og_image_bytes"] = _download_image(
-                        og_url, timeout=timeout_seconds
-                    )
-            except Exception as exc:
-                logger.debug("OG image extraction failed: %s", exc)
-
-            # Rendered text
-            try:
-                text = await page.inner_text("body")
-                # Collapse whitespace
-                text = re.sub(r"\s+", " ", text).strip()
-                result["scraped_text"] = text
-            except Exception as exc:
-                logger.warning("Text extraction failed: %s", exc)
-
-            await context.close()
-            await browser.close()
-
-    except Exception as exc:
-        result["scrape_error"] = str(exc)
-        logger.error("Scrape failed for %s: %s", url, exc)
-
-    return result
-
-
-def _scrape_with_retry(url: str, timeout_seconds: int, max_retries: int) -> dict:
-    """Run the async scrape with retry logic, returning the result dict."""
-    last_result: dict = {
-        "scraped_text": "",
-        "css_tokens": {},
-        "screenshot_bytes": None,
-        "og_image_url": None,
-        "og_image_bytes": None,
-        "scrape_error": "Max retries exceeded",
-    }
-
-    for attempt in range(max_retries):
-        try:
-            result = asyncio.run(_scrape_async(url, timeout_seconds))
-            if not result.get("scrape_error"):
-                return result
-            last_result = result
-            logger.warning(
-                "Scrape attempt %d/%d failed: %s",
-                attempt + 1,
-                max_retries,
-                result["scrape_error"],
-            )
-        except Exception as exc:
-            last_result["scrape_error"] = str(exc)
-            logger.warning(
-                "Scrape attempt %d/%d raised: %s", attempt + 1, max_retries, exc
-            )
-
-    return last_result
-
-
-# ---------------------------------------------------------------------------
-# LangFuse tracing (graceful if unavailable)
-# ---------------------------------------------------------------------------
-
-def _trace_langfuse(
-    url: str,
-    css_token_count: int,
-    scrape_word_count: int,
-    has_og_image: bool,
-    scrape_error: str | None,
-) -> None:
-    try:
-        from langfuse import Langfuse
-
-        lf = Langfuse(
-            public_key=settings.LANGFUSE_PUBLIC_KEY,
-            secret_key=settings.LANGFUSE_SECRET_KEY,
-        )
-        lf.trace(
-            name="input_processor",
-            input={"url": url},
-            output={
-                "css_token_count": css_token_count,
-                "scrape_word_count": scrape_word_count,
-                "has_og_image": has_og_image,
-                "scrape_error": scrape_error,
-            },
-        )
-    except Exception as exc:
-        logger.debug("LangFuse trace failed (non-fatal): %s", exc)
-
-
-# ---------------------------------------------------------------------------
-# Public interface
-# ---------------------------------------------------------------------------
 
 def run(
     url: str,
@@ -357,57 +267,63 @@ def run(
     user_document: str | None = None,
     user_document_filename: str | None = None,
 ) -> InputPackage:
-    """
-    Step 1 — Input Processor.
+    try:
+        if settings.MOCK_MODE:
+            return _mock_input_package(
+                url=url,
+                run_id=run_id,
+                org_id=org_id,
+                user_image=user_image,
+                user_document=user_document,
+                user_document_filename=user_document_filename,
+            )
 
-    In MOCK_MODE returns deterministic data for rapid local development.
-    In real mode renders the URL with Playwright, extracts CSS tokens,
-    screenshot, OG image, and rendered text.
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return InputPackage(
+                url=url,
+                run_id=run_id,
+                org_id=org_id,
+                user_image=user_image,
+                user_document=user_document,
+                user_document_filename=user_document_filename,
+                scrape_error="invalid URL",
+                scrape_word_count=0,
+            )
 
-    NEVER raises — returns a partial InputPackage with scrape_error on
-    failure so the pipeline can continue with user-provided data.
-    """
-    if settings.MOCK_MODE:
-        pkg = _mock_input_package(url, run_id, org_id, user_image, user_document)
-        _trace_langfuse(
-            url=url,
-            css_token_count=len(pkg.css_tokens),
-            scrape_word_count=pkg.scrape_word_count,
-            has_og_image=pkg.og_image_bytes is not None,
-            scrape_error=None,
+        result = _scrape_with_retry(
+            url,
+            settings.SCRAPE_TIMEOUT_SECONDS,
+            settings.SCRAPE_MAX_RETRIES,
         )
-        return pkg
+        scraped_text = str(result.get("scraped_text") or "")
+        css_tokens = result.get("css_tokens") if isinstance(result.get("css_tokens"), dict) else {}
+        css_tokens = {str(k): str(v) for k, v in css_tokens.items()}
 
-    # ── Real mode ────────────────────────────────────────────────────
-    timeout = settings.SCRAPE_TIMEOUT_SECONDS
-    max_retries = settings.SCRAPE_MAX_RETRIES
-
-    result = _scrape_with_retry(url, timeout, max_retries)
-
-    scraped_text: str = result.get("scraped_text", "") or ""
-    scrape_word_count = len(scraped_text.split()) if scraped_text else 0
-
-    pkg = InputPackage(
-        url=url,
-        run_id=run_id,
-        org_id=org_id,
-        scraped_text=scraped_text,
-        css_tokens=result.get("css_tokens") or {},
-        screenshot_bytes=result.get("screenshot_bytes"),
-        og_image_bytes=result.get("og_image_bytes"),
-        og_image_url=result.get("og_image_url"),
-        user_image=user_image,
-        user_document=user_document,
-        scrape_error=result.get("scrape_error"),
-        scrape_word_count=scrape_word_count,
-    )
-
-    _trace_langfuse(
-        url=url,
-        css_token_count=len(pkg.css_tokens),
-        scrape_word_count=pkg.scrape_word_count,
-        has_og_image=pkg.og_image_bytes is not None,
-        scrape_error=pkg.scrape_error,
-    )
-
-    return pkg
+        return InputPackage(
+            url=url,
+            run_id=run_id,
+            org_id=org_id,
+            scraped_text=scraped_text,
+            css_tokens=css_tokens,
+            screenshot_bytes=result.get("screenshot_bytes"),
+            og_image_bytes=result.get("og_image_bytes"),
+            og_image_url=result.get("og_image_url"),
+            user_image=user_image,
+            user_document=user_document,
+            user_document_filename=user_document_filename,
+            scrape_error=result.get("scrape_error"),
+            scrape_word_count=_word_count(scraped_text),
+        )
+    except Exception as exc:  # noqa: BLE001 — never crash callers
+        logger.exception("input_processor.run failed")
+        return InputPackage(
+            url=url,
+            run_id=run_id,
+            org_id=org_id,
+            user_image=user_image,
+            user_document=user_document,
+            user_document_filename=user_document_filename,
+            scrape_error=str(exc),
+            scrape_word_count=0,
+        )

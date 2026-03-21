@@ -34,6 +34,7 @@ class InputPackage(BaseModel):
     # User uploads (highest priority)
     user_image: bytes | None = None
     user_document: str | None = None
+    user_document_filename: str | None = None
 
     # Provenance and diagnostics
     scrape_error: str | None = None

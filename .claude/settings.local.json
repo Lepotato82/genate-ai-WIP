@@ -3,7 +3,10 @@
     "allow": [
       "Bash(.venv/Scripts/python.exe -m pytest tests/test_input_processor.py -v)",
       "Bash(source $HOME/.local/bin/env)",
-      "Bash(uv sync:*)"
+      "Bash(uv sync:*)",
+      "Read(//e/genate-ai/**)",
+      "Bash(python -c \":*)",
+      "Bash(curl -s http://localhost:11434/api/tags)"
     ]
   }
 }

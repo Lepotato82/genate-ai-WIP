@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     LLM_TEXT_MODEL: str = "llama-3.2-90b-text-preview"
     LLM_VISION_MODEL: str = "claude-haiku-4-5"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
+    # Used when LLM_PROVIDER / LLM_VISION_PROVIDER is ollama (not Groq/Anthropic names).
+    OLLAMA_TEXT_MODEL: str = "llama3.2:latest"
+    OLLAMA_VISION_MODEL: str = "llava:latest"
 
     # ─── LLM API Keys ─────────────────────────────────────────────────────
     GROQ_API_KEY: str = ""

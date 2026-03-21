@@ -4,6 +4,12 @@
 from config import settings
 
 
+def _ollama_openai_base_url() -> str:
+    """Ollama's OpenAI-compatible API is mounted at /v1."""
+    base = (settings.OLLAMA_BASE_URL or "http://localhost:11434").rstrip("/")
+    return base if base.endswith("/v1") else f"{base}/v1"
+
+
 def get_text_client():
     """Returns the configured text LLM client. Swap provider here only."""
     if settings.LLM_PROVIDER == "groq":
@@ -18,7 +24,7 @@ def get_text_client():
     elif settings.LLM_PROVIDER == "ollama":
         # OpenAI-compatible client pointed at local Ollama instance
         from openai import OpenAI
-        return OpenAI(base_url=settings.OLLAMA_BASE_URL, api_key="ollama")
+        return OpenAI(base_url=_ollama_openai_base_url(), api_key="ollama")
     else:
         raise ValueError(f"Unknown LLM_PROVIDER: {settings.LLM_PROVIDER}")
 
@@ -36,9 +42,15 @@ def get_vision_client():
         return OpenAI(api_key=settings.OPENAI_API_KEY)
     elif settings.LLM_VISION_PROVIDER == "ollama":
         from openai import OpenAI
-        return OpenAI(base_url=settings.OLLAMA_BASE_URL, api_key="ollama")
+        return OpenAI(base_url=_ollama_openai_base_url(), api_key="ollama")
     else:
         raise ValueError(f"Unknown LLM_VISION_PROVIDER: {settings.LLM_VISION_PROVIDER}")
+
+
+def _default_text_model() -> str:
+    if settings.LLM_PROVIDER == "ollama":
+        return settings.OLLAMA_TEXT_MODEL
+    return settings.LLM_TEXT_MODEL
 
 
 def chat_completion(messages: list[dict], model: str = None, **kwargs) -> str:
@@ -48,7 +60,7 @@ def chat_completion(messages: list[dict], model: str = None, **kwargs) -> str:
     Handles provider-specific differences internally.
     """
     client = get_text_client()
-    model = model or settings.LLM_TEXT_MODEL
+    model = model or _default_text_model()
     response = client.chat.completions.create(
         model=model,
         messages=messages,
@@ -75,7 +87,12 @@ def vision_completion(
     import base64
 
     client = get_vision_client()
-    model = model or settings.LLM_VISION_MODEL
+    if model is None:
+        model = (
+            settings.OLLAMA_VISION_MODEL
+            if settings.LLM_VISION_PROVIDER == "ollama"
+            else settings.LLM_VISION_MODEL
+        )
 
     if settings.LLM_VISION_PROVIDER == "anthropic":
         # ── Anthropic path ────────────────────────────────────────────────

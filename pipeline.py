@@ -4,10 +4,10 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Generator
+from typing import Generator, Literal, cast
 
 from agents import (
-    copywriting,
+    copywriter,
     evaluator,
     formatter,
     input_processor,
@@ -15,7 +15,6 @@ from agents import (
     product_analysis,
     strategy,
     ui_analyzer,
-    visual_gen,
 )
 from config import settings
 from knowledge import persist_run, query_context
@@ -23,11 +22,20 @@ from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.evaluator_output import EvaluatorOutput
 from schemas.formatted_content import FormattedContent
+from schemas.input_package import InputPackage
 from schemas.knowledge_context import KnowledgeContext
 from schemas.product_knowledge import ProductKnowledge
 from schemas.strategy_brief import StrategyBrief
 
 MAX_EVAL_RETRIES = 2
+
+PlatformName = Literal["linkedin", "twitter", "instagram", "blog"]
+
+
+def _norm_platform(platform: str) -> PlatformName:
+    if platform in ("linkedin", "twitter", "instagram", "blog"):
+        return cast(PlatformName, platform)
+    return "linkedin"
 
 
 @dataclass
@@ -38,6 +46,7 @@ class RunArtifacts:
     product_knowledge: ProductKnowledge
     content_brief: ContentBrief
     strategy_brief: StrategyBrief
+    raw_copy: str
     formatted_content: FormattedContent
     evaluator_output: EvaluatorOutput
 
@@ -55,13 +64,127 @@ def _event(step: int, agent: str, status: str, started: float, message: str) -> 
     }
 
 
+def _run_stages_after_input(
+    *,
+    run_id: str,
+    org_id: str | None,
+    pkg: InputPackage,
+    platform: str,
+    started: float,
+) -> tuple[
+    BrandProfile,
+    ProductKnowledge,
+    ContentBrief,
+    StrategyBrief,
+    str,
+    FormattedContent,
+    EvaluatorOutput,
+]:
+    plat = _norm_platform(platform)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_ui = pool.submit(ui_analyzer.run, pkg)
+        f_pa = pool.submit(product_analysis.run, pkg)
+        brand = f_ui.result()
+        product = f_pa.result()
+
+    knowledge_context: KnowledgeContext | None = None
+    if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
+        query_text = f"{product.product_name}: {product.tagline or ''}"
+        knowledge_context = query_context(org_id=org_id, query_text=query_text)
+    _ = knowledge_context
+
+    content_brief = planner.run(brand, product, plat)
+    strategy_brief = strategy.run(content_brief, product, brand)
+    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
+
+    formatted = formatter.run(
+        raw_copy,
+        content_brief,
+        strategy_brief,
+        brand,
+        revision_hint=None,
+        retry_count=0,
+    )
+    retry = 0
+    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+    while not evaluated.passes and retry < MAX_EVAL_RETRIES:
+        retry += 1
+        formatted = formatter.run(
+            raw_copy,
+            content_brief,
+            strategy_brief,
+            brand,
+            revision_hint=evaluated.revision_hint,
+            retry_count=retry,
+        )
+        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+
+    return brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated
+
+
 def run_pipeline(
+    url: str,
+    platform: str = "linkedin",
+    user_image: bytes | None = None,
+    user_document: str | None = None,
+) -> dict:
+    """
+    End-to-end pipeline: input → brand + product (parallel) → planner → strategy →
+    copywriter → formatter → evaluator (with formatter retries).
+    """
+    run_id = str(uuid.uuid4())
+    started = perf_counter()
+    pkg = input_processor.run(
+        url=url,
+        run_id=run_id,
+        org_id=None,
+        user_image=user_image,
+        user_document=user_document,
+    )
+    brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated = _run_stages_after_input(
+        run_id=run_id,
+        org_id=None,
+        pkg=pkg,
+        platform=platform,
+        started=started,
+    )
+    artifacts = RunArtifacts(
+        run_id=run_id,
+        org_id=None,
+        brand_profile=brand,
+        product_knowledge=product,
+        content_brief=content_brief,
+        strategy_brief=strategy_brief,
+        raw_copy=raw_copy,
+        formatted_content=formatted,
+        evaluator_output=evaluated,
+    )
+    RUN_REGISTRY[run_id] = artifacts
+    return {
+        "run_id": run_id,
+        "url": url,
+        "platform": platform,
+        "brand_profile": brand.model_dump(),
+        "product_knowledge": product.model_dump(),
+        "content_brief": content_brief.model_dump(),
+        "strategy_brief": strategy_brief.model_dump(),
+        "raw_copy": raw_copy,
+        "formatted_content": formatted.model_dump(),
+        "evaluator_output": evaluated.model_dump(),
+        "passes": evaluated.passes,
+        "overall_score": evaluated.overall_score,
+    }
+
+
+def run_pipeline_artifacts(
     *,
     url: str,
     platform: str,
     org_id: str | None = None,
     user_image: bytes | None = None,
     user_document: str | None = None,
+    user_document_filename: str | None = None,
 ) -> RunArtifacts:
     events = list(
         run_stream(
@@ -70,6 +193,7 @@ def run_pipeline(
             org_id=org_id,
             user_image=user_image,
             user_document=user_document,
+            user_document_filename=user_document_filename,
         )
     )
     final = events[-1]
@@ -86,6 +210,7 @@ def run_stream(
     org_id: str | None = None,
     user_image: bytes | None = None,
     user_document: str | None = None,
+    user_document_filename: str | None = None,
 ) -> Generator[dict, None, None]:
     run_id = str(uuid.uuid4())
     started = perf_counter()
@@ -97,6 +222,7 @@ def run_stream(
         org_id=org_id,
         user_image=user_image,
         user_document=user_document,
+        user_document_filename=user_document_filename,
     )
     yield _event(1, "input_processor", "complete", started, "Input package ready")
 
@@ -116,52 +242,52 @@ def run_stream(
         query_text = f"{product.product_name}: {product.tagline or ''}"
         knowledge_context = query_context(org_id=org_id, query_text=query_text)
         yield _event(0, "knowledge_query", "complete", started, "Memory query complete")
+    _ = knowledge_context
 
     yield _event(4, "planner", "start", started, "Planning content")
-    content_brief = planner.run(platform=platform, product_knowledge=product, knowledge_context=knowledge_context)
+    content_brief = planner.run(brand, product, _norm_platform(platform))
     yield _event(4, "planner", "complete", started, "Content brief created")
 
     yield _event(5, "strategy", "start", started, "Building strategy")
-    strategy_brief = strategy.run(content_brief=content_brief, product_knowledge=product, knowledge_context=knowledge_context)
+    strategy_brief = strategy.run(content_brief, product, brand)
     yield _event(5, "strategy", "complete", started, "Strategy brief created")
 
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
-    yield _event(7, "visual_gen", "start", started, "Generating visual directions")
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        f_copy = pool.submit(copywriting.run, content_brief, strategy_brief, brand)
-        f_visual = pool.submit(visual_gen.run, brand, content_brief, strategy_brief)
-        raw_copy = f_copy.result()
-        visual_payload = f_visual.result()
+    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
-    yield _event(7, "visual_gen", "complete", started, "Visual payload generated")
+
+    yield _event(8, "formatter", "start", started, "Applying platform formatting")
+    formatted = formatter.run(
+        raw_copy,
+        content_brief,
+        strategy_brief,
+        brand,
+        revision_hint=None,
+        retry_count=0,
+    )
+    yield _event(8, "formatter", "complete", started, "Formatting complete")
 
     retry = 0
-    revision_hint: str | None = None
-    formatted: FormattedContent | None = None
-    evaluated: EvaluatorOutput | None = None
-    while True:
-        yield _event(8, "formatter", "start", started, "Applying platform formatting")
+    yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
+    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+    yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
+
+    while not evaluated.passes and retry < MAX_EVAL_RETRIES:
+        retry += 1
+        yield _event(8, "formatter", "start", started, "Applying revision")
         formatted = formatter.run(
-            content_brief=content_brief,
-            strategy_brief=strategy_brief,
-            raw_copy=raw_copy,
-            visual_payload=visual_payload,
+            raw_copy,
+            content_brief,
+            strategy_brief,
+            brand,
+            revision_hint=evaluated.revision_hint,
             retry_count=retry,
-            revision_hint=revision_hint,
         )
         yield _event(8, "formatter", "complete", started, "Formatting complete")
-
-        yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
-        evaluated = evaluator.run(formatted, strategy_brief, brand)
+        yield _event(9, "evaluator", "start", started, "Re-evaluating")
+        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
         yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
-        if evaluated.passes:
-            break
-        if retry >= MAX_EVAL_RETRIES:
-            break
-        retry += 1
-        revision_hint = evaluated.revision_hint
 
-    assert formatted is not None and evaluated is not None
     artifacts = RunArtifacts(
         run_id=run_id,
         org_id=org_id,
@@ -169,6 +295,7 @@ def run_stream(
         product_knowledge=product,
         content_brief=content_brief,
         strategy_brief=strategy_brief,
+        raw_copy=raw_copy,
         formatted_content=formatted,
         evaluator_output=evaluated,
     )

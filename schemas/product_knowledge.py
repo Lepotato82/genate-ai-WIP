@@ -121,16 +121,14 @@ class ProductKnowledge(BaseModel):
         ),
     )
     pain_points: list[str] = Field(
-        ...,
-        min_length=2,
+        default_factory=list,
         max_length=8,
-        description="Specific observable frictions. Min 2, max 8.",
+        description="Specific observable frictions. May be empty when the model omits them.",
     )
     messaging_angles: list[str] = Field(
-        ...,
-        min_length=1,
+        default_factory=list,
         max_length=5,
-        description="Positioning angles for content. Min 1, max 5.",
+        description="Positioning angles; may be empty for downstream to infer.",
     )
 
     # ── Optional enrichment ───────────────────────────────────────────

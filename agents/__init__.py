@@ -1,4 +1,5 @@
 from agents import (
+    copywriter,
     copywriting,
     evaluator,
     formatter,
@@ -11,6 +12,7 @@ from agents import (
 )
 
 __all__ = [
+    "copywriter",
     "copywriting",
     "evaluator",
     "formatter",
