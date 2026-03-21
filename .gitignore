@@ -1,0 +1,16 @@
+# Virtual environment
+.venv/
+
+# Environment secrets
+.env
+.env.example
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Test cache
+.pytest_cache/
+
+# Package metadata
+*.egg-info/

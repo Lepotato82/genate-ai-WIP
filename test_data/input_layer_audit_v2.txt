@@ -1,0 +1,181 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.0.2, pluggy-1.6.0 -- E:\genate-ai\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: E:\genate-ai
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+tests/test_input_layer_integration.py::TestInputProcessor::test_T1_token_count 
+[Razorpay] Scraping https://razorpay.com …
+  Input: tokens=1  text=13807  method=computed_style  dark=False
+  UI:    category='minimal-saas'  ✗expected='consumer-friendly'  conf=0.85
+  Prod:  name='Razorpay'  features=18  proofs=3
+
+[Chargebee] Scraping https://www.chargebee.com …
+  Input: tokens=66  text=11977  method=computed_style  dark=False
+  UI:    category='minimal-saas'  ✓expected='minimal-saas'  conf=0.85
+  Prod:  name='Chargebee'  features=18  proofs=6
+
+[Postman] Scraping https://www.postman.com …
+  Input: tokens=0  text=0  method=None  dark=None
+  UI:    category='minimal-saas'  ✗expected='developer-tool'  conf=0.85
+  Prod:  name=None  features=0  proofs=0
+
+[Hasura] Scraping https://hasura.io …
+  Input: tokens=69  text=3207  method=computed_style  dark=False
+  UI:    category='minimal-saas'  ✗expected='developer-tool'  conf=0.85
+  Prod:  name='PromptQL'  features=2  proofs=1
+
+[Freshworks] Scraping https://www.freshworks.com …
+  Input: tokens=5  text=4512  method=computed_style  dark=False
+  UI:    category='minimal-saas'  ✗expected='bold-enterprise'  conf=0.85
+  Prod:  name='Freshworks'  features=7  proofs=6
+
+[Linear] Scraping https://linear.app …
+  Input: tokens=519  text=8251  method=computed_style  dark=False
+  UI:    category='minimal-saas'  ✗expected='developer-tool'  conf=0.85
+  Prod:  name='Linear'  features=12  proofs=3
+
+
+==============================================================================
+INTEGRATION AUDIT SUMMARY
+==============================================================================
+Site         | T_pass | U_cat        | U_conf | P_feat | P_proof | OVERALL
+------------------------------------------------------------------------------
+Razorpay     |  5/10  | N minimal-s |  0.85  |     18 |       3 | WARN
+Chargebee    |  7/10  | Y minimal-s |  0.85  |     18 |       6 | WARN
+Postman      |  2/10  | N minimal-s |  0.85  |      0 |       0 | FAIL
+Hasura       |  6/10  | N minimal-s |  0.85  |      2 |       1 | FAIL
+Freshworks   |  7/10  | N minimal-s |  0.85  |      7 |       6 | WARN
+Linear       |  6/10  | N minimal-s |  0.85  |     12 |       3 | WARN
+==============================================================================
+Category accuracy: 1/6
+Full PASS: 0  |  WARN: 4  |  FAIL: 2
+
+Audit saved -> E:\genate-ai\test_data\input_layer_audit.json
+PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T2_signal_tokens PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T3_font_families_extracted PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T4_font_weights_include_body WARN Razorpay: T4: no body-weight (400/500/510) found in []
+WARN Chargebee: T4: no body-weight (400/500/510) found in []
+WARN Postman: T4: no design_tokens
+WARN Hasura: T4: no body-weight (400/500/510) found in []
+WARN Freshworks: T4: no body-weight (400/500/510) found in []
+WARN Linear: T4: no body-weight (400/500/510) found in []
+PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T5_extraction_method WARN Razorpay: T5: extraction_method='computed_style' (expected 'dembrandt')
+WARN Chargebee: T5: extraction_method='computed_style' (expected 'dembrandt')
+WARN Postman: T5: design_tokens is None — dembrandt did not run
+WARN Hasura: T5: extraction_method='computed_style' (expected 'dembrandt')
+WARN Freshworks: T5: extraction_method='computed_style' (expected 'dembrandt')
+WARN Linear: T5: extraction_method='computed_style' (expected 'dembrandt')
+PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T6_dark_theme_detection Razorpay: has_dark_theme=False
+Chargebee: has_dark_theme=False
+Postman: has_dark_theme=None
+Hasura: has_dark_theme=False
+Freshworks: has_dark_theme=False
+Linear: has_dark_theme=False
+WARN Linear: T6: has_dark_theme=False, expected True for Linear
+PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T7_text_length PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T8_product_signal_words PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T9_no_cookie_banner_noise FAILED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T10_og_image_present Razorpay: og_image={'present': True, 'format': 'PNG', 'size': 2301492}
+Chargebee: og_image={'present': True, 'format': 'PNG', 'size': 130368}
+Postman: og_image={'present': False}
+Hasura: og_image={'present': True, 'format': 'PNG', 'size': 248433}
+Freshworks: og_image={'present': True, 'format': 'WebP', 'size': 85104}
+Linear: og_image={'present': True, 'format': 'JPEG', 'size': 277008}
+PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T11_nonexistent_domain_does_not_raise PASSED
+tests/test_input_layer_integration.py::TestInputProcessor::test_T12_js_spa_renders   WARN T12 Postman: scrape timed out, SPA render unverifiable
+PASSED
+tests/test_input_layer_integration.py::TestUIAnalyzer::test_U1_returns_valid_brand_profile PASSED
+tests/test_input_layer_integration.py::TestUIAnalyzer::test_U2_design_category_plausible   N Razorpay: expected='consumer-friendly' actual='minimal-saas'
+  Y Chargebee: expected='minimal-saas' actual='minimal-saas'
+  N Postman: expected='developer-tool' actual='minimal-saas'
+  N Hasura: expected='developer-tool' actual='minimal-saas'
+  N Freshworks: expected='bold-enterprise' actual='minimal-saas'
+  N Linear: expected='developer-tool' actual='minimal-saas'
+FAILED
+tests/test_input_layer_integration.py::TestUIAnalyzer::test_U3_writing_instruction_quality Razorpay: Craft a bold and innovative narrative for Razorpay, emphasizing its cutting-edge approach with a full border radius styl
+Chargebee: Craft copy that showcases Chargebee's technical expertise in recurring revenue management, using a bold and confident to
+Postman: Craft a clear, concise message that highlights the product's efficiency and simplicity, using a friendly yet professiona
+Hasura: Use a technical tone with 600 font weight for headings, incorporating the accent color #96e1ff and rounded corners with 
+Freshworks: Create a clear and concise message that highlights the benefits of using Freshworks' IT and customer service software. U
+Linear: Use a technical tone with a personality that is modern and bold. Use the primary accent color #5e6ad2, Open Sans font wi
+PASSED
+tests/test_input_layer_integration.py::TestUIAnalyzer::test_U4_primary_color_extracted Razorpay: primary_color='#1A1D23'
+Chargebee: primary_color='#bff90b'
+Postman: primary_color='#3498db'
+Hasura: primary_color='#000'
+Freshworks: primary_color='#0082c3'
+Linear: primary_color='#5e6ad2'
+PASSED
+tests/test_input_layer_integration.py::TestUIAnalyzer::test_U5_confidence_reasonable Razorpay: confidence=0.85
+Chargebee: confidence=0.85
+Postman: confidence=0.85
+Hasura: confidence=0.85
+Freshworks: confidence=0.85
+Linear: confidence=0.85
+PASSED
+tests/test_input_layer_integration.py::TestUIAnalyzer::test_U6_dark_theme_consistent Razorpay: token=False model=False
+Chargebee: token=False model=False
+Postman: token=None model=True
+Hasura: token=False model=False
+Freshworks: token=False model=False
+Linear: token=False model=False
+PASSED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P1_returns_valid_product_knowledge PASSED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P2_features_not_empty FAILED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P3_benefits_not_empty FAILED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P4_features_vs_benefits_distinct PASSED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P5_proof_points_grounded PASSED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P6_no_fabricated_stats PASSED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P7_product_name_extracted Razorpay: product_name='Razorpay'
+Chargebee: product_name='Chargebee'
+Postman: product_name=None
+  WARN: P7: product_name is None or empty
+Hasura: product_name='PromptQL'
+Freshworks: product_name='Freshworks'
+Linear: product_name='Linear'
+PASSED
+tests/test_input_layer_integration.py::TestProductAnalysis::test_P8_pain_points_present Razorpay: pain_point_count=4
+Chargebee: pain_point_count=6
+Postman: pain_point_count=0
+  WARN: P8: pain_points is empty (homepage may hide pain)
+Hasura: pain_point_count=3
+Freshworks: pain_point_count=5
+Linear: pain_point_count=3
+PASSED
+
+================================== FAILURES ===================================
+______________ TestInputProcessor.test_T9_no_cookie_banner_noise ______________
+tests\test_input_layer_integration.py:615: in test_T9_no_cookie_banner_noise
+    assert not failures, "\n".join(failures)
+E   AssertionError: Hasura: T9: cookie banner detected at start: 'we use cookies'
+E   assert not ["Hasura: T9: cookie banner detected at start: 'we use cookies'"]
+______________ TestUIAnalyzer.test_U2_design_category_plausible _______________
+tests\test_input_layer_integration.py:671: in test_U2_design_category_plausible
+    assert correct >= 4, (
+E   AssertionError: Category accuracy 1/6 is below minimum threshold of 4/6
+E   assert 1 >= 4
+_______________ TestProductAnalysis.test_P2_features_not_empty ________________
+tests\test_input_layer_integration.py:727: in test_P2_features_not_empty
+    assert not failures, "\n".join(failures)
+E   AssertionError: Postman: P2: features list is empty
+E   assert not ['Postman: P2: features list is empty']
+_______________ TestProductAnalysis.test_P3_benefits_not_empty ________________
+tests\test_input_layer_integration.py:735: in test_P3_benefits_not_empty
+    assert not failures, "\n".join(failures)
+E   AssertionError: Postman: P3: benefits list is empty
+E   assert not ['Postman: P3: benefits list is empty']
+=========================== short test summary info ===========================
+FAILED tests/test_input_layer_integration.py::TestInputProcessor::test_T9_no_cookie_banner_noise
+FAILED tests/test_input_layer_integration.py::TestUIAnalyzer::test_U2_design_category_plausible
+FAILED tests/test_input_layer_integration.py::TestProductAnalysis::test_P2_features_not_empty
+FAILED tests/test_input_layer_integration.py::TestProductAnalysis::test_P3_benefits_not_empty
+================== 4 failed, 22 passed in 116.60s (0:01:56) ===================

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_input_processor.py -v)",
+      "Bash(source $HOME/.local/bin/env)",
+      "Bash(uv sync:*)"
+    ]
+  }
+}

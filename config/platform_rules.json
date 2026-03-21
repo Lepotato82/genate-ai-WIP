@@ -1,0 +1,31 @@
+{
+  "linkedin": {
+    "hook_max_chars": 180,
+    "hashtags_min": 3,
+    "hashtags_max": 5,
+    "hashtags_position": "end_only"
+  },
+  "twitter": {
+    "thread_min": 4,
+    "thread_max": 8,
+    "tweet_max_chars": 280,
+    "hashtags_min": 1,
+    "hashtags_max": 2,
+    "hashtags_position": "final_tweet_only"
+  },
+  "instagram": {
+    "preview_max_chars": 125,
+    "hashtags_min": 20,
+    "hashtags_max": 30,
+    "line_breaks_before_hashtags": 5
+  },
+  "blog": {
+    "word_count_min": 1200,
+    "word_count_max": 2500,
+    "keyword_first_words": 100,
+    "meta_title_min": 50,
+    "meta_title_max": 60,
+    "meta_description_min": 140,
+    "meta_description_max": 160
+  }
+}

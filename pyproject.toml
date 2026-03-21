@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agents", "llm", "schemas", "prompts", "config", "knowledge", "auth", "utils"]
+
+[project]
+name = "genate"
+version = "0.1.0"
+description = "Multi-agent AI pipeline for SaaS marketing content generation"
+requires-python = ">=3.11"
+dependencies = [
+    # API framework
+    "fastapi",
+    "uvicorn[standard]",
+    # Task queue
+    "celery",
+    "redis",
+    # Config / validation
+    "pydantic",
+    "pydantic-settings",
+    # LLM providers
+    "groq",
+    "anthropic",
+    "openai",
+    # Browser automation
+    "playwright",
+    # Vector database
+    "qdrant-client",
+    # Relational database
+    "supabase",
+    # Observability
+    "langfuse",
+    "sentry-sdk",
+    # Utilities
+    "python-dotenv",
+    "PyYAML",
+    "httpx",
+    "aiohttp",
+    "Pillow",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+    "pyright",
+]
+
+[tool.pytest.ini_options]
+markers = ["integration: real network calls, run explicitly only"]
