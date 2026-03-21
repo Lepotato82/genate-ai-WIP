@@ -27,7 +27,7 @@ dependencies = [
     # Browser automation
     "playwright",
     # Vector database
-    "qdrant-client",
+    "qdrant-client[fastembed]",
     # Relational database
     "supabase",
     # Observability
@@ -51,3 +51,4 @@ dev = [
 
 [tool.pytest.ini_options]
 markers = ["integration: real network calls, run explicitly only"]
+testpaths = ["tests"]

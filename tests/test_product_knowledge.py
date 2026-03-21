@@ -12,7 +12,8 @@ def test_product_knowledge_minimal_valid():
         description=(
             "Genate helps SaaS marketing teams convert product truth into platform "
             "content quickly while preserving brand voice and proof-point grounding "
-            "through a structured multi-agent workflow and quality gates."
+            "through a structured multi-agent workflow and quality gates across "
+            "teams, campaigns, and multiple channels."
         ),
         product_category="marketing-content",
         features=[

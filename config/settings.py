@@ -42,6 +42,7 @@ class Settings(BaseSettings):
 
     # ─── Knowledge Layer ──────────────────────────────────────────────────
     KNOWLEDGE_LAYER_ENABLED: bool = False
+    EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
 
     # ─── Image Generation ─────────────────────────────────────────────────
     FAL_API_KEY: str = ""

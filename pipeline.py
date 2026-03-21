@@ -113,7 +113,8 @@ def run_stream(
     knowledge_context: KnowledgeContext | None = None
     if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
         yield _event(0, "knowledge_query", "start", started, "Querying memory")
-        knowledge_context = query_context(org_id=org_id)
+        query_text = f"{product.product_name}: {product.tagline or ''}"
+        knowledge_context = query_context(org_id=org_id, query_text=query_text)
         yield _event(0, "knowledge_query", "complete", started, "Memory query complete")
 
     yield _event(4, "planner", "start", started, "Planning content")

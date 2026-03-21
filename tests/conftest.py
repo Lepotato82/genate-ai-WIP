@@ -6,6 +6,11 @@ non-ASCII characters in model responses (e.g. tick/cross symbols from
 Groq) never cause UnicodeEncodeError on Windows cp1252 terminals.
 """
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 def pytest_configure(config):
