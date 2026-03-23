@@ -64,64 +64,75 @@ def _event(step: int, agent: str, status: str, started: float, message: str) -> 
     }
 
 
-def _run_stages_after_input(
-    *,
-    run_id: str,
-    org_id: str | None,
-    pkg: InputPackage,
-    platform: str,
-    started: float,
-) -> tuple[
-    BrandProfile,
-    ProductKnowledge,
-    ContentBrief,
-    StrategyBrief,
-    str,
-    FormattedContent,
-    EvaluatorOutput,
-]:
-    plat = _norm_platform(platform)
+# ---------------------------------------------------------------------------
+# run_linkedin — simple chain for LinkedIn end-to-end validation
+# ---------------------------------------------------------------------------
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        f_ui = pool.submit(ui_analyzer.run, pkg)
-        f_pa = pool.submit(product_analysis.run, pkg)
-        brand = f_ui.result()
-        product = f_pa.result()
+def run_linkedin(
+    url: str,
+    run_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    """
+    Full LinkedIn pipeline: input → brand → product → plan → strategy →
+    copy → format → evaluate (with up to 2 retries).
 
-    knowledge_context: KnowledgeContext | None = None
-    if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
-        query_text = f"{product.product_name}: {product.tagline or ''}"
-        knowledge_context = query_context(org_id=org_id, query_text=query_text)
-    _ = knowledge_context
+    Input layer uses MOCK_MODE setting. Generation agents (steps 4-9) always
+    call chat_completion (unless MOCK_MODE=true, which affects all agents).
+    """
+    run_id = run_id or str(uuid.uuid4())
 
-    content_brief = planner.run(brand, product, plat)
+    # Steps 1-3: Input layer
+    pkg = input_processor.run(url=url, run_id=run_id, org_id=org_id)
+    brand = ui_analyzer.run(pkg)
+    product = product_analysis.run(pkg)
+
+    # Step 4: Planner
+    content_brief = planner.run(brand, product, platform="linkedin")
+
+    # Step 5: Strategy
     strategy_brief = strategy.run(content_brief, product, brand)
-    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
 
-    formatted = formatter.run(
-        raw_copy,
-        content_brief,
-        strategy_brief,
-        brand,
-        revision_hint=None,
-        retry_count=0,
-    )
-    retry = 0
-    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
-    while not evaluated.passes and retry < MAX_EVAL_RETRIES:
-        retry += 1
+    # Step 6: Copywriter (Visual Gen skipped for LinkedIn — Phase 3)
+    raw_copy = copywriting.run(strategy_brief, content_brief, brand)
+
+    # Step 8: Formatter + Step 9: Evaluator with retry loop
+    formatted: FormattedContent | None = None
+    evaluation: EvaluatorOutput | None = None
+
+    for attempt in range(MAX_EVAL_RETRIES + 1):
+        revision_hint = evaluation.revision_hint if (evaluation and not evaluation.passes) else None
         formatted = formatter.run(
             raw_copy,
             content_brief,
             strategy_brief,
             brand,
-            revision_hint=evaluated.revision_hint,
-            retry_count=retry,
+            revision_hint=revision_hint,
+            retry_count=attempt,
         )
-        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+        evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
+        if evaluation.passes or attempt == MAX_EVAL_RETRIES:
+            break
 
-    return brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated
+    assert formatted is not None and evaluation is not None
 
+    return {
+        "run_id": run_id,
+        "url": url,
+        "brand_profile": brand.model_dump(),
+        "product_knowledge": product.model_dump(),
+        "content_brief": content_brief.model_dump(),
+        "strategy_brief": strategy_brief.model_dump(),
+        "formatted_content": formatted.model_dump(),
+        "evaluation": evaluation.model_dump(),
+        "passes": evaluation.passes,
+        "overall_score": evaluation.overall_score,
+    }
+
+
+# ---------------------------------------------------------------------------
+# run_pipeline — blocking wrapper around run_stream
+# ---------------------------------------------------------------------------
 
 def run_pipeline(
     url: str,
@@ -253,18 +264,22 @@ def run_stream(
 
     # Step 4 — Planner
     yield _event(4, "planner", "start", started, "Planning content")
-    content_brief = planner.run(brand, product, _norm_platform(platform))
+    content_brief = planner.run(brand, product, platform=platform)
     yield _event(4, "planner", "complete", started, "Content brief created")
 
     # Step 5 — Strategy
     yield _event(5, "strategy", "start", started, "Building strategy")
     strategy_brief = strategy.run(content_brief, product, brand)
-    strategy_brief = strategy.run(content_brief, product, brand)
     yield _event(5, "strategy", "complete", started, "Strategy brief created")
 
     # Steps 6+7 — Copywriter + Visual Gen (parallel)
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
-    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
+    yield _event(7, "visual_gen", "start", started, "Generating visual directions")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_copy = pool.submit(copywriting.run, strategy_brief, content_brief, brand)
+        f_visual = pool.submit(visual_gen.run, strategy_brief, brand, content_brief)
+        raw_copy = f_copy.result()
+        _visual_payload = f_visual.result()  # stored but not passed to formatter yet
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
 
     yield _event(8, "formatter", "start", started, "Applying platform formatting")
@@ -280,26 +295,33 @@ def run_stream(
 
     # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
-    yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
-    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
-    yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
+    formatted: FormattedContent | None = None
+    evaluated: EvaluatorOutput | None = None
 
-    while not evaluated.passes and retry < MAX_EVAL_RETRIES:
-        retry += 1
-        yield _event(8, "formatter", "start", started, "Applying revision")
+    while True:
+        revision_hint = evaluated.revision_hint if (evaluated and not evaluated.passes) else None
+        yield _event(8, "formatter", "start", started, "Applying platform formatting")
         formatted = formatter.run(
             raw_copy,
             content_brief,
             strategy_brief,
             brand,
-            revision_hint=evaluated.revision_hint,
+            revision_hint=revision_hint,
             retry_count=retry,
         )
         yield _event(8, "formatter", "complete", started, "Formatting complete")
-        yield _event(9, "evaluator", "start", started, "Re-evaluating")
+
+        yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
         evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
         yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
 
+        if evaluated.passes:
+            break
+        if retry >= MAX_EVAL_RETRIES:
+            break
+        retry += 1
+
+    assert formatted is not None and evaluated is not None
     artifacts = RunArtifacts(
         run_id=run_id,
         org_id=org_id,

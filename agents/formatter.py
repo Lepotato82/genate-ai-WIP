@@ -220,6 +220,74 @@ def run(
             full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}"
 
         return FormattedContent(
+            run_id=content_brief.run_id,
+            org_id=content_brief.org_id,
+            created_at=utc_now_iso(),
+            platform="linkedin",  # type: ignore[arg-type]
+            linkedin_content=LinkedInContent(
+                hook=hook,
+                body=body,
+                hashtags=hashtags,
+                full_post=f"{hook}\n\n{body}\n\n{' '.join(hashtags)}",
+            ),
+            retry_count=retry_count,
+            revision_hint_applied=revision_hint,
+        )
+
+    # ── Real mode: LinkedIn ──────────────────────────────────────────────────
+    if platform == "linkedin":
+        system = _LINKEDIN_SYSTEM
+
+        # Prepend revision instruction if this is a retry
+        if revision_hint:
+            system = (
+                f"REVISION REQUIRED: {revision_hint}\n"
+                "Apply this specific fix to the copy below before formatting.\n\n"
+                + system
+            )
+
+        user_msg = f"Format this copy for LinkedIn:\n\n{raw_copy}"
+
+        raw_response = chat_completion(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+            ],
+            temperature=0,
+        )
+
+        try:
+            data = parse_json_object(raw_response)
+        except ValueError:
+            # Fallback: parse raw_copy mechanically
+            logger.warning("Formatter: LLM returned non-JSON; falling back to mechanical parse")
+            return _mock_linkedin(raw_copy, content_brief, retry_count, revision_hint)
+
+        # Normalise hashtags
+        hashtags_raw = data.get("hashtags", [])
+        if isinstance(hashtags_raw, str):
+            hashtags_raw = hashtags_raw.split()
+        hashtags = [_normalize_hashtag(h) for h in hashtags_raw if h]
+
+        # Clamp hashtag count
+        if len(hashtags) < 3:
+            hashtags += ["#saas", "#marketing", "#b2b"][: 3 - len(hashtags)]
+        hashtags = hashtags[:5]
+
+        hook = str(data.get("hook", "")).strip()[:180]
+        if not hook:
+            lines = [x.strip() for x in raw_copy.splitlines() if x.strip()]
+            hook = lines[0][:180] if lines else "SaaS marketing copy."
+
+        body = str(data.get("body", "")).strip()
+        if not body:
+            body = raw_copy
+
+        full_post = str(data.get("full_post", "")).strip()
+        if not full_post:
+            full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}"
+
+        return FormattedContent(
             run_id=run_id,
             org_id=org_id,
             created_at=utc_now_iso(),

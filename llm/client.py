@@ -60,7 +60,11 @@ def chat_completion(messages: list[dict], model: str = None, **kwargs) -> str:
     Handles provider-specific differences internally.
     """
     client = get_text_client()
-    model = model or _default_text_model()
+    if settings.LLM_PROVIDER == "ollama":
+        model = model or settings.OLLAMA_TEXT_MODEL
+        kwargs.setdefault("max_tokens", 2048)
+    else:
+        model = model or settings.LLM_TEXT_MODEL
     response = client.chat.completions.create(
         model=model,
         messages=messages,
@@ -87,12 +91,11 @@ def vision_completion(
     import base64
 
     client = get_vision_client()
-    if model is None:
-        model = (
-            settings.OLLAMA_VISION_MODEL
-            if settings.LLM_VISION_PROVIDER == "ollama"
-            else settings.LLM_VISION_MODEL
-        )
+    if settings.LLM_VISION_PROVIDER == "ollama":
+        model = model or settings.OLLAMA_VISION_MODEL
+        kwargs.setdefault("max_tokens", 2048)
+    else:
+        model = model or settings.LLM_VISION_MODEL
 
     if settings.LLM_VISION_PROVIDER == "anthropic":
         # ── Anthropic path ────────────────────────────────────────────────

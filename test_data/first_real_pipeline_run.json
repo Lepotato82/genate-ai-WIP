@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "run_date": "2026-03-21T22:22:09.412623+00:00",
   "url": "https://searchable.com",
   "error": null,
@@ -276,4 +277,10 @@
     "passes": true,
     "overall_score": 4.5
   }
+=======
+  "run_date": "2026-03-23T13:19:06.809186+00:00",
+  "url": "https://searchable.com",
+  "error": "Connection error.",
+  "result": null
+>>>>>>> 1d20c6bb2bb963e434b0f9803f5cc233b6d1073d
 }
