@@ -132,6 +132,24 @@ Mechanical formatting constraints for each platform live in `config/platform_rul
 
 ---
 
+## Known Issues (Input Layer — Return to Later)
+
+- `--sx-` token prefix filter not fully applied on Linear (257 tokens vs expected ~30)
+- UI Analyzer defaults to `developer-tool` when LLM returns unrecognized category
+- `design_category` wrong on light-background sites (consumer-friendly misclassified)
+- `tagline` returns None consistently — verbatim extraction not working
+- `description` includes raw nav text on some sites
+- Lemon Health pain_points contaminated with engineering context from LLM training data
+- `font_family` returns `[object Object]` on some sites (JS object not parsed)
+
+## Platform Coverage Status
+
+- linkedin carousel: ✅ working end-to-end
+- linkedin text_post, single_image: schema ready, Formatter not wired
+- twitter thread: schema ready, no run_twitter() function yet
+- instagram: schema ready, not wired
+- blog: schema ready, not wired
+
 ## Key Patterns
 
 **Weak-model-friendly design:** LLMs return flat JSON strings. Python enforces types, validates cross-schema contracts, and applies constraints. Never ask the LLM to enforce its own output constraints.
