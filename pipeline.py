@@ -203,6 +203,10 @@ def run_pipeline_artifacts(
     return RUN_REGISTRY[run_id]
 
 
+# ---------------------------------------------------------------------------
+# run_stream — SSE generator, full pipeline with knowledge layer
+# ---------------------------------------------------------------------------
+
 def run_stream(
     *,
     url: str,
@@ -215,6 +219,7 @@ def run_stream(
     run_id = str(uuid.uuid4())
     started = perf_counter()
 
+    # Step 1 — Input Processor
     yield _event(1, "input_processor", "start", started, "Collecting inputs")
     input_pkg = input_processor.run(
         url=url,
@@ -226,6 +231,7 @@ def run_stream(
     )
     yield _event(1, "input_processor", "complete", started, "Input package ready")
 
+    # Steps 2+3 — UI Analyzer + Product Analysis (parallel)
     yield _event(2, "ui_analyzer", "start", started, "Analyzing brand visuals")
     yield _event(3, "product_analysis", "start", started, "Analyzing product text")
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -236,6 +242,7 @@ def run_stream(
     yield _event(2, "ui_analyzer", "complete", started, "Brand profile extracted")
     yield _event(3, "product_analysis", "complete", started, "Product knowledge extracted")
 
+    # Step K — Knowledge Layer query (optional)
     knowledge_context: KnowledgeContext | None = None
     if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
         yield _event(0, "knowledge_query", "start", started, "Querying memory")
@@ -244,14 +251,18 @@ def run_stream(
         yield _event(0, "knowledge_query", "complete", started, "Memory query complete")
     _ = knowledge_context
 
+    # Step 4 — Planner
     yield _event(4, "planner", "start", started, "Planning content")
     content_brief = planner.run(brand, product, _norm_platform(platform))
     yield _event(4, "planner", "complete", started, "Content brief created")
 
+    # Step 5 — Strategy
     yield _event(5, "strategy", "start", started, "Building strategy")
+    strategy_brief = strategy.run(content_brief, product, brand)
     strategy_brief = strategy.run(content_brief, product, brand)
     yield _event(5, "strategy", "complete", started, "Strategy brief created")
 
+    # Steps 6+7 — Copywriter + Visual Gen (parallel)
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
     raw_copy = copywriter.run(strategy_brief, content_brief, brand)
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
@@ -267,6 +278,7 @@ def run_stream(
     )
     yield _event(8, "formatter", "complete", started, "Formatting complete")
 
+    # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
     yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
     evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
@@ -301,6 +313,7 @@ def run_stream(
     )
     RUN_REGISTRY[run_id] = artifacts
 
+    # Step K (post) — Knowledge Layer persist
     if evaluated.passes and settings.KNOWLEDGE_LAYER_ENABLED and org_id:
         yield _event(0, "knowledge_persist", "start", started, "Persisting approved memory")
         persist_run(

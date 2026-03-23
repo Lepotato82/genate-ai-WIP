@@ -119,6 +119,40 @@ def _normalize_font_weights(value: object) -> list[float]:
     return out or [400.0]
 
 
+def _pick_brand_signals(data: dict, tokens: dict[str, str]) -> list[str]:
+    """Return up to 4 specific brand signal strings derived from real token values."""
+    signals: list[str] = []
+
+    font = (
+        data.get("font_family")
+        or tokens.get("--_font-family-h1")
+        or tokens.get("--font-family-sans")
+        or ""
+    )
+    weight = tokens.get("--_font-weight-h1") or tokens.get("--font-weight-medium") or ""
+    if font and weight:
+        signals.append(f"{font} at weight {weight}")
+    elif font:
+        signals.append(font)
+
+    bg = data.get("background_color") or tokens.get("--_bg-body") or ""
+    if bg:
+        signals.append(f"background {bg}")
+
+    primary = str(data.get("primary_color") or _first_color(tokens, "#5e6ad2"))
+    signals.append(f"primary accent {primary}")
+
+    secondary = data.get("secondary_color") or tokens.get("--color-accent") or ""
+    if secondary and secondary != primary and len(signals) < 4:
+        signals.append(f"secondary {secondary}")
+
+    border = data.get("border_radius") or tokens.get("--border-radius-md") or ""
+    if border and len(signals) < 4:
+        signals.append(f"border-radius {border}")
+
+    return signals
+
+
 def _build_writing_instruction(pkg: InputPackage, design_category: str) -> str:
     tokens = pkg.css_tokens
     font: str | None = None

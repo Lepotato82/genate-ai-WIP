@@ -29,101 +29,152 @@ _FRAMEWORK_PREFIXES = (
 
 _EXTRACT_CSS_TOKENS_JS = """
 () => {
-  const out = {};
-  const style = getComputedStyle(document.documentElement);
-  for (let i = 0; i < style.length; i++) {
-    const name = style.item(i);
-    if (name && name.startsWith("--")) {
-      const v = style.getPropertyValue(name).trim();
-      if (v) out[name] = v;
+    const tokens = {};
+    // 1. Read CSS custom properties from :root computed style
+    const rootStyle = getComputedStyle(document.documentElement);
+    for (const sheet of document.styleSheets) {
+        try {
+            for (const rule of sheet.cssRules) {
+                if (rule.selectorText === ':root') {
+                    const text = rule.cssText;
+                    const matches = text.matchAll(/(-{2}[\\w-]+)\\s*:\\s*([^;]+);/g);
+                    for (const m of matches) {
+                        tokens[m[1].trim()] = m[2].trim();
+                    }
+                }
+            }
+        } catch (e) { /* cross-origin stylesheet — skip */ }
     }
-  }
-  return out;
+    // 2. Also sample computed values for known custom properties found above
+    for (const key of Object.keys(tokens)) {
+        const computed = rootStyle.getPropertyValue(key).trim();
+        if (computed) tokens[key] = computed;
+    }
+    // 3. Typography signals from element styles
+    const elemSelectors = ['h1','h2','h3','p','a','button','code'];
+    for (const sel of elemSelectors) {
+        const el = document.querySelector(sel);
+        if (!el) continue;
+        const s = getComputedStyle(el);
+        tokens[`--_font-family-${sel}`] = s.fontFamily;
+        tokens[`--_font-weight-${sel}`] = s.fontWeight;
+        tokens[`--_font-size-${sel}`] = s.fontSize;
+        tokens[`--_color-${sel}`] = s.color;
+    }
+    // 4. Background of body/main
+    const bodyStyle = getComputedStyle(document.body);
+    tokens['--_bg-body'] = bodyStyle.backgroundColor;
+    // 5. Button variants (up to 10)
+    const buttons = document.querySelectorAll('button, [role=button], a.btn');
+    let btnCount = 0;
+    for (const btn of buttons) {
+        if (btnCount >= 10) break;
+        const s = getComputedStyle(btn);
+        const bg = s.backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+            tokens[`--_btn-bg-${btnCount}`] = bg;
+            tokens[`--_btn-color-${btnCount}`] = s.color;
+            btnCount++;
+        }
+    }
+    return tokens;
 }
 """
 
-_COOKIE_DISMISS_SELECTORS = [
-    "#onetrust-accept-btn-handler",
-    ".osano-cm-accept-all",
-    'button:has-text("Accept all")',
-    'button:has-text("Accept All")',
-    'button:has-text("Accept")',
-    'button:has-text("I agree")',
-    'button:has-text("Got it")',
-    '[data-testid="cookie-accept"]',
-]
+# ---------------------------------------------------------------------------
+# Framework CSS token prefixes to strip (noise, not brand signals)
+# ---------------------------------------------------------------------------
+
+_FRAMEWORK_TOKEN_PREFIXES = (
+    "--mantine-",
+    "--chakra-",
+    "--radix-",
+    "--tw-",
+    "--rsuite-",
+    "--ant-",
+)
 
 
-def _filter_css_tokens(raw: dict) -> dict[str, str]:
-    out: dict[str, str] = {}
-    for k, v in raw.items():
-        if not isinstance(k, str) or not isinstance(v, str):
-            continue
-        if any(k.startswith(p) for p in _FRAMEWORK_PREFIXES):
-            continue
-        if v.strip():
-            out[k] = v.strip()
-    return out
+def _filter_css_tokens(tokens: dict) -> dict:
+    return {
+        k: v
+        for k, v in tokens.items()
+        if not any(k.startswith(p) for p in _FRAMEWORK_TOKEN_PREFIXES)
+    }
 
 
-def _word_count(text: str) -> int:
-    return len(text.split())
+# ---------------------------------------------------------------------------
+# Mock data
+# ---------------------------------------------------------------------------
+
+_MOCK_SCRAPED_TEXT = (
+    "Linear is the issue tracking tool built for high-performance teams. "
+    "Streamline software projects, sprints, tasks, and bug tracking. "
+    "Linear helps thousands of companies like Vercel, Raycast, and Loom "
+    "move faster with purpose-built tools for product development. "
+    "Keyboard-first interface. Real-time sync. Git integration. "
+    "Connect to GitHub, GitLab, Figma, Slack and 40+ integrations. "
+    "99.9% uptime. SOC 2 certified. Used by over 10,000 engineering teams."
+)
+
+_MOCK_CSS_TOKENS: dict[str, str] = {
+    "--color-brand-bg": "#5e6ad2",
+    "--color-accent": "#7170ff",
+    "--color-text-primary": "#1a1a2e",
+    "--color-text-secondary": "#6b7280",
+    "--color-border": "#e5e7eb",
+    "--color-surface": "#ffffff",
+    "--color-surface-raised": "#f9fafb",
+    "--font-family-sans": "Inter, system-ui, sans-serif",
+    "--font-family-mono": "JetBrains Mono, monospace",
+    "--font-weight-regular": "400",
+    "--font-weight-medium": "510",
+    "--font-weight-semibold": "590",
+    "--border-radius-sm": "4px",
+    "--border-radius-md": "6px",
+    "--spacing-unit": "4px",
+    "--_bg-body": "rgb(255, 255, 255)",
+    "--_font-family-h1": "Inter, system-ui, sans-serif",
+    "--_font-weight-h1": "590",
+    "--_font-size-h1": "48px",
+}
 
 
-def _og_image_url_from_html(html: str, base_url: str) -> str | None:
-    for m in re.finditer(
-        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
-        html,
-        re.I,
-    ):
-        return urljoin(base_url, m.group(1).strip())
-    for m in re.finditer(
-        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
-        html,
-        re.I,
-    ):
-        return urljoin(base_url, m.group(1).strip())
-    return None
+def _mock_input_package(
+    url: str,
+    run_id: str,
+    org_id: str | None,
+    user_image: bytes | None,
+    user_document: str | None,
+) -> InputPackage:
+    scraped_text = _MOCK_SCRAPED_TEXT
+    return InputPackage(
+        url=url,
+        run_id=run_id,
+        org_id=org_id,
+        scraped_text=scraped_text,
+        css_tokens=dict(_MOCK_CSS_TOKENS),
+        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,  # minimal PNG stub
+        og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
+        og_image_url="https://linear.app/og.png",
+        user_image=user_image,
+        user_document=user_document,
+        scrape_error=None,
+        scrape_word_count=len(scraped_text.split()),
+    )
 
 
-def _fetch_og_image(url: str | None) -> tuple[bytes | None, str | None]:
-    if not url:
-        return None, None
+# ---------------------------------------------------------------------------
+# Real-mode helpers
+# ---------------------------------------------------------------------------
+
+def _download_image(url: str, timeout: int = 10) -> bytes | None:
+    """Download an image URL and return raw bytes, or None on failure."""
     try:
-        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
-            r = client.get(url)
-            r.raise_for_status()
-            if len(r.content) > 6 * 1024 * 1024:
-                return None, url
-            return r.content, url
-    except Exception as exc:  # noqa: BLE001 — scrape must not raise
-        logger.debug("OG image fetch failed: %s", exc)
-        return None, url
-
-
-def _try_dismiss_cookies(page) -> None:
-    for sel in _COOKIE_DISMISS_SELECTORS:
-        try:
-            loc = page.locator(sel)
-            if loc.count() > 0:
-                loc.first.click(timeout=2000)
-                page.wait_for_timeout(300)
-                break
-        except Exception:  # noqa: BLE001
-            continue
-
-
-def _playwright_proxy() -> dict[str, str] | None:
-    """Return proxy config only when URL is valid; bad .env placeholders break new_context."""
-    raw = settings.BRIGHTDATA_PROXY_URL.strip()
-    if not raw:
-        return None
-    parsed = urlparse(raw)
-    if parsed.scheme not in ("http", "https", "socks5"):
-        logger.warning("BRIGHTDATA_PROXY_URL ignored (need http/https/socks5 URL): %s", raw[:80])
-        return None
-    if not parsed.netloc:
-        logger.warning("BRIGHTDATA_PROXY_URL ignored (missing host): %s", raw[:80])
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            return resp.read()
+    except Exception as exc:
+        logger.debug("OG image download failed for %s: %s", url, exc)
         return None
     return {"server": raw}
 
@@ -155,26 +206,62 @@ def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
                 proxy=proxy,
                 ignore_https_errors=True,
             )
-            page = context.new_page()
-            page.set_default_timeout(timeout_ms)
-
-            page.goto(url, wait_until="networkidle", timeout=timeout_ms)
-            _try_dismiss_cookies(page)
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            page.wait_for_timeout(1500)
-
-            raw_html = page.content()
-            og_image_url = _og_image_url_from_html(raw_html, page.url)
-
-            scraped_text = page.inner_text("body", timeout=timeout_ms) or ""
-            raw_tokens = page.evaluate(_EXTRACT_CSS_TOKENS_JS)
-            if isinstance(raw_tokens, dict):
-                css_tokens = _filter_css_tokens(raw_tokens)
+            page = await context.new_page()
 
             try:
-                screenshot_bytes = page.screenshot(full_page=True, type="png")
-            except Exception as exc:  # noqa: BLE001
-                logger.debug("Screenshot failed: %s", exc)
+                await page.goto(
+                    url,
+                    wait_until="networkidle",
+                    timeout=timeout_seconds * 1000,
+                )
+            except Exception:
+                # Fallback: domcontentloaded is more permissive
+                await page.goto(
+                    url,
+                    wait_until="domcontentloaded",
+                    timeout=timeout_seconds * 1000,
+                )
+
+            # Dismiss cookie banners (best effort)
+            for selector in [
+                "button[id*='accept']",
+                "button[id*='cookie']",
+                "[aria-label*='Accept']",
+                "[data-testid*='cookie-accept']",
+                "button:has-text('Accept')",
+                "button:has-text('Accept all')",
+                "button:has-text('I agree')",
+                "[id*='cookie'] button",
+            ]:
+                try:
+                    btn = page.locator(selector).first
+                    if await btn.is_visible(timeout=500):
+                        await btn.click()
+                        await page.wait_for_timeout(300)
+                        break
+                except Exception:
+                    pass
+
+            # Scroll to bottom to trigger lazy-loaded content (SPAs like Vercel, Linear)
+            try:
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await page.wait_for_timeout(2000)
+            except Exception:
+                pass
+
+            # Extract CSS tokens
+            try:
+                css_tokens = await page.evaluate(_CSS_TOKEN_JS)
+                result["css_tokens"] = _filter_css_tokens(css_tokens or {})
+            except Exception as exc:
+                logger.warning("CSS token extraction failed: %s", exc)
+                result["css_tokens"] = {}
+
+            # Full-page screenshot
+            try:
+                result["screenshot_bytes"] = await page.screenshot(full_page=True)
+            except Exception as exc:
+                logger.warning("Screenshot failed: %s", exc)
 
             context.close()
         except Exception as exc:  # noqa: BLE001

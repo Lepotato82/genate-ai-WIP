@@ -17,12 +17,11 @@ class Settings(BaseSettings):
     # ─── LLM Routing ──────────────────────────────────────────────────────
     LLM_PROVIDER: str = "groq"              # groq | openai | anthropic | ollama
     LLM_VISION_PROVIDER: str = "anthropic"  # anthropic | ollama | openai
-    LLM_TEXT_MODEL: str = "llama-3.2-90b-text-preview"
-    LLM_VISION_MODEL: str = "claude-haiku-4-5"
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    # Used when LLM_PROVIDER / LLM_VISION_PROVIDER is ollama (not Groq/Anthropic names).
-    OLLAMA_TEXT_MODEL: str = "llama3.2:latest"
-    OLLAMA_VISION_MODEL: str = "llava:latest"
+    LLM_TEXT_MODEL: str = "llama-3.2-90b-text-preview"   # Groq/OpenAI model name
+    LLM_VISION_MODEL: str = "claude-haiku-4-5"           # Anthropic model name
+    OLLAMA_BASE_URL: str = "http://localhost:11434/v1"  # must include /v1 for OpenAI SDK compat
+    OLLAMA_TEXT_MODEL: str = "llama3.2:latest"    # Ollama model name for text agents
+    OLLAMA_VISION_MODEL: str = "llava:latest"     # Ollama model name for vision (UI Analyzer)
 
     # ─── LLM API Keys ─────────────────────────────────────────────────────
     GROQ_API_KEY: str = ""

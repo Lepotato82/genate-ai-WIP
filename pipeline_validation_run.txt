@@ -1,0 +1,28 @@
+=== PIPELINE RUN RESULT ===
+passes: True
+overall_score: 4.0
+
+clarity: 4
+engagement: 4
+tone_match: 4
+accuracy: 4
+scores_rationale: The hook names a specific daily friction that resonates with engineers. The proof point is grounded in the primary claim without fabrication.
+
+HOOK: Most engineering teams don't have a project management problem.
+HOOK len: 63
+
+BODY (first 300): They have a status meeting problem.
+
+Every Monday: 45 minutes to answer "what are you working on?"
+
+Slide 1: The status meeting tax
+
+Your team spends 3+ hours a week in ceremonies that exist only to answer
+
+one question: what's the current state of each ticket?
+
+Slide 2: The cost compounds
+
+3 hours 
+
+HASHTAGS: ['#engineeringmanagement', '#softwaredevelopment', '#productivity']

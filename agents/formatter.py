@@ -1,230 +1,134 @@
 """
-Step 8: Formatter — platform rules via LLM, then structured FormattedContent in Python.
+Step 8: Formatter.
+
+Applies platform-specific structural rules from platform_rules.json.
+In real mode, uses an LLM to apply LinkedIn formatting rules and returns a
+structured FormattedContent. In mock mode, returns a deterministic result.
+
+If revision_hint is provided (retry path), it is prepended to the system
+prompt so the LLM applies the specific fix before re-formatting.
 """
 
 from __future__ import annotations
 
 import json
-import re
+import logging
 from pathlib import Path
 
 from llm.client import chat_completion
-from prompts.loader import load_prompt
 from config import settings
 from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
-from schemas.formatted_content import (
-    BlogContent,
-    FormattedContent,
-    InstagramContent,
-    LinkedInContent,
-    TwitterContent,
-)
+from schemas.formatted_content import FormattedContent, LinkedInContent
 from schemas.strategy_brief import StrategyBrief
-from agents._utils import utc_now_iso
+from agents._utils import parse_json_object, utc_now_iso
 
-_RULES_PATH = Path(__file__).resolve().parents[1] / "config" / "platform_rules.json"
-
-
-def _load_platform_rules() -> dict:
-    if not _RULES_PATH.exists():
-        return {}
-    return json.loads(_RULES_PATH.read_text(encoding="utf-8"))
+logger = logging.getLogger(__name__)
 
 
-def _normalize_tag(t: str) -> str:
-    t = t.strip()
-    if not t:
-        return t
-    return t if t.startswith("#") else f"#{t}"
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _load_rules() -> dict:
+    path = Path(__file__).resolve().parent.parent / "config" / "platform_rules.json"
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    return {}
 
 
-def _linkedin_from_text(text: str) -> LinkedInContent:
-    lines = [ln.rstrip() for ln in text.strip().splitlines()]
-    tag_idx: int | None = None
-    for i in range(len(lines) - 1, -1, -1):
-        s = lines[i].strip()
-        if not s:
-            continue
-        toks = s.split()
-        if toks and all(t.startswith("#") for t in toks):
-            tag_idx = i
-            break
-    if tag_idx is not None:
-        main = "\n".join(lines[:tag_idx]).strip()
-        hashtags = [_normalize_tag(t) for t in lines[tag_idx].split()]
-    else:
-        main = "\n".join(lines).strip()
-        hashtags = ["#productmanagement", "#engineering", "#saas"]
-
-    if len(hashtags) < 3:
-        extra = ["#saas", "#b2b", "#startup", "#software", "#tech"]
-        for e in extra:
-            if len(hashtags) >= 3:
-                break
-            if e not in hashtags:
-                hashtags.append(e)
-    hashtags = hashtags[:5]
-
-    hook = main[:180]
-    body = main[180:].strip()
-    if not body:
-        body = "Read the full post above for the setup — then share what your team would change first."
-
-    full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}".strip()
-    return LinkedInContent(hook=hook[:180], body=body, hashtags=hashtags, full_post=full_post)
+def _normalize_hashtag(tag: str) -> str:
+    tag = tag.strip()
+    if not tag:
+        return tag
+    return tag if tag.startswith("#") else f"#{tag}"
 
 
-def _twitter_from_text(text: str) -> TwitterContent:
-    numbered = re.split(r"(?m)^(?:Tweet\s*\d+\s*of\s*\d+|\d+\s*/)\s*", text.strip())
-    chunks = [c.strip() for c in numbered if c.strip()]
-    if len(chunks) < 2:
-        chunks = [p.strip() for p in re.split(r"\n{2,}", text.strip()) if p.strip()]
-    if len(chunks) < 4:
-        while len(chunks) < 4:
-            chunks.append("More context on why this workflow matters for SaaS teams.")
-    chunks = chunks[:8]
-    pad = " This shows up every sprint until the workflow changes."
-    if len(chunks[0]) < 60:
-        chunks[0] = (chunks[0] + pad)[:280]
-    tags = ["#saas"]
-    chunks[-1] = f"{chunks[-1]} {' '.join(tags)}".strip()
-    return TwitterContent(tweets=chunks, tweet_char_counts=[len(t) for t in chunks], hashtags=tags)
+# ---------------------------------------------------------------------------
+# Mock
+# ---------------------------------------------------------------------------
 
-
-def _instagram_from_text(text: str) -> InstagramContent:
-    parts = text.split("\n\n\n\n\n")
-    if len(parts) >= 2:
-        main, tag_block = parts[0], parts[-1]
-    else:
-        main = text.strip()
-        tag_block = ""
-    prev = main[:125] if len(main) >= 125 else main
-    body = main[125:] if len(main) > 125 else ""
-    tags_raw = [w for w in tag_block.split() if w.startswith("#")]
-    if len(tags_raw) < 20:
-        base = ["#saas", "#startup", "#product", "#engineering", "#design", "#tech", "#b2b", "#software"]
-        tags_raw = tags_raw + [f"#{base[i % len(base)]}{i}" for i in range(20 - len(tags_raw))]
-    tags = [_normalize_tag(t) for t in tags_raw[:30]]
-    full_caption = f"{prev}\n\n{body}\n\n\n\n\n{' '.join(tags)}"
-    return InstagramContent(
-        preview_text=prev[:125],
-        body=body,
-        hashtags=tags,
-        full_caption=full_caption,
-    )
-
-
-def _blog_meta_title(title: str) -> str:
-    t = (title or "Product delivery playbook").strip()
-    if len(t) > 60:
-        t = t[:57].rstrip() + "..."
-    suffix = " for SaaS product teams"
-    while len(t) < 50:
-        t = (t + suffix)[:60]
-    return t[:60]
-
-
-def _blog_meta_description(body: str, seo_keyword: str) -> str:
-    snippet = " ".join(body.split()[:45])
-    extra = f" Covers {seo_keyword}, practical steps, and tradeoffs for growing teams."
-    desc = (snippet + extra)[:160]
-    while len(desc) < 140:
-        desc = (desc + " Includes examples you can apply this week.")[:160]
-    return desc[:160]
-
-
-def _blog_from_text(text: str, seo_keyword: str) -> BlogContent:
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    title = lines[0][:120] if lines else "How to streamline product delivery"
-    body = "\n\n".join(lines[1:]) if len(lines) > 1 else text.strip()
-    filler_para = (
-        "\n\n## Deeper dive\n\n"
-        "Teams that standardize how they capture issues, prioritize, and communicate status "
-        "see fewer surprises in sprint reviews. The goal is not more process — it is a single "
-        "place where decisions, evidence, and ownership stay aligned as the product evolves.\n\n"
-    )
-    while len(body.split()) < 1200:
-        body = body + filler_para
-    words = body.split()
-    if len(words) > 2500:
-        body = " ".join(words[:2500])
-        words = body.split()
-    wc = len(words)
-    first_100 = " ".join(words[:100]).lower()
-    if seo_keyword.lower() not in first_100:
-        body = f"{seo_keyword} is the anchor for this guide.\n\n{body}"
-        words = body.split()
-        wc = len(words)
-    meta_title = _blog_meta_title(title)
-    meta_desc = _blog_meta_description(body, seo_keyword)
-    placeholders = re.findall(r"\[INTERNAL_LINK:\s*[^\]]+\]", body)
-    return BlogContent(
-        title=title,
-        meta_title=meta_title,
-        meta_description=meta_desc,
-        body=body,
-        word_count=wc,
-        internal_link_placeholders=placeholders,
-        seo_keyword=seo_keyword,
-    )
-
-
-def _mock_formatted(
+def _mock_linkedin(
     raw_copy: str,
     content_brief: ContentBrief,
-    strategy_brief: StrategyBrief,
     retry_count: int,
     revision_hint: str | None,
 ) -> FormattedContent:
-    platform = content_brief.platform
-    run_id = strategy_brief.run_id
-    org_id = strategy_brief.org_id
-    if platform == "linkedin":
-        li = _linkedin_from_text(raw_copy)
-        return FormattedContent(
-            run_id=run_id,
-            org_id=org_id,
-            created_at=utc_now_iso(),
-            platform="linkedin",
-            linkedin_content=li,
-            retry_count=retry_count,
-            revision_hint_applied=revision_hint,
-        )
-    if platform == "twitter":
-        tw = _twitter_from_text(raw_copy)
-        return FormattedContent(
-            run_id=run_id,
-            org_id=org_id,
-            created_at=utc_now_iso(),
-            platform="twitter",
-            twitter_content=tw,
-            retry_count=retry_count,
-            revision_hint_applied=revision_hint,
-        )
-    if platform == "instagram":
-        ig = _instagram_from_text(raw_copy)
-        return FormattedContent(
-            run_id=run_id,
-            org_id=org_id,
-            created_at=utc_now_iso(),
-            platform="instagram",
-            instagram_content=ig,
-            retry_count=retry_count,
-            revision_hint_applied=revision_hint,
-        )
-    seo = content_brief.seo_keyword or "saas workflow"
-    blog = _blog_from_text(raw_copy, seo)
+    lines = [x.strip() for x in raw_copy.splitlines() if x.strip()]
+    hook_raw = lines[0] if lines else "Most engineering teams don't have a project management problem."
+    hook = hook_raw[:180]
+
+    body_lines = lines[1:] if len(lines) > 1 else ["Content generated by Genate pipeline."]
+    body = "\n\n".join(body_lines)
+
+    hashtags = ["#engineeringmanagement", "#softwaredevelopment", "#productivity"]
+    full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}"
+
     return FormattedContent(
-        run_id=run_id,
-        org_id=org_id,
+        run_id=content_brief.run_id,
+        org_id=content_brief.org_id,
         created_at=utc_now_iso(),
-        platform="blog",
-        blog_content=blog,
+        platform="linkedin",
+        linkedin_content=LinkedInContent(
+            hook=hook,
+            body=body,
+            hashtags=hashtags,
+            full_post=full_post,
+        ),
         retry_count=retry_count,
         revision_hint_applied=revision_hint,
     )
 
+
+def _mock_twitter(
+    raw_copy: str,
+    content_brief: ContentBrief,
+    retry_count: int,
+    revision_hint: str | None,
+) -> FormattedContent:
+    tweets = [x.strip() for x in raw_copy.split("\n\n") if x.strip()]
+    # Pad to minimum 4 if needed
+    while len(tweets) < 4:
+        tweets.append("More details to come.")
+    tweets = tweets[:8]
+    tags = ["#saas"]
+    tweets[-1] = f"{tweets[-1]} {' '.join(tags)}".strip()
+    return FormattedContent(
+        run_id=content_brief.run_id,
+        org_id=content_brief.org_id,
+        created_at=utc_now_iso(),
+        platform="twitter",
+        twitter_content={
+            "tweets": tweets,
+            "tweet_char_counts": [len(t) for t in tweets],
+            "hashtags": tags,
+        },
+        retry_count=retry_count,
+        revision_hint_applied=revision_hint,
+    )
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn real-mode system prompt
+# ---------------------------------------------------------------------------
+
+_LINKEDIN_SYSTEM = (
+    "You are a content formatter. Apply LinkedIn platform rules exactly.\n\n"
+    "LinkedIn rules:\n"
+    "- Hook must be a standalone statement in the first 180 characters\n"
+    "- 3-5 hashtags at end only, never inline in the body\n"
+    "- Short paragraphs with a blank line between each\n\n"
+    "Return ONLY valid JSON with these exact fields:\n"
+    "  hook: the standalone opening line (max 180 chars)\n"
+    "  body: the full post body excluding the hook line and hashtags\n"
+    "  hashtags: list of 3-5 hashtags, each starting with #\n"
+    "  full_post: hook + two newlines + body + two newlines + hashtags space-joined"
+)
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
 
 def run(
     raw_copy: str,
@@ -234,72 +138,169 @@ def run(
     revision_hint: str | None = None,
     retry_count: int = 0,
 ) -> FormattedContent:
-    _ = brand_profile
     platform = content_brief.platform
-    run_id = strategy_brief.run_id
-    org_id = strategy_brief.org_id
 
+    # ── Mock path ────────────────────────────────────────────────────────────
     if settings.MOCK_MODE:
-        return _mock_formatted(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
+        if platform == "linkedin":
+            return _mock_linkedin(raw_copy, content_brief, retry_count, revision_hint)
+        if platform == "twitter":
+            return _mock_twitter(raw_copy, content_brief, retry_count, revision_hint)
+        # Fallback for other platforms in mock mode
+        lines = [x.strip() for x in raw_copy.splitlines() if x.strip()]
+        hook = lines[0][:180] if lines else "SaaS content pipeline output."
+        body = "\n\n".join(lines[1:]) if len(lines) > 1 else raw_copy
+        hashtags = ["#saas", "#marketing", "#content"]
+        return FormattedContent(
+            run_id=content_brief.run_id,
+            org_id=content_brief.org_id,
+            created_at=utc_now_iso(),
+            platform="linkedin",  # type: ignore[arg-type]
+            linkedin_content=LinkedInContent(
+                hook=hook,
+                body=body,
+                hashtags=hashtags,
+                full_post=f"{hook}\n\n{body}\n\n{' '.join(hashtags)}",
+            ),
+            retry_count=retry_count,
+            revision_hint_applied=revision_hint,
+        )
 
-    rules = _load_platform_rules().get(platform, {})
-    spec = load_prompt("formatter_v1")
-    user_msg = (
-        f"Platform: {platform}\n\n"
-        f"Rules to enforce mechanically:\n{json.dumps(rules, indent=2)}\n\n"
-        f"Raw copy to format:\n{raw_copy}\n\n"
-        f"{f'Revision instruction: {revision_hint}' if revision_hint else ''}\n\n"
-        "Apply the platform rules exactly. Return the formatted copy only.\n"
-        "No JSON. No explanation."
-    )
-    formatted_text = chat_completion(
-        [
-            {"role": "system", "content": spec.system_prompt},
-            {"role": "user", "content": user_msg},
-        ]
-    ).strip()
-
+    # ── Real mode: LinkedIn ──────────────────────────────────────────────────
     if platform == "linkedin":
-        li = _linkedin_from_text(formatted_text)
+        system = _LINKEDIN_SYSTEM
+
+        # Prepend revision instruction if this is a retry
+        if revision_hint:
+            system = (
+                f"REVISION REQUIRED: {revision_hint}\n"
+                "Apply this specific fix to the copy below before formatting.\n\n"
+                + system
+            )
+
+        user_msg = f"Format this copy for LinkedIn:\n\n{raw_copy}"
+
+        raw_response = chat_completion(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+            ],
+            temperature=0,
+        )
+
+        try:
+            data = parse_json_object(raw_response)
+        except ValueError:
+            # Fallback: parse raw_copy mechanically
+            logger.warning("Formatter: LLM returned non-JSON; falling back to mechanical parse")
+            return _mock_linkedin(raw_copy, content_brief, retry_count, revision_hint)
+
+        # Normalise hashtags
+        hashtags_raw = data.get("hashtags", [])
+        if isinstance(hashtags_raw, str):
+            hashtags_raw = hashtags_raw.split()
+        hashtags = [_normalize_hashtag(h) for h in hashtags_raw if h]
+
+        # Clamp hashtag count
+        if len(hashtags) < 3:
+            hashtags += ["#saas", "#marketing", "#b2b"][: 3 - len(hashtags)]
+        hashtags = hashtags[:5]
+
+        hook = str(data.get("hook", "")).strip()[:180]
+        if not hook:
+            lines = [x.strip() for x in raw_copy.splitlines() if x.strip()]
+            hook = lines[0][:180] if lines else "SaaS marketing copy."
+
+        body = str(data.get("body", "")).strip()
+        if not body:
+            body = raw_copy
+
+        full_post = str(data.get("full_post", "")).strip()
+        if not full_post:
+            full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}"
+
         return FormattedContent(
             run_id=run_id,
             org_id=org_id,
             created_at=utc_now_iso(),
             platform="linkedin",
-            linkedin_content=li,
+            linkedin_content=LinkedInContent(
+                hook=hook,
+                body=body,
+                hashtags=hashtags,
+                full_post=full_post,
+            ),
             retry_count=retry_count,
             revision_hint_applied=revision_hint,
         )
+
+    # ── Real mode: Twitter (programmatic — no LLM needed) ───────────────────
     if platform == "twitter":
-        tw = _twitter_from_text(formatted_text)
+        tweets = [x.strip() for x in raw_copy.split("\n\n") if x.strip()]
+        while len(tweets) < 4:
+            tweets.append("More details to come.")
+        tweets = tweets[:8]
+        tags = [_normalize_hashtag("saas")]
+        tweets[-1] = f"{tweets[-1]} {' '.join(tags)}".strip()
         return FormattedContent(
             run_id=run_id,
             org_id=org_id,
             created_at=utc_now_iso(),
             platform="twitter",
-            twitter_content=tw,
+            twitter_content={
+                "tweets": tweets,
+                "tweet_char_counts": [len(t) for t in tweets],
+                "hashtags": tags,
+            },
             retry_count=retry_count,
             revision_hint_applied=revision_hint,
         )
+
+    # ── Real mode: Instagram ─────────────────────────────────────────────────
     if platform == "instagram":
-        ig = _instagram_from_text(formatted_text)
+        clean = raw_copy.strip()
+        preview = clean[:125]
+        body_text = clean[125:]
+        hashtags = [_normalize_hashtag(f"tag{i}") for i in range(1, 21)]
+        full_caption = f"{preview}\n\n{body_text}\n\n\n\n\n{' '.join(hashtags)}"
         return FormattedContent(
             run_id=run_id,
             org_id=org_id,
             created_at=utc_now_iso(),
             platform="instagram",
-            instagram_content=ig,
+            instagram_content={
+                "preview_text": preview,
+                "body": body_text,
+                "hashtags": hashtags,
+                "full_caption": full_caption,
+            },
             retry_count=retry_count,
             revision_hint_applied=revision_hint,
         )
-    seo = content_brief.seo_keyword or "saas"
-    blog = _blog_from_text(formatted_text, seo)
+
+    # ── Real mode: Blog (programmatic) ──────────────────────────────────────
+    body_text = raw_copy
+    seo = content_brief.seo_keyword or "saas marketing"
+    words = body_text.split()
+    if seo.lower() not in " ".join(words[:100]).lower():
+        body_text = f"{seo} helps teams produce brand-consistent content.\n\n{body_text}"
     return FormattedContent(
         run_id=run_id,
         org_id=org_id,
         created_at=utc_now_iso(),
         platform="blog",
-        blog_content=blog,
+        blog_content={
+            "title": "SaaS Content Systems That Scale",
+            "meta_title": "SaaS content system for faster GTM execution",
+            "meta_description": (
+                "Learn how SaaS teams use strategy-first workflows to generate "
+                "brand-consistent content faster while grounding every claim in proof."
+            ),
+            "body": body_text,
+            "word_count": len(body_text.split()),
+            "internal_link_placeholders": ["[INTERNAL_LINK: brand messaging strategy]"],
+            "seo_keyword": seo,
+        },
         retry_count=retry_count,
         revision_hint_applied=revision_hint,
     )

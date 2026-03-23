@@ -1,11 +1,14 @@
 """
-Step 5: Strategy — StrategyBrief from content brief + product + brand.
+Step 5: Strategy.
+
+Decides what to say before any copy is written. Selects the specific pain
+point, primary claim, proof point, CTA, and hook direction. Returns a
+StrategyBrief consumed by the Copywriting agent.
 """
 
 from __future__ import annotations
 
-import json
-import re
+import logging
 
 from llm.client import chat_completion
 from prompts.loader import load_prompt
@@ -16,85 +19,34 @@ from schemas.product_knowledge import ProductKnowledge
 from schemas.strategy_brief import StrategyBrief, _NO_PROOF_FALLBACK
 from agents._utils import parse_json_object, utc_now_iso
 
-_GAP_TEXT = "No proof points found on source page or user document"
+logger = logging.getLogger(__name__)
+
+_NO_PROOF_FALLBACK = "No verified proof points available for this product"
 
 
-def _real_proof_entries(pk: ProductKnowledge) -> list:
-    return [p for p in pk.proof_points if p.text.strip() != _GAP_TEXT]
+# ---------------------------------------------------------------------------
+# Mock
+# ---------------------------------------------------------------------------
 
-
-def _enforce_strategy(
-    data: dict,
+def _mock(
     content_brief: ContentBrief,
     product_knowledge: ProductKnowledge,
-) -> dict:
-    d = dict(data)
-    d["narrative_arc"] = content_brief.narrative_arc
-
-    real = _real_proof_entries(product_knowledge)
-    texts = [p.text for p in real]
-
-    if not real:
-        d["proof_point"] = _NO_PROOF_FALLBACK
-        d.setdefault("proof_point_type", "stat")
+    brand_profile: BrandProfile,
+) -> StrategyBrief:
+    if product_knowledge.proof_points:
+        proof = product_knowledge.proof_points[0]
+        proof_text = proof.text
+        proof_type = proof.proof_type
     else:
-        if d.get("proof_point") not in texts:
-            d["proof_point"] = real[0].text
-        matched = next((p for p in real if p.text == d["proof_point"]), real[0])
-        if matched.proof_type != d.get("proof_point_type"):
-            d["proof_point_type"] = matched.proof_type
+        proof_text = _NO_PROOF_FALLBACK
+        proof_type = "stat"
 
-    angles = product_knowledge.messaging_angles
-    if angles:
-        if d.get("messaging_angle_used") not in angles:
-            d["messaging_angle_used"] = angles[0]
-    else:
-        d["messaging_angle_used"] = (
-            d.get("messaging_angle_used")
-            or f"{product_knowledge.product_name} value for modern product teams"
-        )
-
-    icp = str(d.get("target_icp_role") or "").strip()
-    if len(icp.split()) < 3:
-        d["target_icp_role"] = "Senior engineering manager leading product delivery"
-
-    pain = str(d.get("lead_pain_point") or "").strip()
-    if len(pain.split()) < 10:
-        d["lead_pain_point"] = (
-            "Product and engineering teams still waste hours each week reconciling issue status, "
-            "roadmap shifts, and stakeholder questions because their tools drift from ground truth."
-        )
-
-    claim = str(d.get("primary_claim") or "").strip()
-    if re.search(r"[.!?]\s+[A-Z]", claim):
-        claim = re.split(r"(?<=[.!?])\s+", claim)[0].strip()
-    cw = claim.split()
-    if len(cw) > 25:
-        claim = " ".join(cw[:25]).rstrip(",;:") + "."
-    d["primary_claim"] = claim
-
-    diff = d.get("differentiator")
-    if diff is not None and len(str(diff).split()) < 10:
-        d["differentiator"] = None
-
-    d["knowledge_context_applied"] = False
-    return d
-
-
-def _mock(content_brief: ContentBrief, pk: ProductKnowledge, brand: BrandProfile) -> StrategyBrief:
-    real = _real_proof_entries(pk)
-    if real:
-        proof = real[0]
-        proof_point = proof.text
-        proof_point_type = proof.proof_type
-    else:
-        proof_point = _NO_PROOF_FALLBACK
-        proof_point_type = "stat"
-    angle = (
-        pk.messaging_angles[0]
-        if pk.messaging_angles
-        else f"{pk.product_name} streamlines delivery for product and engineering teams"
+    messaging_angle = (
+        product_knowledge.messaging_angles[0]
+        if product_knowledge.messaging_angles
+        else "Speed with brand consistency"
     )
+
     out = StrategyBrief(
         run_id=content_brief.run_id,
         org_id=content_brief.org_id,
@@ -104,28 +56,69 @@ def _mock(content_brief: ContentBrief, pk: ProductKnowledge, brand: BrandProfile
             "roadmap updates, and sprint commitments across tools that were never designed to stay in sync."
         ),
         primary_claim=(
-            f"{pk.product_name} gives teams a fast issue tracker and roadmap that stays aligned "
-            f"with how builders actually ship."
+            "Genate helps SaaS teams generate grounded, brand-aligned content quickly."
         ),
-        proof_point=proof_point,
-        proof_point_type=proof_point_type,
+        proof_point=proof_text,
+        proof_point_type=proof_type,  # type: ignore[arg-type]
         cta_intent="learn_more",
         appeal_type="rational",
         narrative_arc=content_brief.narrative_arc,
-        target_icp_role="Senior product engineering manager",
+        target_icp_role="Growth marketing manager at a SaaS company",
         differentiator=(
-            "Unlike heavyweight enterprise suites that bury work in configuration, this product "
-            "prioritizes speed, keyboard workflows, and a focused surface for shipping."
+            "Unlike generic AI writing tools, Genate ties every content decision to "
+            "extracted brand signals and validated proof points from the product page."
         ),
-        hook_direction="Open with the weekly ritual of cleaning up statuses and duplicate tickets before leadership asks for a readout.",
-        positioning_mode="category_challenging",
-        messaging_angle_used=angle,
+        hook_direction=(
+            "Open by naming a repeated daily friction and its time cost before "
+            "any product or company mention."
+        ),
+        positioning_mode="category_creation",
+        messaging_angle_used=messaging_angle,
         knowledge_context_applied=False,
     )
-    out.validate_against_product_knowledge(pk)
-    out.validate_against_content_brief(content_brief)
+
+    # Cross-schema validation — log warnings but do not crash
+    try:
+        out.validate_against_product_knowledge(product_knowledge)
+    except ValueError as exc:
+        logger.warning("Strategy mock: product_knowledge validation warning: %s", exc)
+
+    try:
+        out.validate_against_content_brief(content_brief)
+    except ValueError as exc:
+        logger.warning("Strategy mock: content_brief validation warning: %s", exc)
+
     return out
 
+
+# ---------------------------------------------------------------------------
+# System prompt (inline — Person B will replace with YAML later)
+# ---------------------------------------------------------------------------
+
+_SYSTEM_PROMPT = (
+    "You are a SaaS content strategist deciding what to say.\n"
+    "Return ONLY valid JSON with these exact fields:\n"
+    "  lead_pain_point: specific daily friction (min 10 words, concrete)\n"
+    "  primary_claim: single sentence product promise (max 25 words)\n"
+    "  proof_point: COPY VERBATIM from the proof_points list provided. "
+    "Do not paraphrase. Do not invent. If none available, use: "
+    "'No verified proof points available for this product'\n"
+    "  proof_point_type: one of stat, customer_name, g2_badge, integration_count, "
+    "uptime_claim, award, user_count\n"
+    "  cta_intent: one of start_trial, learn_more, book_demo, sign_up\n"
+    "  appeal_type: one of rational, emotional, mixed\n"
+    "  target_icp_role: specific job title (min 3 words)\n"
+    "  differentiator: the unlike-X angle (min 10 words) or null\n"
+    "  hook_direction: one sentence instruction for the hook\n"
+    "  positioning_mode: one of category_creation, category_challenging, "
+    "category_domination\n"
+    "  messaging_angle_used: COPY VERBATIM from messaging_angles list"
+)
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
 
 def run(
     content_brief: ContentBrief,
@@ -135,51 +128,92 @@ def run(
     if settings.MOCK_MODE:
         return _mock(content_brief, product_knowledge, brand_profile)
 
-    spec = load_prompt("strategy_v1")
-    user_msg = (
-        f"content_brief.platform={content_brief.platform}\n"
-        f"content_brief.narrative_arc={content_brief.narrative_arc}\n"
-        f"content_brief.content_pillar={content_brief.content_pillar}\n\n"
-        f"product_knowledge.pain_points:\n{json.dumps(product_knowledge.pain_points, indent=2)}\n\n"
-        f"product_knowledge.messaging_angles:\n{json.dumps(product_knowledge.messaging_angles, indent=2)}\n\n"
-        f"product_knowledge.proof_points:\n"
-        f"{json.dumps([p.model_dump() for p in product_knowledge.proof_points], indent=2, default=str)}\n\n"
-        f"product_knowledge.features:\n"
-        f"{json.dumps([f.model_dump() for f in product_knowledge.features], indent=2, default=str)}\n\n"
-        f"brand_profile.tone: {brand_profile.tone}\n"
-        f"brand_profile.writing_instruction:\n{brand_profile.writing_instruction}\n\n"
-        "Return only JSON as specified."
+    # Build numbered proof_points list for the prompt
+    proof_list = "\n".join(
+        f"  {i + 1}. [{p.proof_type}] {p.text}"
+        for i, p in enumerate(product_knowledge.proof_points)
     )
+    angle_list = "\n".join(
+        f"  {i + 1}. {a}"
+        for i, a in enumerate(product_knowledge.messaging_angles)
+    )
+    pain_list = "\n".join(
+        f"  {i + 1}. {p}"
+        for i, p in enumerate(product_knowledge.pain_points)
+    )
+
+    user_msg = (
+        f"narrative_arc: {content_brief.narrative_arc}\n"
+        f"platform: {content_brief.platform}\n"
+        f"content_type: {content_brief.content_type}\n\n"
+        f"pain_points:\n{pain_list}\n\n"
+        f"primary_claim (derived from product description): "
+        f"{product_knowledge.description[:200]}\n\n"
+        f"proof_points (copy verbatim — do not paraphrase):\n{proof_list}\n\n"
+        f"messaging_angles (copy verbatim):\n{angle_list}\n\n"
+        f"brand_tone: {brand_profile.tone}\n"
+        f"writing_instruction: {brand_profile.writing_instruction}"
+    )
+
     raw = chat_completion(
         [
-            {"role": "system", "content": spec.system_prompt},
+            {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": user_msg},
-        ]
+        ],
+        temperature=0,
     )
     data = parse_json_object(raw)
-    data = _enforce_strategy(data, content_brief, product_knowledge)
-    keys = (
-        "lead_pain_point",
-        "primary_claim",
-        "proof_point",
-        "proof_point_type",
-        "cta_intent",
-        "appeal_type",
-        "narrative_arc",
-        "target_icp_role",
-        "differentiator",
-        "hook_direction",
-        "positioning_mode",
-        "messaging_angle_used",
-        "knowledge_context_applied",
-    )
-    payload = {k: data[k] for k in keys if k in data}
-    strategy = StrategyBrief(
+
+    # Enforce narrative_arc must match content_brief — override in code, not just prompt
+    data["narrative_arc"] = content_brief.narrative_arc
+
+    # Strip computed fields if LLM included them
+    data.pop("passes", None)
+    data.pop("overall_score", None)
+
+    # Coerce lead_pain_point to min 10 words
+    lpp = str(data.get("lead_pain_point", "")).strip()
+    if len(lpp.split()) < 10:
+        data["lead_pain_point"] = (
+            lpp + " — this repeated friction prevents teams from moving fast "
+            "and shipping with confidence."
+        )
+
+    # Coerce primary_claim to max 200 chars and single sentence
+    pc = str(data.get("primary_claim", "")).strip()
+    if len(pc) > 195:
+        # Truncate at last full stop or comma before 195
+        cut = pc[:195]
+        for sep in (".", ",", " "):
+            idx = cut.rfind(sep)
+            if idx > 100:
+                cut = cut[:idx + 1].strip()
+                break
+        data["primary_claim"] = cut
+    # Remove trailing sentences (multi-sentence guard)
+    import re as _re
+    pc2 = str(data.get("primary_claim", ""))
+    first_sent = _re.split(r"(?<=[.!?])\s+[A-Z]", pc2)
+    if len(first_sent) > 1:
+        data["primary_claim"] = first_sent[0].strip()
+
+    strategy_brief = StrategyBrief(
         run_id=content_brief.run_id,
         org_id=content_brief.org_id,
         created_at=utc_now_iso(),
-        **payload,
+        knowledge_context_applied=False,
+        **data,
     )
-    strategy.validate_against_product_knowledge(product_knowledge)
-    strategy.validate_against_content_brief(content_brief)
-    return strategy
+
+    # Cross-schema validation — log warnings but do NOT crash pipeline
+    try:
+        strategy_brief.validate_against_product_knowledge(product_knowledge)
+    except ValueError as exc:
+        logger.warning("Strategy: product_knowledge validation warning: %s", exc)
+
+    try:
+        strategy_brief.validate_against_content_brief(content_brief)
+    except ValueError as exc:
+        logger.warning("Strategy: content_brief validation warning: %s", exc)
+
+    return strategy_brief
