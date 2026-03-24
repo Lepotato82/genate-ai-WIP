@@ -188,6 +188,60 @@ These rules are applied in Python after parsing the LLM's score output — the L
 - **reasoning fallback**: if the LLM echoes the signals dict back as the `reasoning` field (starts with `{` or `[`), or if the string is < 20 chars, it is replaced with a generated sentence: `"{feature_count} features and {proof_point_count} proof points support {content_type} format for {platform}."`
 - **narrative_arc / content_pillar / funnel_stage**: normalized from human-readable LLM values to schema literals before building `ContentBrief`. Unrecognised values are mapped via keyword matching; unmatched values fall back to defaults.
 
+## Bug Fixes & Root Causes
+
+This section documents bugs found in real-mode pipeline runs, their root causes, and fixes applied. Use this to identify similar issues in future sessions.
+
+---
+
+### BUG-001 — Fabricated statistics in generated copy
+
+**Found:** Real-mode run against searchable.com, all platforms
+**Symptom:** Copy contained numeric claims not present in proof_points:
+- "Searchable has helped over 200 companies" (LinkedIn) — proof_point had "206%", model invented "200 companies"
+- "40% of brands waste up to 12 hours each month" (Twitter) — proof_point had "40% visibility increases", model fabricated "12 hours"
+
+**Root cause:** Copywriter prompt said "use the proof_point" but did not explicitly forbid the LLM from inventing adjacent numeric claims. LLMs extrapolate from training data when given partial numeric context ("40% visibility" → fabricates "40% of brands waste X hours").
+
+**Fix:**
+1. Added `FABRICATION PROHIBITION` block to `prompts/copywriting_v1.yaml` immediately before the PROOF POINT RULE — includes explicit permitted/forbidden examples and the exact patterns to avoid (frequency invention, count invention, rounding/approximation)
+2. Added `_check_fabricated_stats()` to `agents/evaluator.py` — pre-check before the LLM call that scans copy numbers against proof_point + primary_claim numbers; injects violation as `PRE-DETECTED VIOLATION:` prefix to system prompt when fabricated stats detected
+3. Existing `_apply_fabricated_stat_cap()` post-processes the LLM's accuracy score down to 1 when fabricated stats are found
+
+**Watch for:** Any time a proof_point contains a number, check that the copy does not introduce *different* numbers in the same context. The model will approximate, round, or combine stats. The pre-check fires before LLM scoring. Year numbers (2020–2030) are excluded from detection.
+
+---
+
+### BUG-002 — Twitter Copywriter leaks meta-instructions into output
+
+**Found:** Real-mode Twitter run against searchable.com
+**Symptom:** Tweet 3 contained "(Formatter will split this single long block into two separate tweets)" — an internal note exposed in the output. Also leading number prefixes like "3 " left in tweet bodies.
+
+**Root cause:** The Copywriter prompt described the Formatter's role in a way the model echoed back. Weak models narrate their uncertainty instead of resolving it.
+
+**Fix:**
+1. Added explicit "no meta-annotations" rule to Twitter section of `prompts/copywriting_v1.yaml`
+2. Added `_clean_tweet()` in `agents/formatter.py` that strips parenthetical notes matching `(Formatter...)`, `(Note...)`, `(This...)`, `(Split...)` and leading tweet number prefixes (`3/ `, `3 `) before building `TwitterContent`. Applied to every tweet during normalization.
+
+**Watch for:** Any tweet containing parenthetical text. Also watch for tweets starting with a digit followed by space or slash — these are numbering artifacts. `_clean_tweet()` handles both but new patterns may emerge with different models.
+
+---
+
+### BUG-003 — Instagram preview_text truncated mid-sentence
+
+**Found:** Real-mode Instagram run against searchable.com
+**Symptom:** `preview_text` ended on "your" — incomplete sentence fragment, not a "complete emotional statement"
+
+**Root cause:** Simple `_truncate_at_word_boundary(text, 125)` call with no sentence boundary check. The formatter cut at char 125 regardless of whether that fell mid-sentence.
+
+**Fix:** Replaced with `_truncate_to_sentence()` in `agents/formatter.py`. Priority: sentence boundary within 125 chars → sentence boundary within 150 chars → word boundary within 125 chars. Applied in `_instagram_postprocess()` and both programmatic Instagram fallback paths.
+
+**Note:** `InstagramContent.preview_text` has a `max_length=125` schema constraint, so the 150-char extension only applies when `_truncate_to_sentence()` is used outside the Instagram schema path. Within Instagram, it must stay at 125.
+
+**Watch for:** `preview_text` that does not end with `.`, `!`, or `?`. This happens when the LLM writes one long sentence (> 125 chars) with no mid-sentence punctuation. The fallback to word boundary is correct per spec — it avoids mid-word cuts but cannot guarantee a sentence end.
+
+---
+
 ## Key Patterns
 
 **Weak-model-friendly design:** LLMs return flat JSON strings. Python enforces types, validates cross-schema contracts, and applies constraints. Never ask the LLM to enforce its own output constraints.

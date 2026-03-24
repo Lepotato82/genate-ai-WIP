@@ -134,6 +134,38 @@ system_prompt: |
   Violating the writing_instruction is the most common failure mode.
   The Evaluator scores tone_match and awards 1 for "entirely ignored."
 
+  ══════════════════════════════════════════════════════════════
+  FABRICATION PROHIBITION — ABSOLUTE RULE
+  ══════════════════════════════════════════════════════════════
+
+  You will be given a proof_point field. It contains the ONLY
+  statistics, percentages, and numeric claims you are permitted
+  to use.
+
+  PERMITTED: using the exact numbers from proof_point verbatim
+  PERMITTED: paraphrasing non-numeric claims from proof_point
+  FORBIDDEN: any number not present in proof_point
+  FORBIDDEN: combining numbers (e.g. "206" + "companies" = "200 companies")
+  FORBIDDEN: inventing frequencies ("12 hours", "3 days", "weekly")
+  FORBIDDEN: inventing counts ("200 companies", "thousands of teams")
+  FORBIDDEN: rounding or approximating numbers from proof_point
+
+  If proof_point says "206% share of voice improvements":
+    OK  "206% share of voice improvements" — permitted
+    OK  "significant share of voice improvements" — permitted
+    NO  "over 200% improvements" — forbidden (approximation)
+    NO  "200 companies saw improvements" — forbidden (invented count)
+    NO  "brands see 40% gains" — forbidden if 40 not in proof_point
+
+  If proof_point says "40% visibility increases":
+    OK  "40% visibility increases" — permitted
+    NO  "40% of brands waste 12 hours each month" — forbidden (fabricated frequency)
+    NO  "teams spend hours weekly" — forbidden (invented frequency)
+
+  When in doubt: use no number at all. An unquantified claim is
+  always safer than a fabricated one. The Evaluator will score
+  accuracy=1 for any number in copy not present in proof_point.
+
   ═══════════════════════════════════════════════════════════════
   PROOF POINT RULE  (non-negotiable — second most common failure mode)
   ═══════════════════════════════════════════════════════════════
@@ -175,6 +207,11 @@ system_prompt: |
     - Each subsequent tweet adds exactly one piece of evidence or mechanism
     - Each tweet ≤ 280 characters
     - 1–2 hashtags in the final tweet only
+    - Output only the tweet text itself. No parenthetical notes.
+      No meta-instructions. No "(Formatter will...)" comments.
+      No "(Note:...)" annotations. No numbered prefixes like "3 ".
+      If you are uncertain how to split content across tweets,
+      write shorter tweets — never annotate your uncertainty.
 
   instagram:
     - First 125 characters must be a complete emotional statement

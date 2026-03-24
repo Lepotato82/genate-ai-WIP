@@ -122,6 +122,31 @@ def _apply_engagement_generic_cap(copy_text: str, engagement: int) -> int:
     return engagement
 
 
+def _check_fabricated_stats(
+    copy: str,
+    strategy_brief: StrategyBrief,
+) -> str | None:
+    """Return a pre-built revision_hint if fabricated stats are detected.
+
+    Fires before the LLM scores, giving the Evaluator the correct signal even
+    when the LLM misses it. Returns None when no fabricated numbers are found.
+    """
+    copy_numbers = set(re.findall(r"\b\d+(?:\.\d+)?(?:%|K|M|B)?\b", copy))
+    permitted_text = strategy_brief.proof_point + " " + strategy_brief.primary_claim
+    permitted_numbers = set(re.findall(r"\b\d+(?:\.\d+)?(?:%|K|M|B)?\b", permitted_text))
+    fabricated = copy_numbers - permitted_numbers
+    # Filter out year numbers (2020-2030) — these are not fabricated stats
+    fabricated = {n for n in fabricated if not (2020 <= int(float(n.rstrip("%KMB"))) <= 2030)}
+    if fabricated:
+        return (
+            f"The copy contains numeric claims not present in the "
+            f"proof_point or primary_claim: {sorted(fabricated)}. "
+            f"Remove all fabricated statistics. Only use numbers "
+            f"that appear verbatim in the proof_point field."
+        )
+    return None
+
+
 def _apply_fabricated_stat_cap(
     copy_text: str, proof_point: str, primary_claim: str, accuracy: int
 ) -> int:
@@ -165,6 +190,12 @@ def run(
         system = _INLINE_SYSTEM
 
     copy_text = _extract_copy(formatted_content)
+
+    # Pre-check for fabricated stats before calling LLM — inject violation into system prompt
+    pre_hint = _check_fabricated_stats(copy_text, strategy_brief)
+    if pre_hint:
+        logger.warning("Evaluator pre-check: %s", pre_hint)
+        system = f"PRE-DETECTED VIOLATION: {pre_hint}\n\n" + system
 
     platform_note = ""
     if formatted_content.platform == "twitter":
