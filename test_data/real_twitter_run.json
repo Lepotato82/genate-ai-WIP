@@ -1,22 +1,23 @@
 {
-  "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+  "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
     "org_id": null,
-    "created_at": "2026-03-24T07:27:20.292621+00:00",
-    "design_category": "data-dense",
+    "created_at": "2026-03-24T08:09:38.560880+00:00",
+    "design_category": "developer-tool",
     "primary_color": "#1a0f13",
-    "secondary_color": null,
+    "secondary_color": "oklch(99% .005 85)",
     "background_color": "rgb(253, 251, 249)",
-    "font_family": "Geist",
+    "font_family": "Geist sans-serif",
     "font_weights": [
-      500.0
+      490.0,
+      600.0
     ],
     "border_radius": ".625rem",
-    "spacing_unit": "4px",
+    "spacing_unit": "8px",
     "tone": "technical",
-    "writing_instruction": "This brand observes strong contrast between dark and light colors (e.g. #1a0f13) to convey technical information, consistent font sizes for headings (e.g. H1: 48px), and detailed typography (e.g. monospace font). Match the tone with formal language, precise definitions, and concise explanations to match this brand's voice, emphasizing data-driven insights and technical capabilities.",
+    "writing_instruction": "This brand signals a focus on technical density and development. Use the font Geist to convey a sense of professionalism, and match the primary color #1a0f13 in UI components whenever possible. The secondary color oklch(99% .005 85) can be used for subtle visual cues. Keep typography thin by using font weights 490 or 600. Maintain consistency across UI elements with a strong border radius of .625rem and adequate spacing (8px). Confidence: 0.9",
     "css_tokens": {
       "--radius": ".625rem",
       "--background": "oklch(98.4% .006 85.5)",
@@ -102,9 +103,9 @@
     "confidence": 0.9
   },
   "product_knowledge": {
-    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
     "org_id": null,
-    "created_at": "2026-03-24T07:27:31.417490+00:00",
+    "created_at": "2026-03-24T08:09:51.062409+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
     "tagline": "Built by experts, trusted by 12,000+ users",
@@ -167,9 +168,9 @@
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
     "org_id": null,
-    "created_at": "2026-03-24T07:27:36.148627+00:00",
+    "created_at": "2026-03-24T08:09:56.021035+00:00",
     "platform": "twitter",
     "content_type": "thread",
     "narrative_arc": "pain-agitate-solve-cta",
@@ -198,9 +199,9 @@
     "reasoning": "With our Searchable product, you can unlock the full potential of AI search optimization and take control of your brand's visibility across multiple AI engines. Our proof points show that 2 out of 4 features have driven significant improvements in user experience, while our technical tone resonates with customers looking for actionable insights."
   },
   "strategy_brief": {
-    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
     "org_id": null,
-    "created_at": "2026-03-24T07:27:41.723709+00:00",
+    "created_at": "2026-03-24T08:10:02.048218+00:00",
     "lead_pain_point": "Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings",
     "primary_claim": "Searchable is a SaaS product that helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation",
     "proof_point": "206% share of voice improvements",
@@ -209,34 +210,36 @@
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
     "target_icp_role": "AI Search Optimization Specialist",
-    "differentiator": "Unlock hidden AI visibility gaps and optimize search rankings with data-driven insights",
-    "hook_direction": "Discover how Searchable can transform your team's workflow efficiency",
+    "differentiator": "Unlock the full potential of AI search optimization with a single platform",
+    "hook_direction": "Discover how Searchable can transform your team's workflow and reduce operational friction",
     "positioning_mode": "category_challenging",
     "messaging_angle_used": "Unlock the full potential of AI search optimization",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
     "org_id": null,
-    "created_at": "2026-03-24T07:27:54.662585+00:00",
+    "created_at": "2026-03-24T08:10:56.544819+00:00",
     "platform": "twitter",
     "linkedin_content": null,
     "twitter_content": {
       "tweets": [
-        "Did you spend 3+ hours each week analyzing AI visibility gaps & lack of actionable insights? Discover how Searchable can transform your team's workflow efficiency",
-        "The current state: endless sprints, operational pain points, and unclear workflows. It's estimated that 63% of failed payments are recoverable with optimized timing \u2013 is your team leaving money on the table?",
-        "But what if you could improve execution speed by up to 40% & reduce operational friction by 20%? Searchable provides the actionable insights you need to drive real change. With our platform, you can unlock hidden AI visibility gaps and optimize search rankings with data-driven",
-        "Unlock hidden AI visibility gaps and optimize search rankings with data-driven insights. Start your trial today and discover how Searchable can transform your team's workflow efficiency! #Searchable #WorkflowEfficiency"
+        "Discover how long hours of AI visibility analysis & lack of actionable insights are costing your team money. Spend 206% less time searching & find solutions faster with Searchable, optimizing 5x faster than others",
+        "The current state: struggling to bridge the gap between insights & action. Limited clarity on workflows leads to 3x more operational friction. Find out how Searchable helps you streamline processes in minutes.",
+        "Ever experienced missed opportunities because of AI visibility gaps? Searchable finds these blindspots, unlocking 8x speed gains for faster decision-making & actionable automation of workflows that drive results",
+        "Say goodbye to long hours of manual analysis & optimize your workflow. See the difference Searchable makes with clearer visibility, improved collaboration tools, and seamless integration.",
+        "Ready to stop wasting time on insights and start gaining traction? Try Searchable's trial today for exclusive access and accelerate your team's performance #Searchable #AIsearchoptimization"
       ],
       "tweet_char_counts": [
-        162,
-        207,
-        277,
-        218
+        213,
+        209,
+        211,
+        187,
+        189
       ],
       "hashtags": [
         "#Searchable",
-        "#WorkflowEfficiency"
+        "#AIsearchoptimization"
       ]
     },
     "instagram_content": null,
@@ -245,28 +248,28 @@
     "suggested_format": null,
     "video_script": null,
     "video_hook": null,
-    "retry_count": 0,
-    "revision_hint_applied": null,
+    "retry_count": 2,
+    "revision_hint_applied": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
     "approved": false,
     "approved_at": null,
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
     "org_id": null,
-    "created_at": "2026-03-24T07:28:02.662061+00:00",
+    "created_at": "2026-03-24T08:11:06.674502+00:00",
     "platform": "twitter",
-    "clarity": 3,
+    "clarity": 5,
     "engagement": 3,
-    "tone_match": 3,
-    "accuracy": 3,
-    "overall_score": 3.0,
-    "passes": true,
-    "revision_hint": null,
-    "lowest_dimension": null,
-    "scores_rationale": "Copy scored highest on clarity (3/5) and lowest on clarity (3/5). Scores derived from markdown evaluation response.",
-    "retry_count": 0
+    "tone_match": 5,
+    "accuracy": 1,
+    "overall_score": 3.5,
+    "passes": false,
+    "revision_hint": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
+    "lowest_dimension": "accuracy",
+    "scores_rationale": "The copy clearly explains the problem and solution, with a clear structure that doesn't blur together. The hook is strong, but it could be more impactful if it created financial fear or curiosity in the first line. The copy executes the writing instruction perfectly, with a focus on technical density and development. The proof_point appears verbatim in one tweet, but there's no other supporting detail to back it up. A minor deduction for not providing more context.",
+    "retry_count": 2
   },
-  "passes": true,
-  "overall_score": 3.0
+  "passes": false,
+  "overall_score": 3.5
 }

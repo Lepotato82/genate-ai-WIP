@@ -1,22 +1,24 @@
 {
-  "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+  "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
     "org_id": null,
-    "created_at": "2026-03-24T08:07:39.390818+00:00",
+    "created_at": "2026-03-24T13:27:37.576921+00:00",
     "design_category": "minimal-saas",
     "primary_color": "#1a0f13",
-    "secondary_color": null,
+    "secondary_color": "#65454e",
     "background_color": "rgb(253, 251, 249)",
-    "font_family": null,
+    "font_family": "Geist",
     "font_weights": [
-      400.0
+      400.0,
+      500.0,
+      600.0
     ],
-    "border_radius": "6px",
-    "spacing_unit": "4px",
+    "border_radius": ".625rem",
+    "spacing_unit": "16px",
     "tone": "minimal",
-    "writing_instruction": "One idea per sentence. Lead with the outcome. Confident not pushy. Geist typeface. Weight scale: 400/500/600.",
+    "writing_instruction": "To match this brand voice, use the Geist font family and a muted color palette with primary color #1a0f13, secondary color #65454e, and background color rgb(253, 251, 249). The tone is minimal, so keep the language concise and straightforward. The design category is minimal-saas, so prioritize simplicity and clarity in your writing. Use font weights 400, 500, and 600 to create visual hierarchy and emphasis.",
     "css_tokens": {
       "--radius": ".625rem",
       "--background": "oklch(98.4% .006 85.5)",
@@ -99,17 +101,17 @@
       "--_btn-bg-9": "rgb(59, 45, 34)",
       "--_btn-color-9": "rgb(255, 255, 255)"
     },
-    "confidence": 0.7
+    "confidence": 0.8
   },
   "product_knowledge": {
-    "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
     "org_id": null,
-    "created_at": "2026-03-24T08:07:52.053023+00:00",
+    "created_at": "2026-03-24T13:27:48.639798+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
-    "tagline": "Built by experts, trusted by 12,000+ users",
-    "description": "Searchable is a SaaS product described on the source page. It helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation. Source summary: Free webinar \u00b7 Wed 25 March \u00b7 Learn which prompts to target for AI search Register free Product Resources Pricing Careers English Espa\u00f1ol Fran\u00e7ais Deutsch Portugu\u00eas \u65e5\u672c\u8a9e Login Start for free Searchable is an AI search optimization platform that helps brands track visibility and analytics",
-    "product_category": "fintech-saas",
+    "tagline": "Visibility & Analytics from AI Search \u2014 and the actions to drive growth",
+    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines.",
+    "product_category": "data-analytics",
     "features": [
       {
         "name": "AI Visibility Tracking",
@@ -129,9 +131,10 @@
       }
     ],
     "benefits": [
+      "Improve AI search rankings",
       "Increase product discovery through AI shopping assistants",
-      "Improve visibility when prospects research solutions via AI",
-      "Ensure content is cited and linked by AI engines"
+      "Get recommended by AI for local searches",
+      "Deliver AI search optimization services to clients"
     ],
     "proof_points": [
       {
@@ -140,41 +143,41 @@
         "source": "scraped_page"
       },
       {
-        "text": "\u00a31 million in qualified pipeline generated",
+        "text": "Generated over \u00a31 million in qualified pipeline from AI search",
         "proof_type": "stat",
         "source": "scraped_page"
       }
     ],
     "pain_points": [
-      "Spending hours analyzing AI visibility gaps",
-      "Lack of actionable insights to improve AI search rankings"
+      "Difficulty tracking brand mentions and rankings across AI engines",
+      "Struggling to optimize content for AI search",
+      "Limited visibility into AI search performance metrics"
     ],
     "messaging_angles": [
-      "Unlock the full potential of AI search optimization",
-      "Take control of your brand's visibility across multiple AI engines"
+      "Take control of AI search"
     ],
-    "target_customer": "e-commerce brands, B2B software companies, content publishers, local businesses, agencies",
+    "target_customer": "E-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
     "integrations": [
       "Google Analytics",
       "Google Search Console",
       "HubSpot",
       "Salesforce"
     ],
-    "pricing_mentioned": true,
+    "pricing_mentioned": false,
     "pricing_description": null,
     "scrape_word_count": 1529,
     "user_document_filename": null,
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
     "org_id": null,
-    "created_at": "2026-03-24T08:07:59.905474+00:00",
-    "platform": "linkedin",
-    "content_type": "carousel",
+    "created_at": "2026-03-24T13:27:50.893342+00:00",
+    "platform": "twitter",
+    "content_type": "thread",
     "narrative_arc": "pain-agitate-solve-cta",
     "content_pillar": "product_and_solution",
-    "funnel_stage": "mofu",
+    "funnel_stage": "tofu",
     "posting_strategy": {
       "recommended_frequency": "3x weekly",
       "best_days": [
@@ -184,81 +187,93 @@
       "best_time_window": "10:00-12:00 IST"
     },
     "word_count_target": null,
-    "slide_count_target": 6,
-    "thread_length_target": null,
+    "slide_count_target": null,
+    "thread_length_target": 6,
     "platform_rules_summary": [
-      "Hook must be standalone in first 180 characters",
-      "3-5 hashtags at end only, never inline",
-      "Short paragraphs with blank line between each"
+      "Thread of 4-8 tweets (4-8)",
+      "Each tweet max 280 chars",
+      "Hashtags (1-2): final tweet only"
     ],
     "seo_keyword": null,
     "knowledge_context_used": false,
     "knowledge_context_summary": null,
-    "benchmark_reference": "SaaS engagement benchmarks for the selected format.",
-    "reasoning": "4 features and 2 proof points support carousel format for linkedin."
+    "benchmark_reference": "Based on Twitter's character limit and user engagement patterns, a 6-tweet thread is optimal for conveying complex information without overwhelming our audience.",
+    "reasoning": "With 3 pain points and 4 features to highlight, a thread of 6 tweets allows us to effectively introduce the problem, agitate it by highlighting the consequences of not addressing it, and then provide a solution using our product, Searchable. The presence of 2 proof points and a strong stat will add credibility to our narrative, making a compelling case for taking control of AI search. Given the minimal brand tone, we'll focus on concise, informative tweets that resonate with our audience."
   },
   "strategy_brief": {
-    "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
     "org_id": null,
-    "created_at": "2026-03-24T08:08:05.749845+00:00",
-    "lead_pain_point": "Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings",
-    "primary_claim": "Searchable is a SaaS product that helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation",
+    "created_at": "2026-03-24T13:27:55.243958+00:00",
+    "lead_pain_point": "Difficulty tracking brand mentions and rankings across multiple AI engines daily",
+    "primary_claim": "Searchable drives growth through AI search optimization",
     "proof_point": "206% share of voice improvements",
     "proof_point_type": "stat",
     "cta_intent": "start_trial",
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
     "target_icp_role": "Digital Marketing Manager",
-    "differentiator": "Unlock the full potential of AI search optimization without sacrificing control over brand visibility",
-    "hook_direction": "Discover how Searchable can optimize your AI search rankings and boost your brand's online presence",
+    "differentiator": "unlike traditional SEO platforms that fail to account for AI search",
+    "hook_direction": "Start by highlighting the frustration of tracking AI search metrics",
     "positioning_mode": "category_challenging",
-    "messaging_angle_used": "Unlock the full potential of AI search optimization",
+    "messaging_angle_used": "Take control of AI search",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
     "org_id": null,
-    "created_at": "2026-03-24T08:09:05.713537+00:00",
-    "platform": "linkedin",
-    "linkedin_content": {
-      "hook": "Discover how Searchable can optimize your AI search rankings and boost your brand's online presence",
-      "body": "Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings can be a waste of valuable team time.\n\nToday, most teams spend an average of 20 hours searching for and implementing the right AI tools to fill those visibility gaps, but only 40% get a decent return on investment.",
-      "hashtags": [
-        "#AIsearchoptimization",
-        "#SearchableSaaS",
-        "#DigitalMarketing"
+    "created_at": "2026-03-24T13:28:17.481403+00:00",
+    "platform": "twitter",
+    "linkedin_content": null,
+    "twitter_content": {
+      "tweets": [
+        "Tracking AI search metrics is a daily headache. Multiple engines, countless mentions, and rankings that shift constantly. How do you stay on top of it all?",
+        "The truth is, manual tracking is a huge time sink. And even then, you're likely to miss crucial insights that could inform your growth strategy. The complexity is overwhelming.",
+        "But what if you could simplify your search metric tracking and unlock real growth? That's where AI search optimization comes in \u2013 and it's been proven to drive results.",
+        "We've seen it firsthand: 206% share of voice improvements. This isn't just a incremental boost \u2013 it's a game-changer for businesses looking to expand their online presence.",
+        "So how can you start driving similar growth for your brand? It starts with Searchable, the AI search optimization solution that helps you cut through the noise and reach your target audience.",
+        "Ready to take the first step? Start your trial today and discover how Searchable can help you grow your brand's online presence and drive real results. #Searchable #AISearchOptimization"
       ],
-      "full_post": "Discover how Searchable can optimize your AI search rankings and boost your brand's online presence\n\nSpending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings can be a waste of valuable team time.\n\nToday, most teams spend an average of 20 hours searching for and implementing the right AI tools to fill those visibility gaps, but only 40% get a decent return on investment.\n\n#AIsearchoptimization #SearchableSaaS #DigitalMarketing"
+      "tweet_char_counts": [
+        155,
+        176,
+        168,
+        172,
+        191,
+        185
+      ],
+      "hashtags": [
+        "#Searchable",
+        "#AISearchOptimization"
+      ]
     },
-    "twitter_content": null,
     "instagram_content": null,
     "blog_content": null,
     "image_prompt": null,
     "suggested_format": null,
     "video_script": null,
     "video_hook": null,
-    "retry_count": 2,
-    "revision_hint_applied": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
+    "retry_count": 0,
+    "revision_hint_applied": null,
     "approved": false,
     "approved_at": null,
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "b8b1a92b-75e7-486f-a81f-af983016fbcd",
+    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
     "org_id": null,
-    "created_at": "2026-03-24T08:09:17.996057+00:00",
-    "platform": "linkedin",
-    "clarity": 3,
-    "engagement": 3,
+    "created_at": "2026-03-24T13:28:36.593562+00:00",
+    "platform": "twitter",
+    "clarity": 4,
+    "engagement": 4,
     "tone_match": 3,
-    "accuracy": 1,
-    "overall_score": 2.5,
-    "passes": false,
-    "revision_hint": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
-    "lowest_dimension": "accuracy",
-    "scores_rationale": "The core message gets through but the structure requires effort. Strong hook with a minor weakness \u2014 slightly too long, or payoff is delayed by one sentence. Partial execution of the instruction. Register shifts mid-copy. Some elements are right, others are wrong. Core claim is accurate. One supporting detail is a reasonable inference \u2014 not a fabrication.",
-    "retry_count": 2
+    "accuracy": 5,
+    "overall_score": 4.0,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "The copy is easy to understand, and each tweet has a clear purpose, but the transition between tweets could be smoother to create a more cohesive narrative. The hook in tweet 1 is strong and creates curiosity, but it could be more specific about the daily friction of tracking AI search metrics to stop the scroll. The language is generally concise and straightforward, but the tone is not entirely minimal, with phrases like 'game-changer' that slightly deviate from the instructed minimal tone. The proof_point appears verbatim in tweet 4, directly supporting the primary_claim and demonstrating a clear connection to the provided accuracy baseline.",
+    "retry_count": 0
   },
-  "passes": false,
-  "overall_score": 2.5
+  "passes": true,
+  "overall_score": 4.0
 }

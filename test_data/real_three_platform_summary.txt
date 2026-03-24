@@ -2,29 +2,50 @@
 UI Analyzer: LLM returned unparseable JSON; falling back to CSS-token heuristics
 [product_analysis] sending 1529 words to LLM
 [product_analysis] user message preview: 'Free webinar · Wed 25 March · Learn which prompts to target for AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI '
-product_name: None
-scrape_word_count: None
-passes: True  overall_score: 4.5
-scores: clarity=4 engagement=5 tone_match=4 accuracy=5
-hook (50 chars): Boost Your Brand's Online Presence with Searchable
+Formatter: LLM returned non-JSON; falling back to mechanical parse
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['2', '20', '40', '63']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'63%', '40%'} � capping accuracy at 1
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['20', '40']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'40%'} � capping accuracy at 1
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['20', '40']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'40%'} � capping accuracy at 1
+passes: False  overall_score: 2.5
+scores: clarity=3 engagement=3 tone_match=3 accuracy=1
+hook (99 chars): Discover how Searchable can optimize your AI search rankings and boost your brand's online presence
+body preview: Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings can be a waste
 
 === TWITTER ===
 [product_analysis] sending 1529 words to LLM
 [product_analysis] user message preview: 'Free webinar · Wed 25 March · Learn which prompts to target for AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI '
-Evaluator: non-JSON response; extracting scores from markdown text
-product_name: None
-scrape_word_count: None
-passes: True  overall_score: 3.0
-scores: clarity=3 engagement=3 tone_match=3 accuracy=3
-tweets: 4, over 280 chars: 0
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['1', '2', '3', '4', '5']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'3x', '5x', '8x'} � capping accuracy at 1
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['1', '2', '3', '4', '5']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'3x', '5x', '8x'} � capping accuracy at 1
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['1', '2', '3', '4', '5']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'3x', '5x', '8x'} � capping accuracy at 1
+passes: False  overall_score: 3.5
+scores: clarity=5 engagement=3 tone_match=5 accuracy=1
+tweets: 5, over 280 chars: 0, meta_leaks: 0
+  [1] (213 chars): Discover how long hours of AI visibility analysis & lack of actionable insights are costing your tea
+  [2] (209 chars): The current state: struggling to bridge the gap between insights & action. Limited clarity on workfl
+  [3] (211 chars): Ever experienced missed opportunities because of AI visibility gaps? Searchable finds these blindspo
+  [4] (187 chars): Say goodbye to long hours of manual analysis & optimize your workflow. See the difference Searchable
+  [5] (189 chars): Ready to stop wasting time on insights and start gaining traction? Try Searchable's trial today for 
 
 === INSTAGRAM ===
 UI Analyzer: LLM returned unparseable JSON; falling back to CSS-token heuristics
-[product_analysis] sending 1529 words to LLM
+[product_analysis] sending 1475 words to LLM
 [product_analysis] user message preview: 'Free webinar · Wed 25 March · Learn which prompts to target for AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI '
-product_name: None
-scrape_word_count: None
-passes: True  overall_score: 4.25
-scores: clarity=4 engagement=5 tone_match=3 accuracy=5
-hashtags (21), placeholders: 0
+Strategy: product_knowledge validation warning: proof_point '[stat] Proven results with measurable ROI' does not match any entry in ProductKnowledge.proof_points. Valid values: ['Trusted by leading brands and agencies', 'Proven results with measurable ROI']. Copy the proof point text verbatim.
+Formatter Instagram: non-JSON; mechanical split
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['63', '90']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'63%', '90%'} � capping accuracy at 1
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['63']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'63%'} � capping accuracy at 1
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['63']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'63%'} � capping accuracy at 1
+passes: False  overall_score: 3.0
+scores: clarity=4 engagement=3 tone_match=4 accuracy=1
+preview (60 chars, ends_sentence=True): Missing millions of clicks from customers searching for you?
+hashtags (24), placeholders: 0, list_artifact: False
 

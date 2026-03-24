@@ -242,6 +242,27 @@ This section documents bugs found in real-mode pipeline runs, their root causes,
 
 ---
 
+### BUG-004 — Ollama llama3.2 fabrication rate vs Groq llama-3.3-70b
+
+**Found:** Real-mode run against searchable.com, all platforms
+**Context:** After implementing the fabrication prohibition rule in the Copywriter prompt and `_check_fabricated_stats()` pre-check in the Evaluator, all three platforms still failed with `accuracy=1` on every retry when using Ollama llama3.2. The fabricated stats changed each retry (`3x`, `5x`, `8x`, then `40%`, `63%`, `90%`) confirming the model was not following the prohibition rule despite it being explicit.
+
+**Root cause:** llama3.2 via Ollama (7B/8B parameter range) does not reliably follow complex multi-rule prompts. When the actual proof_points contain no numbers ("Trusted by leading brands", "Proven results with measurable ROI"), the model defaults to inventing plausible-sounding stats from training data rather than writing number-free copy. This is a model capability floor issue, not a prompt design issue.
+
+**Fix:** Switched `LLM_PROVIDER` from `ollama` to `groq` with `llama-3.3-70b-versatile`. The 70B model follows the fabrication prohibition rule reliably and writes compelling copy from qualitative proof points without inventing numbers.
+
+**Result:** All three platforms: accuracy 1→5, passes False→True, retry_count 2→0. Groq comparison:
+
+| platform  | ollama_acc | groq_acc | ollama_pass | groq_pass |
+|-----------|-----------|---------|------------|---------|
+| linkedin  | 1         | 5       | False      | True    |
+| twitter   | 1         | 5       | False      | True    |
+| instagram | 1         | 5       | False      | True    |
+
+**Watch for:** If fabrication recurs on Groq, the issue is in proof_point extraction quality (Product Analysis returning weak qualitative proof points instead of real stats from the page). The fix is to improve the Product Analysis prompt to extract only concrete, specific proof points and skip vague qualitative claims like "Proven results with measurable ROI".
+
+---
+
 ## Key Patterns
 
 **Weak-model-friendly design:** LLMs return flat JSON strings. Python enforces types, validates cross-schema contracts, and applies constraints. Never ask the LLM to enforce its own output constraints.
