@@ -77,7 +77,20 @@ _INLINE_SYSTEM = (
     "  clarity    — is the copy easy to understand on a single read?\n"
     "  engagement — does the hook stop the scroll or force continued reading?\n"
     "  tone_match — does the copy execute the writing_instruction exactly?\n"
-    "  accuracy   — are all claims grounded in the primary_claim provided?\n\n"
+    "  accuracy   — are claims grounded in primary_claim AND the proof_point?\n\n"
+    "STRICT CALIBRATION (apply before scoring):\n"
+    "- ENGAGEMENT 5 requires: the hook names a specific daily friction OR uses a surprising "
+    "number OR creates genuine curiosity. Generic openers such as \"Your Daily Friction is...\", "
+    "\"Are you struggling with...\", \"Discover how...\" cap engagement at 3.\n"
+    "- TONE_MATCH 5 requires: zero violations of writing_instruction. Exclamation marks when "
+    "instruction says corporate → tone_match 2. Words like \"revolutionize\", \"game-changing\", "
+    "\"seamless\" → tone_match 1 unless the instruction explicitly allows hype.\n"
+    "- ACCURACY 5 requires: proof_point used verbatim or near-verbatim. Score 3 if paraphrased "
+    "but not fabricated. Score 1 if any statistic appears that is NOT in the provided "
+    "proof_point or primary_claim.\n"
+    "- Platform format violations reduce the relevant dimension: bullet symbols (•) in "
+    "LinkedIn body → clarity minus 1. CTA copy that does not match cta_intent → tone_match minus 1. "
+    "Hashtags inline in body (not at end) → tone_match minus 1.\n\n"
     "PASS RULE: passes = true ONLY when ALL FOUR scores are >= 3.\n\n"
     "Return ONLY valid JSON. When ALL scores >= 3:\n"
     "{\n"
@@ -90,6 +103,20 @@ _INLINE_SYSTEM = (
     '  "revision_hint": "<one specific, actionable sentence targeting the lowest score>"\n\n'
     "DO NOT include 'passes' or 'overall_score' — these are computed by the system."
 )
+
+
+_GENERIC_ENGAGEMENT_OPENERS = (
+    "discover how",
+    "are you struggling",
+    "your daily friction is",
+)
+
+
+def _apply_engagement_generic_cap(copy_text: str, engagement: int) -> int:
+    head = copy_text.lower()[:500]
+    if any(p in head for p in _GENERIC_ENGAGEMENT_OPENERS):
+        return min(engagement, 3)
+    return engagement
 
 
 # ---------------------------------------------------------------------------
@@ -114,12 +141,28 @@ def run(
 
     copy_text = _extract_copy(formatted_content)
 
+    platform_note = ""
+    if formatted_content.platform == "twitter":
+        platform_note = (
+            "\n\nFormat expectations (Twitter): Thread with 4–8 tweets; tweet 1 is the hook; "
+            "proof_point should appear verbatim in one tweet; hashtags only on the final tweet. "
+            "Penalize clarity if tweets blur together or omit the strategy proof.\n"
+        )
+    elif formatted_content.platform == "instagram":
+        platform_note = (
+            "\n\nFormat expectations (Instagram): First line is preview (emotional); proof_point "
+            "should appear in the caption body; hashtags must not appear inline in body/preview. "
+            "Penalize tone_match if the voice ignores writing_instruction.\n"
+        )
+
     user_msg = (
         f"platform: {formatted_content.platform}\n\n"
         f"copy:\n{copy_text}\n\n"
         f"writing_instruction: {brand_profile.writing_instruction}\n\n"
+        f"cta_intent: {strategy_brief.cta_intent}\n\n"
         f"primary_claim: {strategy_brief.primary_claim}\n\n"
         f"proof_point (accuracy baseline): {strategy_brief.proof_point}"
+        f"{platform_note}"
     )
 
     raw = chat_completion(
@@ -154,6 +197,8 @@ def run(
             data[dim] = int(data[dim])
         except (KeyError, TypeError, ValueError):
             data[dim] = 3  # safe fallback
+
+    data["engagement"] = _apply_engagement_generic_cap(copy_text, data["engagement"])
 
     # Determine if copy passes (all scores >= 3)
     will_pass = all(data.get(d, 3) >= 3 for d in ("clarity", "engagement", "tone_match", "accuracy"))

@@ -1,0 +1,205 @@
+{
+  "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+  "url": "https://linear.app",
+  "brand_profile": {
+    "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+    "org_id": null,
+    "created_at": "2026-03-24T06:37:33.780657+00:00",
+    "design_category": "developer-tool",
+    "primary_color": "#5e6ad2",
+    "secondary_color": "#7170ff",
+    "background_color": "#ffffff",
+    "font_family": "Inter",
+    "font_weights": [
+      400.0,
+      510.0,
+      590.0
+    ],
+    "border_radius": "6px",
+    "spacing_unit": "4px",
+    "tone": "technical",
+    "writing_instruction": "Write in a direct technical SaaS voice, lead with concrete daily friction, use exact product language, and avoid generic hype claims.",
+    "css_tokens": {
+      "--color-brand-bg": "#5e6ad2",
+      "--color-accent": "#7170ff",
+      "--color-text-primary": "#1a1a2e",
+      "--color-text-secondary": "#6b7280",
+      "--color-border": "#e5e7eb",
+      "--color-surface": "#ffffff",
+      "--color-surface-raised": "#f9fafb",
+      "--font-family-sans": "Inter, system-ui, sans-serif",
+      "--font-family-mono": "JetBrains Mono, monospace",
+      "--font-weight-regular": "400",
+      "--font-weight-medium": "510",
+      "--font-weight-semibold": "590",
+      "--border-radius-sm": "4px",
+      "--border-radius-md": "6px",
+      "--spacing-unit": "4px",
+      "--_bg-body": "rgb(255, 255, 255)",
+      "--_font-family-h1": "Inter, system-ui, sans-serif",
+      "--_font-weight-h1": "590",
+      "--_font-size-h1": "48px"
+    },
+    "confidence": 0.8
+  },
+  "product_knowledge": {
+    "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+    "org_id": null,
+    "created_at": "2026-03-24T06:37:33.780689+00:00",
+    "product_name": "Linear",
+    "product_url": "https://linear.app",
+    "tagline": "Built for SaaS growth teams.",
+    "description": "This product helps SaaS teams create consistent marketing assets using structured workflows, reusable brand context, and fast execution loops. Teams can analyze brand signals, build strategy briefs, and generate content that stays aligned with proof points and positioning.",
+    "product_category": "marketing-content",
+    "features": [
+      {
+        "name": "Brand analysis",
+        "description": "Extracts visual + text signals"
+      },
+      {
+        "name": "Content automation",
+        "description": "Generates platform copy fast"
+      }
+    ],
+    "benefits": [
+      "Faster campaign production",
+      "More consistent brand voice"
+    ],
+    "proof_points": [
+      {
+        "text": "Used by over 10,000 engineering teams.",
+        "proof_type": "user_count",
+        "source": "scraped_page"
+      }
+    ],
+    "pain_points": [
+      "Inconsistent messaging",
+      "Manual content creation overhead"
+    ],
+    "messaging_angles": [
+      "Speed with consistency"
+    ],
+    "target_customer": null,
+    "integrations": [
+      "Slack",
+      "GitHub"
+    ],
+    "pricing_mentioned": false,
+    "pricing_description": null,
+    "scrape_word_count": 62,
+    "user_document_filename": null,
+    "data_source": "scraped_only"
+  },
+  "content_brief": {
+    "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+    "org_id": null,
+    "created_at": "2026-03-24T06:37:33.780744+00:00",
+    "platform": "instagram",
+    "content_type": "carousel",
+    "narrative_arc": "before-after-bridge-cta",
+    "content_pillar": "product_and_solution",
+    "funnel_stage": "tofu",
+    "posting_strategy": {
+      "recommended_frequency": "4x weekly",
+      "best_days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "best_time_window": "18:00-21:00 IST"
+    },
+    "word_count_target": null,
+    "slide_count_target": 8,
+    "thread_length_target": null,
+    "platform_rules_summary": [
+      "First 125 chars: complete emotional statement",
+      "20-30 hashtags; placement: after 5 line breaks; inline hashtags: False"
+    ],
+    "seo_keyword": null,
+    "knowledge_context_used": false,
+    "knowledge_context_summary": null,
+    "benchmark_reference": "Instagram carousels drive higher saves and shares than single images for educational product breakdowns (social benchmark data).",
+    "reasoning": "Carousel fits swipeable educational content; signals show feature_count=2 and pain_point_count=2 for multi-slide storytelling."
+  },
+  "strategy_brief": {
+    "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+    "org_id": null,
+    "created_at": "2026-03-24T06:37:33.781212+00:00",
+    "lead_pain_point": "Product and engineering leads still lose hours each week reconciling issue state, roadmap updates, and sprint commitments across tools that were never designed to stay in sync.",
+    "primary_claim": "Genate helps SaaS teams generate grounded, brand-aligned content quickly.",
+    "proof_point": "Used by over 10,000 engineering teams.",
+    "proof_point_type": "user_count",
+    "cta_intent": "learn_more",
+    "appeal_type": "rational",
+    "narrative_arc": "before-after-bridge-cta",
+    "target_icp_role": "Growth marketing manager at a SaaS company",
+    "differentiator": "Unlike generic AI writing tools, Genate ties every content decision to extracted brand signals and validated proof points from the product page.",
+    "hook_direction": "Open by naming a repeated daily friction and its time cost before any product or company mention.",
+    "positioning_mode": "category_creation",
+    "messaging_angle_used": "Speed with consistency",
+    "knowledge_context_applied": false
+  },
+  "formatted_content": {
+    "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+    "org_id": null,
+    "created_at": "2026-03-24T06:37:33.781381+00:00",
+    "platform": "instagram",
+    "linkedin_content": null,
+    "twitter_content": null,
+    "instagram_content": {
+      "preview_text": "You are one scroll away from copy that actually matches your product truth.",
+      "body": "Most teams still ship generic hooks because strategy never meets the page.\n\nWe anchor every line in proof like: Used by over 10,000 engineering teams.\n\nTry a workflow where brand, claim, and CTA stay aligned end to end.",
+      "hashtags": [
+        "#marketingcontent",
+        "#saas",
+        "#b2b",
+        "#startup",
+        "#software",
+        "#product",
+        "#growth",
+        "#brandanalysis",
+        "#contentautomation",
+        "#topic1",
+        "#topic2",
+        "#topic3",
+        "#topic4",
+        "#topic5",
+        "#topic6",
+        "#topic7",
+        "#topic8",
+        "#topic9",
+        "#topic10",
+        "#topic11"
+      ],
+      "full_caption": "You are one scroll away from copy that actually matches your product truth.\nMost teams still ship generic hooks because strategy never meets the page.\n\nWe anchor every line in proof like: Used by over 10,000 engineering teams.\n\nTry a workflow where brand, claim, and CTA stay aligned end to end.\n\n\n\n\n#marketingcontent #saas #b2b #startup #software #product #growth #brandanalysis #contentautomation #topic1 #topic2 #topic3 #topic4 #topic5 #topic6 #topic7 #topic8 #topic9 #topic10 #topic11"
+    },
+    "blog_content": null,
+    "image_prompt": null,
+    "suggested_format": null,
+    "video_script": null,
+    "video_hook": null,
+    "retry_count": 0,
+    "revision_hint_applied": null,
+    "approved": false,
+    "approved_at": null,
+    "user_edited_copy": null
+  },
+  "evaluation": {
+    "run_id": "3085ce1d-0ce4-434f-a682-4b73aa746072",
+    "org_id": null,
+    "created_at": "2026-03-24T06:37:33.781399+00:00",
+    "platform": "instagram",
+    "clarity": 4,
+    "engagement": 4,
+    "tone_match": 4,
+    "accuracy": 4,
+    "overall_score": 4.0,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "The hook names a specific daily friction that resonates with engineers. The proof point is grounded in the primary claim without fabrication.",
+    "retry_count": 0
+  },
+  "passes": true,
+  "overall_score": 4.0
+}

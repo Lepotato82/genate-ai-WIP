@@ -372,27 +372,6 @@ def run(input_package: InputPackage) -> BrandProfile:
     if settings.MOCK_MODE:
         return _mock_profile(pkg)
 
-    system = (
-        "You are UI Analyzer. Return ONLY JSON for BrandProfile fields: "
-        "design_category, primary_color, secondary_color, background_color, "
-        "font_family, font_weights, border_radius, spacing_unit, tone, "
-        "writing_instruction, confidence. Use one of categories: developer-tool, "
-        "minimal-saas, bold-enterprise, consumer-friendly, data-dense. "
-        "writing_instruction must name at least 3 specific brand signals by exact value "
-        "from the CSS tokens (e.g. 'Inter Variable at weight 510, near-black background "
-        "rgb(8,9,10), muted indigo accent #5e6ad2'). No placeholders or templates — "
-        "only values that actually appear in the token data."
-    )
-    user = (
-        f"URL: {pkg.url}\n"
-        f"CSS tokens: {pkg.css_tokens}\n"
-        "Analyze image + css and output JSON only."
-    )
-    raw = vision_completion(
-        [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        image_data=pkg.get_primary_image(),
-    )
-    data = _normalized_brand_data(parse_json_object(raw), pkg)
     spec = load_prompt("ui_analyzer_v1")
     system_prompt = spec.system_prompt
     summary = _tokens_summary(pkg.css_tokens)
@@ -402,8 +381,6 @@ def run(input_package: InputPackage) -> BrandProfile:
         {"role": "user", "content": user_content},
     ]
 
-    # Vision disabled for Ollama — token data sufficient for
-    # classification. Re-enable when using Claude Haiku or GPT-4o.
     raw = chat_completion(messages)
 
     data = _normalize_brand_dict(parse_json_object(raw), pkg)

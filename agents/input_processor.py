@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import re
+import urllib.request
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -15,6 +16,11 @@ from config import settings
 from schemas.input_package import InputPackage
 
 logger = logging.getLogger(__name__)
+
+
+def _word_count(text: str) -> int:
+    return len(text.split())
+
 
 _FRAMEWORK_PREFIXES = (
     "--mantine-",
@@ -81,26 +87,29 @@ _EXTRACT_CSS_TOKENS_JS = """
 }
 """
 
-# ---------------------------------------------------------------------------
-# Framework CSS token prefixes to strip (noise, not brand signals)
-# ---------------------------------------------------------------------------
-
-_FRAMEWORK_TOKEN_PREFIXES = (
-    "--mantine-",
-    "--chakra-",
-    "--radix-",
-    "--tw-",
-    "--rsuite-",
-    "--ant-",
-)
+_COOKIE_DISMISS_SELECTORS = [
+    "button[id*='accept']",
+    "button[id*='cookie']",
+    "[aria-label*='Accept']",
+    "[data-testid*='cookie-accept']",
+    "button:has-text('Accept')",
+    "button:has-text('Accept all')",
+    "button:has-text('I agree')",
+    "[id*='cookie'] button",
+]
 
 
 def _filter_css_tokens(tokens: dict) -> dict:
-    return {
-        k: v
-        for k, v in tokens.items()
-        if not any(k.startswith(p) for p in _FRAMEWORK_TOKEN_PREFIXES)
-    }
+    out: dict[str, str] = {}
+    for k, v in tokens.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            continue
+        if not v.strip():
+            continue
+        if any(k.startswith(p) for p in _FRAMEWORK_PREFIXES):
+            continue
+        out[k] = v
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -140,33 +149,40 @@ _MOCK_CSS_TOKENS: dict[str, str] = {
 }
 
 
-def _mock_input_package(
-    url: str,
-    run_id: str,
-    org_id: str | None,
-    user_image: bytes | None,
-    user_document: str | None,
-) -> InputPackage:
-    scraped_text = _MOCK_SCRAPED_TEXT
-    return InputPackage(
-        url=url,
-        run_id=run_id,
-        org_id=org_id,
-        scraped_text=scraped_text,
-        css_tokens=dict(_MOCK_CSS_TOKENS),
-        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,  # minimal PNG stub
-        og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
-        og_image_url="https://linear.app/og.png",
-        user_image=user_image,
-        user_document=user_document,
-        scrape_error=None,
-        scrape_word_count=len(scraped_text.split()),
-    )
-
-
 # ---------------------------------------------------------------------------
 # Real-mode helpers
 # ---------------------------------------------------------------------------
+
+def _playwright_proxy() -> dict[str, str] | None:
+    raw = (settings.BRIGHTDATA_PROXY_URL or "").strip()
+    if not raw:
+        return None
+    p = urlparse(raw)
+    if p.scheme not in ("http", "https"):
+        return None
+    return {"server": raw}
+
+
+def _og_image_url_from_html(html: str, base_url: str) -> str | None:
+    for pattern in (
+        r'property=["\']og:image["\']\s+content=["\']([^"\']+)["\']',
+        r'content=["\']([^"\']+)["\']\s+property=["\']og:image["\']',
+    ):
+        m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
+        if m:
+            link = m.group(1).strip()
+            if link.startswith("http://") or link.startswith("https://"):
+                return link
+            return urljoin(base_url.rstrip("/") + "/", link.lstrip("/"))
+    return None
+
+
+def _fetch_og_image(url: str | None) -> tuple[bytes | None, str | None]:
+    if not url:
+        return None, None
+    data = _download_image(url)
+    return data, url
+
 
 def _download_image(url: str, timeout: int = 10) -> bytes | None:
     """Download an image URL and return raw bytes, or None on failure."""
@@ -176,7 +192,6 @@ def _download_image(url: str, timeout: int = 10) -> bytes | None:
     except Exception as exc:
         logger.debug("OG image download failed for %s: %s", url, exc)
         return None
-    return {"server": raw}
 
 
 def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
@@ -206,60 +221,50 @@ def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
                 proxy=proxy,
                 ignore_https_errors=True,
             )
-            page = await context.new_page()
+            page = context.new_page()
 
             try:
-                await page.goto(
+                page.goto(
                     url,
                     wait_until="networkidle",
-                    timeout=timeout_seconds * 1000,
+                    timeout=timeout_ms,
                 )
             except Exception:
-                # Fallback: domcontentloaded is more permissive
-                await page.goto(
+                page.goto(
                     url,
                     wait_until="domcontentloaded",
-                    timeout=timeout_seconds * 1000,
+                    timeout=timeout_ms,
                 )
 
-            # Dismiss cookie banners (best effort)
-            for selector in [
-                "button[id*='accept']",
-                "button[id*='cookie']",
-                "[aria-label*='Accept']",
-                "[data-testid*='cookie-accept']",
-                "button:has-text('Accept')",
-                "button:has-text('Accept all')",
-                "button:has-text('I agree')",
-                "[id*='cookie'] button",
-            ]:
+            for selector in _COOKIE_DISMISS_SELECTORS:
                 try:
                     btn = page.locator(selector).first
-                    if await btn.is_visible(timeout=500):
-                        await btn.click()
-                        await page.wait_for_timeout(300)
+                    if btn.is_visible(timeout=500):
+                        btn.click()
+                        page.wait_for_timeout(300)
                         break
                 except Exception:
                     pass
 
-            # Scroll to bottom to trigger lazy-loaded content (SPAs like Vercel, Linear)
             try:
-                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await page.wait_for_timeout(2000)
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(2000)
             except Exception:
                 pass
 
-            # Extract CSS tokens
             try:
-                css_tokens = await page.evaluate(_CSS_TOKEN_JS)
-                result["css_tokens"] = _filter_css_tokens(css_tokens or {})
+                raw_css = page.evaluate(_EXTRACT_CSS_TOKENS_JS)
+                css_tokens = _filter_css_tokens(raw_css or {})
             except Exception as exc:
                 logger.warning("CSS token extraction failed: %s", exc)
-                result["css_tokens"] = {}
 
-            # Full-page screenshot
             try:
-                result["screenshot_bytes"] = await page.screenshot(full_page=True)
+                scraped_text = page.inner_text("body")[:200_000]
+            except Exception:
+                scraped_text = ""
+
+            try:
+                screenshot_bytes = page.screenshot(full_page=True)
             except Exception as exc:
                 logger.warning("Screenshot failed: %s", exc)
 
@@ -315,34 +320,21 @@ def _mock_input_package(
     user_document: str | None = None,
     user_document_filename: str | None = None,
 ) -> InputPackage:
-    scraped = (
-        "Linear is a purpose-built issue tracking tool for planning and building "
-        "products. Streamline your workflow, collaborate across teams, and ship "
-        "faster with cycles, projects, and roadmaps. Modern software teams use "
-        "Linear to manage issues, track progress, and align engineering execution."
-    )
-    tokens = {
-        "--color-brand-bg": "#5e6ad2",
-        "--color-accent": "#7170ff",
-        "--foreground": "#111111",
-        "--background": "#ffffff",
-        "--border-radius-md": "6px",
-        "--spacing-unit": "4px",
-    }
+    scraped_text = _MOCK_SCRAPED_TEXT
     return InputPackage(
         url=url,
         run_id=run_id,
         org_id=org_id,
-        scraped_text=scraped,
-        css_tokens=tokens,
-        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
-        og_image_bytes=None,
-        og_image_url=None,
+        scraped_text=scraped_text,
+        css_tokens=dict(_MOCK_CSS_TOKENS),
+        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,
+        og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
+        og_image_url="https://linear.app/og.png",
         user_image=user_image,
         user_document=user_document,
         user_document_filename=user_document_filename,
         scrape_error=None,
-        scrape_word_count=_word_count(scraped),
+        scrape_word_count=_word_count(scraped_text),
     )
 
 
