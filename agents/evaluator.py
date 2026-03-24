@@ -33,11 +33,13 @@ def _extract_copy(content: FormattedContent) -> str:
     if content.linkedin_content:
         return content.linkedin_content.full_post
     if content.twitter_content:
-        return "\n\n".join(content.twitter_content.tweets)
+        tweets = content.twitter_content.tweets
+        total = len(tweets)
+        return "\n\n".join(f"Tweet {i + 1}/{total}: {t}" for i, t in enumerate(tweets))
     if content.instagram_content:
         return content.instagram_content.full_caption
     if content.blog_content:
-        return content.blog_content.body
+        return str(content.blog_content.get("body", ""))
     return ""
 
 
@@ -156,8 +158,10 @@ def run(
         )
 
     user_msg = (
+        "Read the copy below carefully before scoring. Apply calibration anchors "
+        "to what is actually written — do not score based on the strategy fields alone.\n\n"
         f"platform: {formatted_content.platform}\n\n"
-        f"copy:\n{copy_text}\n\n"
+        f"--- COPY TO EVALUATE ---\n{copy_text}\n--- END COPY ---\n\n"
         f"writing_instruction: {brand_profile.writing_instruction}\n\n"
         f"cta_intent: {strategy_brief.cta_intent}\n\n"
         f"primary_claim: {strategy_brief.primary_claim}\n\n"

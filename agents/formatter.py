@@ -258,30 +258,59 @@ def _twitter_postprocess_llm(
     )
 
 
-def _category_hashtag_tokens(category: str) -> list[str]:
-    base = category.replace("-", "").replace("_", "")
-    return [base[:24], "saas", "b2b", "startup", "software", "product", "growth"]
+_CATEGORY_IG_TAGS: dict[str, list[str]] = {
+    "developer-tool": ["#devtools", "#developers", "#engineering", "#buildinpublic", "#apis", "#techstartup"],
+    "project-management": ["#projectmanagement", "#productivity", "#agile", "#workflow", "#teamwork"],
+    "fintech-saas": ["#fintech", "#payments", "#b2bfinance", "#saasfinance", "#finops"],
+    "hr-people": ["#hrtech", "#peopleops", "#recruiting", "#talentmanagement", "#workplaceculture"],
+    "data-analytics": ["#dataanalytics", "#bi", "#datascience", "#insights", "#dashboards"],
+    "customer-success": ["#customersuccess", "#crm", "#customerexperience", "#b2bsaas", "#supportops"],
+    "marketing-content": ["#contentmarketing", "#saasmarketing", "#growthhacking", "#digitalmarketing", "#contentops"],
+    "security-compliance": ["#cybersecurity", "#compliance", "#infosec", "#securitytools", "#cloudsecurity"],
+    "vertical-saas": ["#verticalsaas", "#industrytech", "#specialistsoftware"],
+    "other": ["#saas", "#b2bsoftware", "#software", "#startup"],
+}
+
+_GENERIC_IG_PAD_TAGS = [
+    "#saas", "#b2b", "#startup", "#techstartup", "#productdesign", "#futureofwork",
+    "#worksmarter", "#productivityhacks", "#automation", "#digitaltools",
+    "#b2bmarketing", "#founders", "#startupgrowth", "#remoteteams", "#innovation",
+    "#softwaredevelopment", "#techleaders", "#modernwork", "#scaleyourbusiness",
+    "#workflowautomation",
+]
 
 
 def _instagram_pad_hashtags(
     hashtags: list[str],
     product_category: str,
     features: list,
+    messaging_angles: list[str] | None = None,
 ) -> list[str]:
     out = [_normalize_hashtag(h) for h in hashtags if h]
     seen = {h.lower() for h in out}
-    n = 1
-    for tok in _category_hashtag_tokens(product_category):
-        tag = _normalize_hashtag(tok if tok.startswith("#") else tok)
-        if not tag.startswith("#"):
-            tag = f"#{tag}"
-        if tag.lower() not in seen:
-            out.append(tag if tag.startswith("#") else f"#{tag}")
-            seen.add(tag.lower())
-        if len(out) >= 20:
+
+    # 1. Category-specific tags
+    for tag in _CATEGORY_IG_TAGS.get(product_category, _CATEGORY_IG_TAGS["other"]):
+        if len(out) >= 25:
             break
+        if tag.lower() not in seen:
+            out.append(tag)
+            seen.add(tag.lower())
+
+    # 2. Messaging angle slugs (derive real tags from strategy angles)
+    for angle in (messaging_angles or []):
+        if len(out) >= 25:
+            break
+        slug = re.sub(r"[^\w]+", "", angle.lower())[:22]
+        if len(slug) >= 3:
+            tag = f"#{slug}"
+            if tag.lower() not in seen:
+                out.append(tag)
+                seen.add(tag.lower())
+
+    # 3. Feature name slugs
     for feat in features:
-        if len(out) >= 20:
+        if len(out) >= 25:
             break
         name = getattr(feat, "name", str(feat))
         slug = re.sub(r"[^\w]+", "", name.lower())[:20]
@@ -291,12 +320,15 @@ def _instagram_pad_hashtags(
         if tag.lower() not in seen:
             out.append(tag)
             seen.add(tag.lower())
-    while len(out) < 20:
-        tag = f"#topic{n}"
-        if tag.lower() not in seen:
-            out.append(tag)
-            seen.add(tag.lower())
-        n += 1
+
+    # 4. Generic SaaS pad tags (no placeholder #topic{n})
+    for pad in _GENERIC_IG_PAD_TAGS:
+        if len(out) >= 20:
+            break
+        if pad.lower() not in seen:
+            out.append(pad)
+            seen.add(pad.lower())
+
     return out[:30]
 
 
@@ -310,9 +342,11 @@ def _instagram_postprocess(
     body = body.strip().rstrip("\n")
     pk = product_knowledge
     if pk is not None:
-        tags = _instagram_pad_hashtags(hashtags, pk.product_category, pk.features)
+        tags = _instagram_pad_hashtags(
+            hashtags, pk.product_category, pk.features, pk.messaging_angles
+        )
     else:
-        tags = _instagram_pad_hashtags(hashtags, "other", [])
+        tags = _instagram_pad_hashtags(hashtags, "other", [], None)
 
     full_caption = f"{preview_text}\n{body}\n\n\n\n\n{' '.join(tags)}"
     return InstagramContent(
@@ -572,9 +606,10 @@ def run(
         body = str(data.get("body", "")).strip()
         if not body:
             body = raw_copy
-        full_post = str(data.get("full_post", "")).strip()
-        if not full_post:
-            full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}"
+        # Strip inline hashtags from body — they belong at the end only
+        body = _HASHTAG_TOKEN.sub("", body).strip()
+        # Always rebuild full_post to prevent LLM from duplicating hashtags
+        full_post = f"{hook}\n\n{body}\n\n{' '.join(hashtags)}"
 
         return FormattedContent(
             run_id=run_id,

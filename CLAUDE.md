@@ -145,10 +145,17 @@ Mechanical formatting constraints for each platform live in `config/platform_rul
 ## Platform Coverage Status
 
 - linkedin carousel: ✅ working end-to-end
-- linkedin text_post, single_image: schema ready, Formatter not wired
-- twitter thread: schema ready, no run_twitter() function yet
-- instagram: schema ready, not wired
+- linkedin text_post, single_image: ✅ planner selects via signals; Formatter wired
+- twitter thread: ✅ run_twitter() wired; LLM formatter; post-parse char enforcement
+- instagram carousel/single_image: ✅ run_instagram() wired; LLM formatter; hashtag padding from product context
 - blog: schema ready, not wired
+
+## Formatter Behaviour Notes
+
+- **LinkedIn full_post**: always rebuilt from hook + stripped body + hashtags — the LLM `full_post` field is ignored to prevent hashtag duplication in the body.
+- **Instagram hashtags**: padded to 20-30 using category-specific tags → messaging_angle slugs → feature name slugs → generic SaaS pads. Never uses `#topic{n}` placeholders.
+- **Twitter tweets**: passed to evaluator as `Tweet 1/N: ...` numbered strings so the LLM can evaluate each tweet individually.
+- **Evaluator user_msg**: leads with "Read the copy below carefully before scoring" and wraps the copy in `--- COPY TO EVALUATE ---` delimiters to prevent the LLM from scoring the strategy fields instead of the copy.
 
 ## Key Patterns
 
