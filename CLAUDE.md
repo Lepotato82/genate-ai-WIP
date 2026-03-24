@@ -135,27 +135,45 @@ Mechanical formatting constraints for each platform live in `config/platform_rul
 ## Known Issues (Input Layer — Return to Later)
 
 - `--sx-` token prefix filter not fully applied on Linear (257 tokens vs expected ~30)
-- UI Analyzer defaults to `developer-tool` when LLM returns unrecognized category
-- `design_category` wrong on light-background sites (consumer-friendly misclassified)
 - `tagline` returns None consistently — verbatim extraction not working
 - `description` includes raw nav text on some sites
 - Lemon Health pain_points contaminated with engineering context from LLM training data
-- `font_family` returns `[object Object]` on some sites (JS object not parsed)
+
+## Known Issues — UI Analyzer
+
+These are known and accepted for now. Return to them after switching to Groq and validating real-mode output quality.
+
+**design_category default bias**
+`_normalize_design_category()` in `agents/ui_analyzer.py` falls back to `"developer-tool"` when the LLM returns an unrecognized value. Light-background consumer sites (e.g. health apps, warm palette brands) get misclassified. Fix: infer from background color token before defaulting.
+
+**tone default bias**
+`_normalize_tone()` falls back to `"technical"` for unrecognized values. Consumer and warm-brand sites get `"technical"` instead of `"playful"` or `"minimal"`. Same sites affected as above.
+
+**writing_instruction is category-based not brand-specific**
+`_build_writing_instruction()` generates copy from design_category rather than actual token signals. Output is generic per category rather than specific to the brand (e.g. does not reference Inter Variable weight 510, indigo #5e6ad2, or Berkeley Mono by name). Fix: extract specific named token values and embed them.
+
+**font_family returns [object Object] on some sites**
+The Playwright JS evaluation returns a font-face object instead of a string on some sites. The extractor needs to handle this and stringify the value before storing in css_tokens.
+
+**Impact**: Low while running on mock input or weak models. Becomes important when switching to real input + Groq, because writing_instruction feeds directly into Copywriter system prompt.
+Priority: fix after first successful Groq real-mode run.
 
 ## Platform Coverage Status
 
-- linkedin carousel: ✅ working end-to-end
-- linkedin text_post, single_image: ✅ planner selects via signals; Formatter wired
-- twitter thread: ✅ run_twitter() wired; LLM formatter; post-parse char enforcement
-- instagram carousel/single_image: ✅ run_instagram() wired; LLM formatter; hashtag padding from product context
+- linkedin carousel: ✅ working
+- linkedin text_post: ✅ working (Planner selects based on signals)
+- linkedin single_image, poll: schema ready, not wired in Formatter
+- twitter thread: ✅ working — char counts computed by Python, hashtags enforced in final tweet only
+- instagram carousel: ✅ working — real hashtags from product category, no placeholder tags
+- instagram single_image: schema ready, not wired
 - blog: schema ready, not wired
 
 ## Formatter Behaviour Notes
 
-- **LinkedIn full_post**: always rebuilt from hook + stripped body + hashtags — the LLM `full_post` field is ignored to prevent hashtag duplication in the body.
-- **Instagram hashtags**: padded to 20-30 using category-specific tags → messaging_angle slugs → feature name slugs → generic SaaS pads. Never uses `#topic{n}` placeholders.
-- **Twitter tweets**: passed to evaluator as `Tweet 1/N: ...` numbered strings so the LLM can evaluate each tweet individually.
-- **Evaluator user_msg**: leads with "Read the copy below carefully before scoring" and wraps the copy in `--- COPY TO EVALUATE ---` delimiters to prevent the LLM from scoring the strategy fields instead of the copy.
+- **LinkedIn**: hashtags stripped from LLM body, rebuilt at end only
+- **Instagram**: hashtags padded from `_CATEGORY_IG_TAGS` and `_GENERIC_IG_PAD_TAGS` when LLM returns fewer than 20
+- **Twitter**: `tweet_char_counts` always recomputed by Python, never trusted from LLM output
+- **Evaluator**: copy wrapped in `--- COPY TO EVALUATE ---` delimiters, tweets numbered (Tweet 1/N format) before scoring
 
 ## Key Patterns
 

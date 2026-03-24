@@ -211,7 +211,8 @@ def _parse_proof_points(items: list, source: str) -> list[ProofPoint]:
                 continue
             raw_type = str(item.get("proof_type") or "").strip()
             ptype = raw_type if raw_type in _VALID_PROOF_TYPES else _classify_proof_type(text)
-            src = str(item.get("source") or source).strip() or source
+            src_raw = str(item.get("source") or "").strip()
+            src = src_raw if src_raw in {"scraped_page", "user_document", "inferred"} else source
             out.append(ProofPoint(text=text[:120], proof_type=ptype, source=src))  # type: ignore[arg-type]
         elif isinstance(item, str):
             text = item.strip()

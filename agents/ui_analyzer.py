@@ -5,8 +5,11 @@ Step 2: UI Analyzer — LLM returns flat JSON; Python builds BrandProfile.
 from __future__ import annotations
 
 import json
+import logging
 
 from llm.client import chat_completion
+
+logger = logging.getLogger(__name__)
 from prompts.loader import load_prompt
 from config import settings
 from schemas.brand_profile import BrandProfile
@@ -383,7 +386,16 @@ def run(input_package: InputPackage) -> BrandProfile:
 
     raw = chat_completion(messages)
 
-    data = _normalize_brand_dict(parse_json_object(raw), pkg)
+    try:
+        parsed = parse_json_object(raw)
+    except ValueError:
+        # LLM returned completely unparseable output — derive brand profile from CSS tokens
+        logger.warning(
+            "UI Analyzer: LLM returned unparseable JSON; falling back to CSS-token heuristics"
+        )
+        parsed = {}
+
+    data = _normalize_brand_dict(parsed, pkg)
     return BrandProfile(
         run_id=pkg.run_id,
         org_id=pkg.org_id,

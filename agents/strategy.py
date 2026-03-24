@@ -197,6 +197,11 @@ def run(
     if len(first_sent) > 1:
         data["primary_claim"] = first_sent[0].strip()
 
+    # Null out differentiator if it's too short — validator requires >= 10 words when not null
+    diff = data.get("differentiator")
+    if diff is not None and len(str(diff).split()) < 10:
+        data["differentiator"] = None
+
     strategy_brief = StrategyBrief(
         run_id=content_brief.run_id,
         org_id=content_brief.org_id,

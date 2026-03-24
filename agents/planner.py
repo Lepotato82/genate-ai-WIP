@@ -436,9 +436,61 @@ def run(
             "best_time_window": "10:00-12:00 IST",
         }
 
-    data.setdefault("narrative_arc", "pain-agitate-solve-cta")
-    data.setdefault("content_pillar", "pain_and_problem")
-    data.setdefault("funnel_stage", "tofu")
+    _VALID_ARCS = frozenset({
+        "pain-agitate-solve-cta", "before-after-bridge-cta", "stat-hook-problem-solution-cta"
+    })
+    _ARC_MAP = {
+        "problem agitation solution": "pain-agitate-solve-cta",
+        "problem-agitation-solution": "pain-agitate-solve-cta",
+        "pas": "pain-agitate-solve-cta",
+        "before after bridge": "before-after-bridge-cta",
+        "before-after-bridge": "before-after-bridge-cta",
+        "stat hook": "stat-hook-problem-solution-cta",
+        "stat-hook": "stat-hook-problem-solution-cta",
+    }
+    arc_raw = data.get("narrative_arc")
+    if not isinstance(arc_raw, str) or arc_raw not in _VALID_ARCS:
+        arc_str = str(arc_raw or "").strip().lower()
+        data["narrative_arc"] = _ARC_MAP.get(arc_str, "pain-agitate-solve-cta")
+
+    _VALID_PILLARS = frozenset({
+        "pain_and_problem", "education_and_insight", "product_and_solution",
+        "social_proof", "founder_team_voice"
+    })
+    _PILLAR_MAP = {
+        "pain": "pain_and_problem",
+        "problem": "pain_and_problem",
+        "education": "education_and_insight",
+        "insight": "education_and_insight",
+        "product": "product_and_solution",
+        "solution": "product_and_solution",
+        "product differentiation": "product_and_solution",
+        "social": "social_proof",
+        "proof": "social_proof",
+        "founder": "founder_team_voice",
+        "team": "founder_team_voice",
+    }
+    pillar_raw = data.get("content_pillar")
+    if not isinstance(pillar_raw, str) or pillar_raw not in _VALID_PILLARS:
+        pillar_str = str(pillar_raw or "").strip().lower()
+        matched = next((v for k, v in _PILLAR_MAP.items() if k in pillar_str), None)
+        data["content_pillar"] = matched or "product_and_solution"
+
+    _VALID_STAGES = frozenset({"tofu", "mofu", "bofu"})
+    _STAGE_MAP = {
+        "awareness": "tofu",
+        "top": "tofu",
+        "consideration": "mofu",
+        "middle": "mofu",
+        "decision": "bofu",
+        "conversion": "bofu",
+        "bottom": "bofu",
+    }
+    stage_raw = data.get("funnel_stage")
+    if not isinstance(stage_raw, str) or stage_raw not in _VALID_STAGES:
+        stage_str = str(stage_raw or "").strip().lower()
+        matched_stage = next((v for k, v in _STAGE_MAP.items() if k in stage_str), None)
+        data["funnel_stage"] = matched_stage or "tofu"
 
     return ContentBrief(
         run_id=product_knowledge.run_id,

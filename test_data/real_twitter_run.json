@@ -1,0 +1,272 @@
+{
+  "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+  "url": "https://searchable.com",
+  "brand_profile": {
+    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "org_id": null,
+    "created_at": "2026-03-24T07:27:20.292621+00:00",
+    "design_category": "data-dense",
+    "primary_color": "#1a0f13",
+    "secondary_color": null,
+    "background_color": "rgb(253, 251, 249)",
+    "font_family": "Geist",
+    "font_weights": [
+      500.0
+    ],
+    "border_radius": ".625rem",
+    "spacing_unit": "4px",
+    "tone": "technical",
+    "writing_instruction": "This brand observes strong contrast between dark and light colors (e.g. #1a0f13) to convey technical information, consistent font sizes for headings (e.g. H1: 48px), and detailed typography (e.g. monospace font). Match the tone with formal language, precise definitions, and concise explanations to match this brand's voice, emphasizing data-driven insights and technical capabilities.",
+    "css_tokens": {
+      "--radius": ".625rem",
+      "--background": "oklch(98.4% .006 85.5)",
+      "--foreground": "#1a0f13",
+      "--card": "oklch(98.4% .006 85.5)",
+      "--card-foreground": "#1a0f13",
+      "--popover": "oklch(98.4% .006 85.5)",
+      "--popover-foreground": "#1a0f13",
+      "--primary": "#c15f3c",
+      "--primary-foreground": "oklch(99% .005 85)",
+      "--secondary": "oklch(96% .008 85)",
+      "--secondary-foreground": "#1a0f13",
+      "--muted": "oklch(95% .006 85)",
+      "--muted-foreground": "#65454e",
+      "--accent": "oklch(96% .008 85)",
+      "--accent-foreground": "#1a0f13",
+      "--destructive": "oklch(57.7% .245 27.325)",
+      "--destructive-foreground": "oklch(98.4% .006 85.5)",
+      "--border": "oklch(91% .006 85)",
+      "--input": "oklch(91% .006 85)",
+      "--ring": "#c15f3c",
+      "--chart-1": "#c15f3c",
+      "--chart-2": "#da8c79",
+      "--chart-3": "#a64e2a",
+      "--chart-4": "#e3a99b",
+      "--chart-5": "#8a3e21",
+      "--sidebar": "#f9f4f1",
+      "--sidebar-foreground": "#2e1c22",
+      "--sidebar-primary": "#c15f3c",
+      "--sidebar-primary-foreground": "#fff",
+      "--sidebar-accent": "#ddd0c8",
+      "--sidebar-accent-foreground": "#2e1c22",
+      "--sidebar-border": "#f0e4db",
+      "--sidebar-ring": "#c15f3c",
+      "--font-geist-sans": "\"Geist Sans\",sans-serif",
+      "--font-geist-mono": "\"Geist Mono\",monospace",
+      "--_font-family-h1": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-h1": "500",
+      "--_font-size-h1": "48px",
+      "--_color-h1": "rgb(26, 15, 19)",
+      "--_font-family-h2": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-h2": "400",
+      "--_font-size-h2": "16px",
+      "--_color-h2": "rgb(26, 15, 19)",
+      "--_font-family-h3": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-h3": "600",
+      "--_font-size-h3": "24px",
+      "--_color-h3": "rgb(46, 28, 34)",
+      "--_font-family-p": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-p": "400",
+      "--_font-size-p": "14px",
+      "--_color-p": "oklab(0.999994 0.0000455678 0.0000200868 / 0.9)",
+      "--_font-family-a": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-a": "600",
+      "--_font-size-a": "14px",
+      "--_color-a": "rgb(255, 255, 255)",
+      "--_font-family-button": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-button": "500",
+      "--_font-size-button": "16px",
+      "--_color-button": "rgb(101, 69, 78)",
+      "--_bg-body": "rgb(253, 251, 249)",
+      "--_btn-bg-0": "rgb(249, 244, 241)",
+      "--_btn-color-0": "rgb(46, 28, 34)",
+      "--_btn-bg-1": "rgb(255, 255, 255)",
+      "--_btn-color-1": "rgb(46, 28, 34)",
+      "--_btn-bg-2": "rgb(255, 255, 255)",
+      "--_btn-color-2": "rgb(125, 97, 105)",
+      "--_btn-bg-3": "rgb(255, 255, 255)",
+      "--_btn-color-3": "rgb(125, 97, 105)",
+      "--_btn-bg-4": "rgb(255, 255, 255)",
+      "--_btn-color-4": "rgb(125, 97, 105)",
+      "--_btn-bg-5": "rgb(240, 228, 219)",
+      "--_btn-color-5": "rgb(158, 138, 144)",
+      "--_btn-bg-6": "rgb(193, 95, 60)",
+      "--_btn-color-6": "rgb(255, 255, 255)",
+      "--_btn-bg-7": "rgb(193, 95, 60)",
+      "--_btn-color-7": "rgb(255, 255, 255)",
+      "--_btn-bg-8": "rgb(59, 45, 34)",
+      "--_btn-color-8": "rgb(255, 255, 255)",
+      "--_btn-bg-9": "rgb(59, 45, 34)",
+      "--_btn-color-9": "rgb(255, 255, 255)"
+    },
+    "confidence": 0.9
+  },
+  "product_knowledge": {
+    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "org_id": null,
+    "created_at": "2026-03-24T07:27:31.417490+00:00",
+    "product_name": "Searchable",
+    "product_url": "https://searchable.com",
+    "tagline": "Built by experts, trusted by 12,000+ users",
+    "description": "Searchable is a SaaS product described on the source page. It helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation. Source summary: Free webinar \u00b7 Wed 25 March \u00b7 Learn which prompts to target for AI search Register free Product Resources Pricing Careers English Espa\u00f1ol Fran\u00e7ais Deutsch Portugu\u00eas \u65e5\u672c\u8a9e Login Start for free Searchable is an AI search optimization platform that helps brands track visibility and analytics",
+    "product_category": "fintech-saas",
+    "features": [
+      {
+        "name": "AI Visibility Tracking",
+        "description": "Monitor brand mentions and rankings across ChatGPT, Claude, Perplexity, Google AI, Copilot, and more"
+      },
+      {
+        "name": "Content Optimization",
+        "description": "AI-powered content creation and optimization tools to improve AEO score"
+      },
+      {
+        "name": "Technical Audits",
+        "description": "Comprehensive site analysis to identify and fix issues affecting AI engine understanding"
+      },
+      {
+        "name": "Competitive Analysis",
+        "description": "Track share of voice compared to competitors across AI engines"
+      }
+    ],
+    "benefits": [
+      "Increase product discovery through AI shopping assistants",
+      "Improve visibility when prospects research solutions via AI",
+      "Ensure content is cited and linked by AI engines"
+    ],
+    "proof_points": [
+      {
+        "text": "206% share of voice improvements",
+        "proof_type": "stat",
+        "source": "scraped_page"
+      },
+      {
+        "text": "\u00a31 million in qualified pipeline generated",
+        "proof_type": "stat",
+        "source": "scraped_page"
+      }
+    ],
+    "pain_points": [
+      "Spending hours analyzing AI visibility gaps",
+      "Lack of actionable insights to improve AI search rankings"
+    ],
+    "messaging_angles": [
+      "Unlock the full potential of AI search optimization",
+      "Take control of your brand's visibility across multiple AI engines"
+    ],
+    "target_customer": "e-commerce brands, B2B software companies, content publishers, local businesses, agencies",
+    "integrations": [
+      "Google Analytics",
+      "Google Search Console",
+      "HubSpot",
+      "Salesforce"
+    ],
+    "pricing_mentioned": true,
+    "pricing_description": null,
+    "scrape_word_count": 1529,
+    "user_document_filename": null,
+    "data_source": "scraped_only"
+  },
+  "content_brief": {
+    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "org_id": null,
+    "created_at": "2026-03-24T07:27:36.148627+00:00",
+    "platform": "twitter",
+    "content_type": "thread",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "content_pillar": "product_and_solution",
+    "funnel_stage": "mofu",
+    "posting_strategy": {
+      "recommended_frequency": "3x weekly",
+      "best_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "best_time_window": "10:00-12:00 IST"
+    },
+    "word_count_target": null,
+    "slide_count_target": null,
+    "thread_length_target": 6,
+    "platform_rules_summary": [
+      "Thread of 4-8 tweets (4-8)",
+      "Each tweet max 280 chars",
+      "Hashtags (1-2): final tweet only"
+    ],
+    "seo_keyword": null,
+    "knowledge_context_used": false,
+    "knowledge_context_summary": null,
+    "benchmark_reference": "Gartner Report: AI Search Optimization Trends",
+    "reasoning": "With our Searchable product, you can unlock the full potential of AI search optimization and take control of your brand's visibility across multiple AI engines. Our proof points show that 2 out of 4 features have driven significant improvements in user experience, while our technical tone resonates with customers looking for actionable insights."
+  },
+  "strategy_brief": {
+    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "org_id": null,
+    "created_at": "2026-03-24T07:27:41.723709+00:00",
+    "lead_pain_point": "Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings",
+    "primary_claim": "Searchable is a SaaS product that helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation",
+    "proof_point": "206% share of voice improvements",
+    "proof_point_type": "stat",
+    "cta_intent": "start_trial",
+    "appeal_type": "rational",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "target_icp_role": "AI Search Optimization Specialist",
+    "differentiator": "Unlock hidden AI visibility gaps and optimize search rankings with data-driven insights",
+    "hook_direction": "Discover how Searchable can transform your team's workflow efficiency",
+    "positioning_mode": "category_challenging",
+    "messaging_angle_used": "Unlock the full potential of AI search optimization",
+    "knowledge_context_applied": false
+  },
+  "formatted_content": {
+    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "org_id": null,
+    "created_at": "2026-03-24T07:27:54.662585+00:00",
+    "platform": "twitter",
+    "linkedin_content": null,
+    "twitter_content": {
+      "tweets": [
+        "Did you spend 3+ hours each week analyzing AI visibility gaps & lack of actionable insights? Discover how Searchable can transform your team's workflow efficiency",
+        "The current state: endless sprints, operational pain points, and unclear workflows. It's estimated that 63% of failed payments are recoverable with optimized timing \u2013 is your team leaving money on the table?",
+        "But what if you could improve execution speed by up to 40% & reduce operational friction by 20%? Searchable provides the actionable insights you need to drive real change. With our platform, you can unlock hidden AI visibility gaps and optimize search rankings with data-driven",
+        "Unlock hidden AI visibility gaps and optimize search rankings with data-driven insights. Start your trial today and discover how Searchable can transform your team's workflow efficiency! #Searchable #WorkflowEfficiency"
+      ],
+      "tweet_char_counts": [
+        162,
+        207,
+        277,
+        218
+      ],
+      "hashtags": [
+        "#Searchable",
+        "#WorkflowEfficiency"
+      ]
+    },
+    "instagram_content": null,
+    "blog_content": null,
+    "image_prompt": null,
+    "suggested_format": null,
+    "video_script": null,
+    "video_hook": null,
+    "retry_count": 0,
+    "revision_hint_applied": null,
+    "approved": false,
+    "approved_at": null,
+    "user_edited_copy": null
+  },
+  "evaluation": {
+    "run_id": "ee19eb7d-ba65-4b59-8037-f8d847e7bedc",
+    "org_id": null,
+    "created_at": "2026-03-24T07:28:02.662061+00:00",
+    "platform": "twitter",
+    "clarity": 3,
+    "engagement": 3,
+    "tone_match": 3,
+    "accuracy": 3,
+    "overall_score": 3.0,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "Copy scored highest on clarity (3/5) and lowest on clarity (3/5). Scores derived from markdown evaluation response.",
+    "retry_count": 0
+  },
+  "passes": true,
+  "overall_score": 3.0
+}
