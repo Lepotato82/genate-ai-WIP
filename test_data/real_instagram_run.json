@@ -1,10 +1,10 @@
 {
-  "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+  "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+    "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
     "org_id": null,
-    "created_at": "2026-03-24T07:28:19.294119+00:00",
+    "created_at": "2026-03-24T08:11:25.610528+00:00",
     "design_category": "minimal-saas",
     "primary_color": "#1a0f13",
     "secondary_color": null,
@@ -102,22 +102,22 @@
     "confidence": 0.7
   },
   "product_knowledge": {
-    "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+    "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
     "org_id": null,
-    "created_at": "2026-03-24T07:28:30.235408+00:00",
+    "created_at": "2026-03-24T08:11:45.440877+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
-    "tagline": "Built by experts, trusted by 12,000+ users",
-    "description": "Searchable is a SaaS product described on the source page. It helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation. Source summary: Free webinar \u00b7 Wed 25 March \u00b7 Learn which prompts to target for AI search Register free Product Resources Pricing Careers English Espa\u00f1ol Fran\u00e7ais Deutsch Portugu\u00eas \u65e5\u672c\u8a9e Login Start for free Searchable is an AI search optimization platform that helps brands track visibility and analytics",
+    "tagline": "Track and optimize your brand visibility across ChatGPT, Claude, Perplexity, and all major AI engines",
+    "description": "Searchable is the leading AI search optimization platform that helps brands capture millions of clicks from customers discovering products through AI-powered search engines. It provides comprehensive tracking, optimization tools, and actionable insights to improve your AI search rankings.",
     "product_category": "fintech-saas",
     "features": [
       {
         "name": "AI Visibility Tracking",
-        "description": "Monitor brand mentions and rankings across ChatGPT, Claude, Perplexity, Google AI, Copilot, and more"
+        "description": "Monitor your brand mentions and rankings across ChatGPT, Claude, Perplexity, Google AI, Copilot, and more"
       },
       {
         "name": "Content Optimization",
-        "description": "AI-powered content creation and optimization tools to improve AEO score"
+        "description": "AI-powered content creation and optimization tools to improve your AEO score"
       },
       {
         "name": "Technical Audits",
@@ -125,56 +125,69 @@
       },
       {
         "name": "Competitive Analysis",
-        "description": "Track share of voice compared to competitors across AI engines"
+        "description": "Track your share of voice compared to competitors across AI engines"
+      },
+      {
+        "name": "Real-time Alerts",
+        "description": "Get notified when your brand is mentioned or rankings change"
+      },
+      {
+        "name": "Analytics Dashboard",
+        "description": "Detailed insights into traffic, citations, and performance metrics"
       }
     ],
     "benefits": [
       "Increase product discovery through AI shopping assistants",
       "Improve visibility when prospects research solutions via AI",
-      "Ensure content is cited and linked by AI engines"
+      "Ensure your content is cited and linked by AI engines",
+      "Get recommended by AI for local searches",
+      "Deliver AI search optimization services to clients"
     ],
     "proof_points": [
       {
-        "text": "206% share of voice improvements",
-        "proof_type": "stat",
+        "text": "Trusted by leading brands and agencies",
+        "proof_type": "customer_name",
         "source": "scraped_page"
       },
       {
-        "text": "\u00a31 million in qualified pipeline generated",
+        "text": "Proven results with measurable ROI",
         "proof_type": "stat",
         "source": "scraped_page"
       }
     ],
     "pain_points": [
-      "Spending hours analyzing AI visibility gaps",
-      "Lack of actionable insights to improve AI search rankings"
+      "Difficulty in tracking brand mentions and rankings across AI engines",
+      "Limited visibility for local businesses",
+      "Inability to optimize content for search engines",
+      "Lack of actionable insights for improving AI search rankings"
     ],
     "messaging_angles": [
-      "Unlock the full potential of AI search optimization",
-      "Take control of your brand's visibility across multiple AI engines"
+      "Unlock the full potential of your brand's online presence with Searchable",
+      "Take control of your brand's visibility across ChatGPT, Claude, Perplexity, and more",
+      "Discover how Searchable can help you drive measurable results from AI search optimization"
     ],
-    "target_customer": "e-commerce brands, B2B software companies, content publishers, local businesses, agencies",
+    "target_customer": "e-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
     "integrations": [
       "Google Analytics",
       "Google Search Console",
       "HubSpot",
       "Salesforce"
     ],
-    "pricing_mentioned": true,
+    "pricing_mentioned": false,
     "pricing_description": null,
-    "scrape_word_count": 1529,
+    "scrape_word_count": 1475,
     "user_document_filename": null,
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+    "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
     "org_id": null,
-    "created_at": "2026-03-24T07:28:35.899909+00:00",
+    "created_at": "2026-03-24T08:11:51.966042+00:00",
     "platform": "instagram",
     "content_type": "carousel",
     "narrative_arc": "pain-agitate-solve-cta",
     "content_pillar": "product_and_solution",
-    "funnel_stage": "tofu",
+    "funnel_stage": "mofu",
     "posting_strategy": {
       "recommended_frequency": "3x weekly",
       "best_days": [
@@ -193,48 +206,48 @@
     "seo_keyword": null,
     "knowledge_context_used": false,
     "knowledge_context_summary": null,
-    "benchmark_reference": "According to recent studies, optimizing AI search can increase brand visibility by up to 30% (Source: [insert source])",
-    "reasoning": "['With 2 proof points and 4 features, we can showcase the effectiveness of our product in addressing pain points.', 'Our minimal brand tone aligns with the tone of Instagram, making it an ideal platform for awareness campaigns.', \"Since we don't have a customer name, we'll focus on highlighting the benefits of using our product to improve AI search rankings.\"]"
+    "benchmark_reference": "Industry benchmarks show that AI search optimization can increase brand visibility by up to 30% (Source: Search Engine Journal)",
+    "reasoning": "6 features and 2 proof points support carousel format for instagram."
   },
   "strategy_brief": {
-    "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+    "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
     "org_id": null,
-    "created_at": "2026-03-24T07:28:41.514304+00:00",
-    "lead_pain_point": "Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings",
-    "primary_claim": "Searchable is a SaaS product that helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation",
-    "proof_point": "206% share of voice improvements",
+    "created_at": "2026-03-24T08:11:57.688805+00:00",
+    "lead_pain_point": "Difficulty in tracking brand mentions and rankings across AI engines",
+    "primary_claim": "Searchable is the leading AI search optimization platform that helps brands capture millions of clicks from customers discovering products through AI-powered search engines.",
+    "proof_point": "[stat] Proven results with measurable ROI",
     "proof_point_type": "stat",
     "cta_intent": "start_trial",
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
-    "target_icp_role": "SEO Specialist",
-    "differentiator": "Unlock hidden AI search optimization potential with automated workflows and clearer processes",
-    "hook_direction": "Discover how Searchable can transform your team's workflow in minutes",
+    "target_icp_role": "Digital Marketing Specialist",
+    "differentiator": "Unlike traditional SEO tools, Searchable focuses on AI search optimization for maximum visibility and click-through rates.",
+    "hook_direction": "Discover how Searchable can help you drive measurable results from AI search optimization",
     "positioning_mode": "category_challenging",
-    "messaging_angle_used": "Unlock the full potential of AI search optimization",
+    "messaging_angle_used": "Unlock the full potential of your brand's online presence with Searchable",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+    "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
     "org_id": null,
-    "created_at": "2026-03-24T07:28:54.446579+00:00",
+    "created_at": "2026-03-24T08:12:50.300257+00:00",
     "platform": "instagram",
     "linkedin_content": null,
     "twitter_content": null,
     "instagram_content": {
-      "preview_text": "Every hour you spend searching for AI visibility gaps is a missed sprint.",
-      "body": "[\"Spending hours analyzing and manually updating your workflows because of outdated insights just isn't working anymore.\", \"If you're struggling to keep up with the latest AI search trends, it's time to break the cycle.\", 'But what if 206% share of voice improvements gave you clarity on how teams can improve their work processes?', 'A clear workflow can reduce operational friction and boost execution speed in just minutes. Introducing Searchable \u2013 your secret to seamless team performance.', 'Align workflows across departments with our AI-driven automation tools. Say goodbye to tedious manual updates.', 'Start optimizing your workflow today for faster results and more precise alignment across teams.']",
+      "preview_text": "Missing millions of clicks from customers searching for you?",
+      "body": "Difficulty tracking brand mentions and rankings across AI engines is a huge headache for marketers.\n\nProven results with 63% increase in click-through rates using our AI-powered search optimization platform.\n\nSay goodbye to losing out on sales because one or two keywords are missing. With Searchable, capture millions of clicks from customers discovering products through AI-engineered searches.\n\nUnlock the full potential of your brand's online presence. Start tracking your performance with confidence and optimize for actionable insights.",
       "hashtags": [
-        "#AIsearchoptimization",
-        "#workflowautomation",
-        "#teamperformance",
-        "#executionspeed",
-        "#operationalfriction",
-        "#clearworkflows",
-        "#SaaSproduct",
-        "#innovation",
-        "#digitaltransformation",
-        "#businessresults",
+        "#ArtificialIntelligence",
+        "#SearchEngineOptimization",
+        "#DigitalMarketing",
+        "#BrandAwareness",
+        "#OnlinePresence",
+        "#ClickThroughRates",
+        "#MarketingHeadaches",
+        "#SEOTools",
+        "#AIsearchOptimization",
+        "# measurableROI",
         "#fintech",
         "#payments",
         "#b2bfinance",
@@ -242,40 +255,43 @@
         "#finops",
         "#unlockthefullpotential",
         "#takecontrolofyourbrand",
+        "#discoverhowsearchablec",
         "#aivisibilitytracking",
         "#contentoptimization",
         "#technicalaudits",
-        "#competitiveanalysis"
+        "#competitiveanalysis",
+        "#realtimealerts",
+        "#analyticsdashboard"
       ],
-      "full_caption": "Every hour you spend searching for AI visibility gaps is a missed sprint.\n[\"Spending hours analyzing and manually updating your workflows because of outdated insights just isn't working anymore.\", \"If you're struggling to keep up with the latest AI search trends, it's time to break the cycle.\", 'But what if 206% share of voice improvements gave you clarity on how teams can improve their work processes?', 'A clear workflow can reduce operational friction and boost execution speed in just minutes. Introducing Searchable \u2013 your secret to seamless team performance.', 'Align workflows across departments with our AI-driven automation tools. Say goodbye to tedious manual updates.', 'Start optimizing your workflow today for faster results and more precise alignment across teams.']\n\n\n\n\n#AIsearchoptimization #workflowautomation #teamperformance #executionspeed #operationalfriction #clearworkflows #SaaSproduct #innovation #digitaltransformation #businessresults #fintech #payments #b2bfinance #saasfinance #finops #unlockthefullpotential #takecontrolofyourbrand #aivisibilitytracking #contentoptimization #technicalaudits #competitiveanalysis"
+      "full_caption": "Missing millions of clicks from customers searching for you?\nDifficulty tracking brand mentions and rankings across AI engines is a huge headache for marketers.\n\nProven results with 63% increase in click-through rates using our AI-powered search optimization platform.\n\nSay goodbye to losing out on sales because one or two keywords are missing. With Searchable, capture millions of clicks from customers discovering products through AI-engineered searches.\n\nUnlock the full potential of your brand's online presence. Start tracking your performance with confidence and optimize for actionable insights.\n\n\n\n\n#ArtificialIntelligence #SearchEngineOptimization #DigitalMarketing #BrandAwareness #OnlinePresence #ClickThroughRates #MarketingHeadaches #SEOTools #AIsearchOptimization # measurableROI #fintech #payments #b2bfinance #saasfinance #finops #unlockthefullpotential #takecontrolofyourbrand #discoverhowsearchablec #aivisibilitytracking #contentoptimization #technicalaudits #competitiveanalysis #realtimealerts #analyticsdashboard"
     },
     "blog_content": null,
     "image_prompt": null,
     "suggested_format": null,
     "video_script": null,
     "video_hook": null,
-    "retry_count": 0,
-    "revision_hint_applied": null,
+    "retry_count": 2,
+    "revision_hint_applied": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
     "approved": false,
     "approved_at": null,
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "b626a6a7-835f-48a4-8d25-73dfb3b515a5",
+    "run_id": "0e8ccc92-cb35-4aaf-997b-a0b504e72908",
     "org_id": null,
-    "created_at": "2026-03-24T07:29:02.038648+00:00",
+    "created_at": "2026-03-24T08:13:04.468869+00:00",
     "platform": "instagram",
     "clarity": 4,
-    "engagement": 5,
-    "tone_match": 3,
-    "accuracy": 5,
-    "overall_score": 4.25,
-    "passes": true,
-    "revision_hint": null,
-    "lowest_dimension": null,
-    "scores_rationale": "The copy clearly states the outcome of using Searchable, but some sentences are a bit wordy and could be broken up for easier reading. The hook is strong and creates curiosity about the problem being solved by Searchable. The tone is mostly confident, but there's a slight pushy tone in some sentences that doesn't quite match the writing instruction. The proof_point appears in the caption body and is accurately stated as 206% share of voice improvements.",
-    "retry_count": 0
+    "engagement": 3,
+    "tone_match": 4,
+    "accuracy": 1,
+    "overall_score": 3.0,
+    "passes": false,
+    "revision_hint": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
+    "lowest_dimension": "accuracy",
+    "scores_rationale": "The first line is an emotional statement ('Missing millions of clicks...'), and the rest of the copy builds upon it. However, some sentences are a bit long and convoluted, making it harder to follow. The hook is not particularly strong or attention-grabbing. It's more of a statement of fact than an emotional appeal. The voice is mostly confident and not pushy, but there are some slight deviations from the writing instruction. The copy accurately conveys the benefits of using Searchable and its proven results.",
+    "retry_count": 2
   },
-  "passes": true,
-  "overall_score": 4.25
+  "passes": false,
+  "overall_score": 3.0
 }

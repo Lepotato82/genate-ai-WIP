@@ -193,14 +193,26 @@ def _pad_tweets_to_four(
     return out[:8]
 
 
+def _clean_tweet(tweet: str) -> str:
+    """Strip parenthetical meta-instructions and leading tweet-number prefixes."""
+    tweet = re.sub(r"\([Ff]ormatter[^)]*\)", "", tweet)
+    tweet = re.sub(r"\([Nn]ote[^)]*\)", "", tweet)
+    tweet = re.sub(r"\([Tt]his[^)]*\)", "", tweet)
+    tweet = re.sub(r"\([Ss]plit[^)]*\)", "", tweet)
+    # Strip leading tweet number prefixes like "3 " or "3/ " but not "(3x)" inline
+    tweet = re.sub(r"^\d+[/\s]\s*", "", tweet.strip())
+    return tweet.strip()
+
+
 def _twitter_postprocess_llm(
     tweets: list[str],
     hashtags: list[str],
     raw_copy: str,
     strategy_brief: StrategyBrief | None = None,
 ) -> TwitterContent:
-    # Normalize tweet strings
-    tw = [str(t).strip() for t in tweets if str(t).strip()]
+    # Normalize tweet strings and strip meta-annotations
+    tw = [_clean_tweet(str(t)) for t in tweets if str(t).strip()]
+    tw = [t for t in tw if t]
     tw = _pad_tweets_to_four(tw, raw_copy, strategy_brief)
     if len(tw) > 8:
         tw = tw[:8]
@@ -332,13 +344,38 @@ def _instagram_pad_hashtags(
     return out[:30]
 
 
+def _truncate_to_sentence(text: str, max_chars: int = 125) -> str:
+    """Truncate text to max_chars at a sentence boundary.
+
+    Priority:
+      1. Text already <= max_chars: return as-is.
+      2. Last sentence-ending punctuation (. ! ?) within max_chars: cut there.
+      3. Allow up to 150 chars to find a boundary — better slightly long than a fragment.
+      4. Last word boundary within max_chars — no mid-word cuts.
+    """
+    if len(text) <= max_chars:
+        return text
+    window = text[:max_chars]
+    for i in reversed(range(len(window))):
+        if window[i] in ".!?":
+            return window[: i + 1].strip()
+    extended = text[:150]
+    for i in reversed(range(len(extended))):
+        if extended[i] in ".!?":
+            return extended[: i + 1].strip()
+    last_space = window.rfind(" ")
+    if last_space > 0:
+        return window[:last_space].strip()
+    return window.strip()
+
+
 def _instagram_postprocess(
     preview_text: str,
     body: str,
     hashtags: list[str],
     product_knowledge: ProductKnowledge | None,
 ) -> InstagramContent:
-    preview_text = _truncate_at_word_boundary(preview_text.strip(), 125)
+    preview_text = _truncate_to_sentence(preview_text.strip())
     body = body.strip().rstrip("\n")
     pk = product_knowledge
     if pk is not None:
@@ -433,10 +470,10 @@ def _mock_instagram(
         )
     lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
     if lines:
-        preview = _truncate_at_word_boundary(lines[0], 125)
+        preview = _truncate_to_sentence(lines[0])
         body = "\n\n".join(lines[1:]).strip()
     else:
-        preview = _truncate_at_word_boundary(raw, 125)
+        preview = _truncate_to_sentence(raw)
         body = ""
     if not body:
         body = (
@@ -691,16 +728,21 @@ def run(
             data = parse_json_object(raw_response)
         except ValueError:
             logger.warning("Formatter Instagram: non-JSON; mechanical split")
-            preview = _truncate_at_word_boundary(raw_copy.strip(), 125)
+            preview = _truncate_to_sentence(raw_copy.strip())
             body = raw_copy.strip()[len(preview) :].strip() or " "
             ic = _instagram_postprocess(preview, body, [], product_knowledge)
         else:
             ht = data.get("hashtags", [])
             if isinstance(ht, str):
                 ht = [ht]
+            body_raw = data.get("body")
+            if isinstance(body_raw, list):
+                body = "\n\n".join(str(s) for s in body_raw)
+            else:
+                body = str(body_raw or "")
             ic = _instagram_postprocess(
                 str(data.get("preview_text", "")),
-                str(data.get("body", "")),
+                body,
                 list(ht),
                 product_knowledge,
             )

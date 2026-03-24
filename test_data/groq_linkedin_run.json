@@ -1,0 +1,269 @@
+{
+  "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+  "url": "https://searchable.com",
+  "brand_profile": {
+    "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+    "org_id": null,
+    "created_at": "2026-03-24T13:27:06.008974+00:00",
+    "design_category": "minimal-saas",
+    "primary_color": "#1a0f13",
+    "secondary_color": "#65454e",
+    "background_color": "rgb(253, 251, 249)",
+    "font_family": "Geist",
+    "font_weights": [
+      400.0,
+      500.0,
+      600.0
+    ],
+    "border_radius": ".625rem",
+    "spacing_unit": "16px",
+    "tone": "minimal",
+    "writing_instruction": "When writing for this brand, use a minimalist tone and incorporate the Geist font family, with a focus on the primary color #1a0f13 and secondary color #65454e. The design category is minimal-saas, so keep the language clean and concise, avoiding clutter and emphasizing simplicity. Use font weights 400, 500, and 600 to create visual hierarchy and emphasize key points. The border radius is .625rem, so use rounded corners and subtle curves to create a sense of approachability. Overall, the tone should be professional and restrained, with a focus on showcasing the product's features and benefits in a clear and concise manner.",
+    "css_tokens": {
+      "--radius": ".625rem",
+      "--background": "oklch(98.4% .006 85.5)",
+      "--foreground": "#1a0f13",
+      "--card": "oklch(98.4% .006 85.5)",
+      "--card-foreground": "#1a0f13",
+      "--popover": "oklch(98.4% .006 85.5)",
+      "--popover-foreground": "#1a0f13",
+      "--primary": "#c15f3c",
+      "--primary-foreground": "oklch(99% .005 85)",
+      "--secondary": "oklch(96% .008 85)",
+      "--secondary-foreground": "#1a0f13",
+      "--muted": "oklch(95% .006 85)",
+      "--muted-foreground": "#65454e",
+      "--accent": "oklch(96% .008 85)",
+      "--accent-foreground": "#1a0f13",
+      "--destructive": "oklch(57.7% .245 27.325)",
+      "--destructive-foreground": "oklch(98.4% .006 85.5)",
+      "--border": "oklch(91% .006 85)",
+      "--input": "oklch(91% .006 85)",
+      "--ring": "#c15f3c",
+      "--chart-1": "#c15f3c",
+      "--chart-2": "#da8c79",
+      "--chart-3": "#a64e2a",
+      "--chart-4": "#e3a99b",
+      "--chart-5": "#8a3e21",
+      "--sidebar": "#f9f4f1",
+      "--sidebar-foreground": "#2e1c22",
+      "--sidebar-primary": "#c15f3c",
+      "--sidebar-primary-foreground": "#fff",
+      "--sidebar-accent": "#ddd0c8",
+      "--sidebar-accent-foreground": "#2e1c22",
+      "--sidebar-border": "#f0e4db",
+      "--sidebar-ring": "#c15f3c",
+      "--font-geist-sans": "\"Geist Sans\",sans-serif",
+      "--font-geist-mono": "\"Geist Mono\",monospace",
+      "--_font-family-h1": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-h1": "500",
+      "--_font-size-h1": "48px",
+      "--_color-h1": "rgb(26, 15, 19)",
+      "--_font-family-h2": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-h2": "400",
+      "--_font-size-h2": "16px",
+      "--_color-h2": "rgb(26, 15, 19)",
+      "--_font-family-h3": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-h3": "600",
+      "--_font-size-h3": "24px",
+      "--_color-h3": "rgb(46, 28, 34)",
+      "--_font-family-p": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-p": "400",
+      "--_font-size-p": "14px",
+      "--_color-p": "oklab(0.999994 0.0000455678 0.0000200868 / 0.9)",
+      "--_font-family-a": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-a": "600",
+      "--_font-size-a": "14px",
+      "--_color-a": "rgb(255, 255, 255)",
+      "--_font-family-button": "Geist, \"Geist Fallback\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--_font-weight-button": "500",
+      "--_font-size-button": "16px",
+      "--_color-button": "rgb(101, 69, 78)",
+      "--_bg-body": "rgb(253, 251, 249)",
+      "--_btn-bg-0": "rgb(249, 244, 241)",
+      "--_btn-color-0": "rgb(46, 28, 34)",
+      "--_btn-bg-1": "rgb(255, 255, 255)",
+      "--_btn-color-1": "rgb(46, 28, 34)",
+      "--_btn-bg-2": "rgb(255, 255, 255)",
+      "--_btn-color-2": "rgb(125, 97, 105)",
+      "--_btn-bg-3": "rgb(255, 255, 255)",
+      "--_btn-color-3": "rgb(125, 97, 105)",
+      "--_btn-bg-4": "rgb(255, 255, 255)",
+      "--_btn-color-4": "rgb(125, 97, 105)",
+      "--_btn-bg-5": "rgb(240, 228, 219)",
+      "--_btn-color-5": "rgb(158, 138, 144)",
+      "--_btn-bg-6": "rgb(193, 95, 60)",
+      "--_btn-color-6": "rgb(255, 255, 255)",
+      "--_btn-bg-7": "rgb(193, 95, 60)",
+      "--_btn-color-7": "rgb(255, 255, 255)",
+      "--_btn-bg-8": "rgb(59, 45, 34)",
+      "--_btn-color-8": "rgb(255, 255, 255)",
+      "--_btn-bg-9": "rgb(59, 45, 34)",
+      "--_btn-color-9": "rgb(255, 255, 255)"
+    },
+    "confidence": 0.8
+  },
+  "product_knowledge": {
+    "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+    "org_id": null,
+    "created_at": "2026-03-24T13:27:07.751868+00:00",
+    "product_name": "Searchable",
+    "product_url": "https://searchable.com",
+    "tagline": "Visibility & Analytics from AI Search \u2014 and the actions to drive growth",
+    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable recommendations to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines.",
+    "product_category": "data-analytics",
+    "features": [
+      {
+        "name": "AI Visibility Tracking",
+        "description": "Monitor your brand mentions and rankings across ChatGPT, Claude, Perplexity, Google AI, Copilot, and more"
+      },
+      {
+        "name": "Content Optimization",
+        "description": "AI-powered content creation and optimization tools to improve your AEO score"
+      },
+      {
+        "name": "Technical Audits",
+        "description": "Comprehensive site analysis to identify and fix issues affecting AI engine understanding"
+      },
+      {
+        "name": "Competitive Analysis",
+        "description": "Track your share of voice compared to competitors across AI engines"
+      }
+    ],
+    "benefits": [
+      "Improve AI search rankings",
+      "Increase product discovery through AI shopping assistants",
+      "Get recommended by AI for local searches",
+      "Deliver AI search optimization services to clients"
+    ],
+    "proof_points": [
+      {
+        "text": "206% share of voice improvements",
+        "proof_type": "stat",
+        "source": "scraped_page"
+      },
+      {
+        "text": "Generated over \u00a31 million in qualified pipeline from AI search",
+        "proof_type": "stat",
+        "source": "scraped_page"
+      }
+    ],
+    "pain_points": [
+      "Difficulty in tracking brand visibility across AI engines",
+      "Limited understanding of how AI engines process websites",
+      "Inability to optimize content for AI search"
+    ],
+    "messaging_angles": [
+      "Take control of AI search"
+    ],
+    "target_customer": "E-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
+    "integrations": [
+      "Google Analytics",
+      "Google Search Console",
+      "HubSpot",
+      "Salesforce"
+    ],
+    "pricing_mentioned": false,
+    "pricing_description": null,
+    "scrape_word_count": 1529,
+    "user_document_filename": null,
+    "data_source": "scraped_only"
+  },
+  "content_brief": {
+    "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+    "org_id": null,
+    "created_at": "2026-03-24T13:27:09.041561+00:00",
+    "platform": "linkedin",
+    "content_type": "carousel",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "content_pillar": "education_and_insight",
+    "funnel_stage": "tofu",
+    "posting_strategy": {
+      "recommended_frequency": "3x weekly",
+      "best_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "best_time_window": "10:00-12:00 IST"
+    },
+    "word_count_target": null,
+    "slide_count_target": 8,
+    "thread_length_target": null,
+    "platform_rules_summary": [
+      "Hook must be standalone in first 180 characters",
+      "3-5 hashtags at end only, never inline",
+      "Short paragraphs with blank line between each"
+    ],
+    "seo_keyword": null,
+    "knowledge_context_used": false,
+    "knowledge_context_summary": null,
+    "benchmark_reference": "Based on LinkedIn content type rules and the provided signals, a carousel is the most effective way to educate the audience about the product's features and benefits.",
+    "reasoning": "With 3 pain points and 4 distinct features, a carousel is the best content type to showcase the product's capabilities. The minimal brand tone and presence of a strong stat also support this choice. Although the proof point count is 2, the feature count and pain point count outweigh this, making a carousel the most suitable option. The lack of a customer name does not hinder this choice, as the strong stat provides a sufficient visual anchor."
+  },
+  "strategy_brief": {
+    "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+    "org_id": null,
+    "created_at": "2026-03-24T13:27:09.940194+00:00",
+    "lead_pain_point": "Difficulty in tracking brand visibility and analytics across multiple AI engines and search platforms",
+    "primary_claim": "Optimize AI search with actionable insights",
+    "proof_point": "206% share of voice improvements",
+    "proof_point_type": "stat",
+    "cta_intent": "start_trial",
+    "appeal_type": "rational",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "target_icp_role": "Digital Marketing Manager",
+    "differentiator": "Unlike traditional SEO tools, Searchable is specifically designed for AI search optimization",
+    "hook_direction": "Start by identifying the pain points of tracking brand visibility across AI engines",
+    "positioning_mode": "category_creation",
+    "messaging_angle_used": "Take control of AI search",
+    "knowledge_context_applied": false
+  },
+  "formatted_content": {
+    "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+    "org_id": null,
+    "created_at": "2026-03-24T13:27:14.624290+00:00",
+    "platform": "linkedin",
+    "linkedin_content": {
+      "hook": "Tracking brand visibility across AI engines is a daunting task",
+      "body": "It's easy to get lost in a sea of data, making it difficult to gain meaningful insights. This challenge can lead to missed opportunities and a lack of understanding of your brand's online presence.\n\nThe complexity of tracking brand visibility can be overwhelming, resulting in hours spent sifting through multiple dashboards and reports. This not only wastes time but also takes away from more critical tasks, such as strategy and growth.\n\nIn today's digital landscape, having a clear understanding of your brand's visibility is crucial. It's the key to making informed decisions, driving growth, and staying ahead of the competition.\n\nThat's why we've developed a solution to help optimize AI search with actionable insights. Our platform provides a unified view of your brand's visibility across multiple AI engines and search platforms, giving you the clarity you need to make informed decisions.\n\nWith our platform, you can say goodbye to tedious data analysis and hello to a streamlined process. Our intuitive dashboard provides real-time insights, allowing you to track your brand's performance and make adjustments on the fly.\n\nBut don't just take our word for it - our platform has been proven to deliver results. With a 206% share of voice improvements, our users have seen significant gains in their brand's online presence.\n\nOur platform is designed with simplicity and ease of use in mind. We believe that you shouldn't need to be a data expert to gain meaningful insights, which is why we've created a user-friendly interface that makes it easy to get started.\n\nBy optimizing AI search with actionable insights, you can take your brand to the next level. You'll be able to make informed decisions, drive growth, and stay ahead of the competition. So why wait? Start your trial today and see the difference for yourself.\n\nTake the first step towards optimizing your AI search and start your trial now. With our platform, you'll be able to gain the insights you need to drive your brand forward and achieve your goals. Start your trial today and discover a smarter way to track your brand's visibility.",
+      "hashtags": [
+        "#AISearchOptimization",
+        "#BrandVisibility",
+        "#DigitalMarketing",
+        "#SearchEngineOptimization",
+        "#AI"
+      ],
+      "full_post": "Tracking brand visibility across AI engines is a daunting task\n\nIt's easy to get lost in a sea of data, making it difficult to gain meaningful insights. This challenge can lead to missed opportunities and a lack of understanding of your brand's online presence.\n\nThe complexity of tracking brand visibility can be overwhelming, resulting in hours spent sifting through multiple dashboards and reports. This not only wastes time but also takes away from more critical tasks, such as strategy and growth.\n\nIn today's digital landscape, having a clear understanding of your brand's visibility is crucial. It's the key to making informed decisions, driving growth, and staying ahead of the competition.\n\nThat's why we've developed a solution to help optimize AI search with actionable insights. Our platform provides a unified view of your brand's visibility across multiple AI engines and search platforms, giving you the clarity you need to make informed decisions.\n\nWith our platform, you can say goodbye to tedious data analysis and hello to a streamlined process. Our intuitive dashboard provides real-time insights, allowing you to track your brand's performance and make adjustments on the fly.\n\nBut don't just take our word for it - our platform has been proven to deliver results. With a 206% share of voice improvements, our users have seen significant gains in their brand's online presence.\n\nOur platform is designed with simplicity and ease of use in mind. We believe that you shouldn't need to be a data expert to gain meaningful insights, which is why we've created a user-friendly interface that makes it easy to get started.\n\nBy optimizing AI search with actionable insights, you can take your brand to the next level. You'll be able to make informed decisions, drive growth, and stay ahead of the competition. So why wait? Start your trial today and see the difference for yourself.\n\nTake the first step towards optimizing your AI search and start your trial now. With our platform, you'll be able to gain the insights you need to drive your brand forward and achieve your goals. Start your trial today and discover a smarter way to track your brand's visibility.\n\n#AISearchOptimization #BrandVisibility #DigitalMarketing #SearchEngineOptimization #AI"
+    },
+    "twitter_content": null,
+    "instagram_content": null,
+    "blog_content": null,
+    "image_prompt": null,
+    "suggested_format": null,
+    "video_script": null,
+    "video_hook": null,
+    "retry_count": 0,
+    "revision_hint_applied": null,
+    "approved": false,
+    "approved_at": null,
+    "user_edited_copy": null
+  },
+  "evaluation": {
+    "run_id": "b72b4f13-81c9-4561-a91e-aabb0ca61202",
+    "org_id": null,
+    "created_at": "2026-03-24T13:27:24.353191+00:00",
+    "platform": "linkedin",
+    "clarity": 4,
+    "engagement": 3,
+    "tone_match": 4,
+    "accuracy": 5,
+    "overall_score": 4.0,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "The copy is well-structured and easy to follow, with a clear explanation of the problem and the solution, but some sentences are a bit long and could be broken up for better flow. The hook is a clear statement of a problem, but it's a fairly generic opening and doesn't create a strong sense of urgency or curiosity. The tone is generally professional and restrained, with a focus on showcasing the product's features and benefits, but there are a few places where the language could be even more concise and minimalist. The copy accurately reflects the primary claim and uses the proof point of 206% share of voice improvements, which is a specific and credible statistic.",
+    "retry_count": 0
+  },
+  "passes": true,
+  "overall_score": 4.0
+}
