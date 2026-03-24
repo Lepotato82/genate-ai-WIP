@@ -418,15 +418,13 @@ def run(
     else:
         data.pop("thread_length_target", None)
 
-    reasoning = str(data.get("reasoning", "")).strip()
-    if len(reasoning) < 20:
+    reasoning_raw = data.get("reasoning", "")
+    reasoning = str(reasoning_raw).strip()
+    # LLM sometimes echoes the signals dict back instead of writing a sentence
+    if reasoning.startswith("{") or reasoning.startswith("[") or len(reasoning) < 20:
         reasoning = (
-            f"Chose {data.get('content_type')} using signals: "
-            f"feature_count={signals['feature_count']}, "
-            f"pain_point_count={signals['pain_point_count']}, "
-            f"has_strong_stat={signals['has_strong_stat']}, "
-            f"has_customer_name={signals['has_customer_name']}, "
-            f"brand_tone={signals['brand_tone']}."
+            f"{signals['feature_count']} features and {signals['proof_point_count']} proof points "
+            f"support {data.get('content_type')} format for {platform}."
         )
 
     if not data.get("posting_strategy"):

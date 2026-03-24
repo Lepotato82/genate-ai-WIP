@@ -171,9 +171,22 @@ Priority: fix after first successful Groq real-mode run.
 ## Formatter Behaviour Notes
 
 - **LinkedIn**: hashtags stripped from LLM body, rebuilt at end only
-- **Instagram**: hashtags padded from `_CATEGORY_IG_TAGS` and `_GENERIC_IG_PAD_TAGS` when LLM returns fewer than 20
+- **Instagram**: hashtags padded from `_CATEGORY_IG_TAGS` and `_GENERIC_IG_PAD_TAGS` when LLM returns fewer than 20; if LLM returns `body` as a list, it is joined with `"\n\n"` before building `InstagramContent` (weak models sometimes return a list of paragraph strings)
 - **Twitter**: `tweet_char_counts` always recomputed by Python, never trusted from LLM output
 - **Evaluator**: copy wrapped in `--- COPY TO EVALUATE ---` delimiters, tweets numbered (Tweet 1/N format) before scoring
+
+## Evaluator Calibration Rules (Python-enforced, not LLM-trusted)
+
+These rules are applied in Python after parsing the LLM's score output — the LLM cannot override them:
+
+- **Fabricated stat cap**: any numeric stat in copy (e.g. `63%`, `2x`) that is NOT present verbatim in `proof_point` or `primary_claim` → `accuracy = 1`. This catches hallucinated statistics from the model's training data (e.g. Chargebee dunning stats appearing in Searchable copy).
+- **Generic opener cap**: hooks starting with "Discover how", "Are you struggling", "Your daily friction is" → `engagement` capped at 3.
+- **passes and overall_score**: always computed by Pydantic validators, never set by the LLM.
+
+## Planner Behaviour Notes
+
+- **reasoning fallback**: if the LLM echoes the signals dict back as the `reasoning` field (starts with `{` or `[`), or if the string is < 20 chars, it is replaced with a generated sentence: `"{feature_count} features and {proof_point_count} proof points support {content_type} format for {platform}."`
+- **narrative_arc / content_pillar / funnel_stage**: normalized from human-readable LLM values to schema literals before building `ContentBrief`. Unrecognised values are mapped via keyword matching; unmatched values fall back to defaults.
 
 ## Key Patterns
 

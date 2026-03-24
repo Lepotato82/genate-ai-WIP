@@ -698,9 +698,14 @@ def run(
             ht = data.get("hashtags", [])
             if isinstance(ht, str):
                 ht = [ht]
+            body_raw = data.get("body")
+            if isinstance(body_raw, list):
+                body = "\n\n".join(str(s) for s in body_raw)
+            else:
+                body = str(body_raw or "")
             ic = _instagram_postprocess(
                 str(data.get("preview_text", "")),
-                str(data.get("body", "")),
+                body,
                 list(ht),
                 product_knowledge,
             )

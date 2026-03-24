@@ -122,6 +122,28 @@ def _apply_engagement_generic_cap(copy_text: str, engagement: int) -> int:
     return engagement
 
 
+def _apply_fabricated_stat_cap(
+    copy_text: str, proof_point: str, primary_claim: str, accuracy: int
+) -> int:
+    """Cap accuracy at 1 if copy contains a numeric stat not present in proof_point or primary_claim.
+
+    A numeric stat is any token matching digits with optional % or x suffix (e.g. 63%, 2x, 40%).
+    Stats that appear verbatim in proof_point or primary_claim are allowed.
+    """
+    allowed_text = (proof_point + " " + primary_claim).lower()
+    allowed_stats = set(re.findall(r"\d+(?:\.\d+)?(?:%|x\b)", allowed_text))
+    copy_stats = set(re.findall(r"\d+(?:\.\d+)?(?:%|x\b)", copy_text.lower()))
+    fabricated = copy_stats - allowed_stats
+    if fabricated:
+        logger.warning(
+            "Evaluator: fabricated stats detected not in proof_point/primary_claim: %s — "
+            "capping accuracy at 1",
+            fabricated,
+        )
+        return 1
+    return accuracy
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
@@ -225,6 +247,9 @@ def run(
             data[dim] = 3  # safe fallback
 
     data["engagement"] = _apply_engagement_generic_cap(copy_text, data["engagement"])
+    data["accuracy"] = _apply_fabricated_stat_cap(
+        copy_text, strategy_brief.proof_point, strategy_brief.primary_claim, data["accuracy"]
+    )
 
     # Determine if copy passes (all scores >= 3)
     will_pass = all(data.get(d, 3) >= 3 for d in ("clarity", "engagement", "tone_match", "accuracy"))
