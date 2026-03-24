@@ -1,32 +1,39 @@
 """
-agents/input_processor.py
-Genate — Input Processor agent (Step 1)
-
-Renders the target URL in a real browser, extracts CSS tokens via
-getComputedStyle(), captures a full-page screenshot, downloads the OG
-image, and packages everything into an InputPackage.
-
-NEVER raises on scrape failure — returns a partial InputPackage with
-scrape_error populated so the pipeline can continue with user-provided
-data only.
+Step 1: Input Processor — Playwright scrape, CSS tokens, screenshots. No LLM.
 """
 
-import asyncio
+from __future__ import annotations
+
 import logging
-import os
 import re
 import urllib.request
+from urllib.parse import urljoin, urlparse
+
+import httpx
+from playwright.sync_api import sync_playwright
 
 from config import settings
 from schemas.input_package import InputPackage
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# JavaScript injected into the rendered page to extract CSS design tokens
-# ---------------------------------------------------------------------------
 
-_CSS_TOKEN_JS = """
+def _word_count(text: str) -> int:
+    return len(text.split())
+
+
+_FRAMEWORK_PREFIXES = (
+    "--mantine-",
+    "--osano-",
+    "--chakra-",
+    "--radix-",
+    "--tw-",
+    "--rsuite-",
+    "--ant-",
+    "--sx-",
+)
+
+_EXTRACT_CSS_TOKENS_JS = """
 () => {
     const tokens = {};
     // 1. Read CSS custom properties from :root computed style
@@ -80,26 +87,29 @@ _CSS_TOKEN_JS = """
 }
 """
 
-# ---------------------------------------------------------------------------
-# Framework CSS token prefixes to strip (noise, not brand signals)
-# ---------------------------------------------------------------------------
-
-_FRAMEWORK_TOKEN_PREFIXES = (
-    "--mantine-",
-    "--chakra-",
-    "--radix-",
-    "--tw-",
-    "--rsuite-",
-    "--ant-",
-)
+_COOKIE_DISMISS_SELECTORS = [
+    "button[id*='accept']",
+    "button[id*='cookie']",
+    "[aria-label*='Accept']",
+    "[data-testid*='cookie-accept']",
+    "button:has-text('Accept')",
+    "button:has-text('Accept all')",
+    "button:has-text('I agree')",
+    "[id*='cookie'] button",
+]
 
 
 def _filter_css_tokens(tokens: dict) -> dict:
-    return {
-        k: v
-        for k, v in tokens.items()
-        if not any(k.startswith(p) for p in _FRAMEWORK_TOKEN_PREFIXES)
-    }
+    out: dict[str, str] = {}
+    for k, v in tokens.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            continue
+        if not v.strip():
+            continue
+        if any(k.startswith(p) for p in _FRAMEWORK_PREFIXES):
+            continue
+        out[k] = v
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -139,33 +149,40 @@ _MOCK_CSS_TOKENS: dict[str, str] = {
 }
 
 
-def _mock_input_package(
-    url: str,
-    run_id: str,
-    org_id: str | None,
-    user_image: bytes | None,
-    user_document: str | None,
-) -> InputPackage:
-    scraped_text = _MOCK_SCRAPED_TEXT
-    return InputPackage(
-        url=url,
-        run_id=run_id,
-        org_id=org_id,
-        scraped_text=scraped_text,
-        css_tokens=dict(_MOCK_CSS_TOKENS),
-        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,  # minimal PNG stub
-        og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
-        og_image_url="https://linear.app/og.png",
-        user_image=user_image,
-        user_document=user_document,
-        scrape_error=None,
-        scrape_word_count=len(scraped_text.split()),
-    )
-
-
 # ---------------------------------------------------------------------------
 # Real-mode helpers
 # ---------------------------------------------------------------------------
+
+def _playwright_proxy() -> dict[str, str] | None:
+    raw = (settings.BRIGHTDATA_PROXY_URL or "").strip()
+    if not raw:
+        return None
+    p = urlparse(raw)
+    if p.scheme not in ("http", "https"):
+        return None
+    return {"server": raw}
+
+
+def _og_image_url_from_html(html: str, base_url: str) -> str | None:
+    for pattern in (
+        r'property=["\']og:image["\']\s+content=["\']([^"\']+)["\']',
+        r'content=["\']([^"\']+)["\']\s+property=["\']og:image["\']',
+    ):
+        m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
+        if m:
+            link = m.group(1).strip()
+            if link.startswith("http://") or link.startswith("https://"):
+                return link
+            return urljoin(base_url.rstrip("/") + "/", link.lstrip("/"))
+    return None
+
+
+def _fetch_og_image(url: str | None) -> tuple[bytes | None, str | None]:
+    if not url:
+        return None, None
+    data = _download_image(url)
+    return data, url
+
 
 def _download_image(url: str, timeout: int = 10) -> bytes | None:
     """Download an image URL and return raw bytes, or None on failure."""
@@ -177,210 +194,149 @@ def _download_image(url: str, timeout: int = 10) -> bytes | None:
         return None
 
 
-async def _scrape_async(
-    url: str,
-    timeout_seconds: int,
-) -> dict:
-    """
-    Single Playwright session:
-    1. Connect (Browserless CDP or local Chromium).
-    2. Navigate and wait for networkidle.
-    3. Extract CSS tokens via JS.
-    4. Capture full-page screenshot.
-    5. Extract OG image URL.
-    6. Extract rendered text from body.
+def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
+    timeout_ms = max(1000, int(timeout_seconds * 1000))
+    proxy = _playwright_proxy()
 
-    Returns a dict with keys:
-        scraped_text, css_tokens, screenshot_bytes,
-        og_image_url, og_image_bytes, scrape_error
-    """
-    from playwright.async_api import async_playwright
+    scraped_text = ""
+    css_tokens: dict[str, str] = {}
+    screenshot_bytes: bytes | None = None
+    og_image_url: str | None = None
+    og_image_bytes: bytes | None = None
+    scrape_error: str | None = None
 
-    result: dict = {
-        "scraped_text": "",
-        "css_tokens": {},
-        "screenshot_bytes": None,
-        "og_image_url": None,
-        "og_image_bytes": None,
-        "scrape_error": None,
-    }
-
-    browserless_key = settings.BROWSERLESS_API_KEY
-
-    try:
-        async with async_playwright() as pw:
-            if browserless_key:
-                # Connect to Browserless hosted service via CDP
-                cdp_url = (
-                    f"wss://chrome.browserless.io?token={browserless_key}"
+    with sync_playwright() as p:
+        browser = None
+        try:
+            if settings.BROWSERLESS_API_KEY.strip():
+                ws = (
+                    f"wss://chrome.browserless.io?token={settings.BROWSERLESS_API_KEY.strip()}"
                 )
-                browser = await pw.chromium.connect_over_cdp(cdp_url)
+                browser = p.chromium.connect_over_cdp(ws)
             else:
-                browser = await pw.chromium.launch(headless=True)
+                browser = p.chromium.launch(headless=True)
 
-            context = await browser.new_context(
-                viewport={"width": 1440, "height": 900},
-                user_agent=(
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                ),
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                proxy=proxy,
+                ignore_https_errors=True,
             )
-            page = await context.new_page()
+            page = context.new_page()
 
             try:
-                await page.goto(
+                page.goto(
                     url,
                     wait_until="networkidle",
-                    timeout=timeout_seconds * 1000,
+                    timeout=timeout_ms,
                 )
             except Exception:
-                # Fallback: domcontentloaded is more permissive
-                await page.goto(
+                page.goto(
                     url,
                     wait_until="domcontentloaded",
-                    timeout=timeout_seconds * 1000,
+                    timeout=timeout_ms,
                 )
 
-            # Dismiss cookie banners (best effort)
-            for selector in [
-                "button[id*='accept']",
-                "button[id*='cookie']",
-                "[aria-label*='Accept']",
-                "[data-testid*='cookie-accept']",
-                "button:has-text('Accept')",
-                "button:has-text('Accept all')",
-                "button:has-text('I agree')",
-                "[id*='cookie'] button",
-            ]:
+            for selector in _COOKIE_DISMISS_SELECTORS:
                 try:
                     btn = page.locator(selector).first
-                    if await btn.is_visible(timeout=500):
-                        await btn.click()
-                        await page.wait_for_timeout(300)
+                    if btn.is_visible(timeout=500):
+                        btn.click()
+                        page.wait_for_timeout(300)
                         break
                 except Exception:
                     pass
 
-            # Scroll to bottom to trigger lazy-loaded content (SPAs like Vercel, Linear)
             try:
-                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await page.wait_for_timeout(2000)
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(2000)
             except Exception:
                 pass
 
-            # Extract CSS tokens
             try:
-                css_tokens = await page.evaluate(_CSS_TOKEN_JS)
-                result["css_tokens"] = _filter_css_tokens(css_tokens or {})
+                raw_css = page.evaluate(_EXTRACT_CSS_TOKENS_JS)
+                css_tokens = _filter_css_tokens(raw_css or {})
             except Exception as exc:
                 logger.warning("CSS token extraction failed: %s", exc)
-                result["css_tokens"] = {}
 
-            # Full-page screenshot
             try:
-                result["screenshot_bytes"] = await page.screenshot(full_page=True)
+                scraped_text = page.inner_text("body")[:200_000]
+            except Exception:
+                scraped_text = ""
+
+            try:
+                screenshot_bytes = page.screenshot(full_page=True)
             except Exception as exc:
                 logger.warning("Screenshot failed: %s", exc)
 
-            # OG image
-            try:
-                og_url = await page.get_attribute(
-                    'meta[property="og:image"]', "content"
-                )
-                if og_url:
-                    result["og_image_url"] = og_url
-                    result["og_image_bytes"] = _download_image(
-                        og_url, timeout=timeout_seconds
-                    )
-            except Exception as exc:
-                logger.debug("OG image extraction failed: %s", exc)
+            context.close()
+        except Exception as exc:  # noqa: BLE001
+            scrape_error = str(exc)
+        finally:
+            if browser is not None:
+                try:
+                    browser.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
-            # Rendered text
-            try:
-                text = await page.inner_text("body")
-                # Collapse whitespace
-                text = re.sub(r"\s+", " ", text).strip()
-                result["scraped_text"] = text
-            except Exception as exc:
-                logger.warning("Text extraction failed: %s", exc)
+    if og_image_url and scrape_error is None:
+        og_image_bytes, og_image_url = _fetch_og_image(og_image_url)
 
-            await context.close()
-            await browser.close()
-
-    except Exception as exc:
-        result["scrape_error"] = str(exc)
-        logger.error("Scrape failed for %s: %s", url, exc)
-
-    return result
+    return {
+        "scraped_text": scraped_text,
+        "css_tokens": css_tokens,
+        "screenshot_bytes": screenshot_bytes,
+        "og_image_url": og_image_url,
+        "og_image_bytes": og_image_bytes,
+        "scrape_error": scrape_error,
+    }
 
 
-def _scrape_with_retry(url: str, timeout_seconds: int, max_retries: int) -> dict:
-    """Run the async scrape with retry logic, returning the result dict."""
-    last_result: dict = {
+def _scrape_with_retry(url: str, timeout: int, max_retries: int) -> dict:
+    last: dict | None = None
+    attempts = max(0, max_retries) + 1
+    for _ in range(attempts):
+        last = _scrape_page_sync(url, timeout)
+        if last.get("scrape_error") is None and (
+            last.get("scraped_text") or last.get("css_tokens")
+        ):
+            return last
+        if last.get("scrape_error") is None and not last.get("scraped_text"):
+            last["scrape_error"] = "empty scrape result"
+    return last or {
         "scraped_text": "",
         "css_tokens": {},
         "screenshot_bytes": None,
         "og_image_url": None,
         "og_image_bytes": None,
-        "scrape_error": "Max retries exceeded",
+        "scrape_error": "scrape failed",
     }
 
-    for attempt in range(max_retries):
-        try:
-            result = asyncio.run(_scrape_async(url, timeout_seconds))
-            if not result.get("scrape_error"):
-                return result
-            last_result = result
-            logger.warning(
-                "Scrape attempt %d/%d failed: %s",
-                attempt + 1,
-                max_retries,
-                result["scrape_error"],
-            )
-        except Exception as exc:
-            last_result["scrape_error"] = str(exc)
-            logger.warning(
-                "Scrape attempt %d/%d raised: %s", attempt + 1, max_retries, exc
-            )
 
-    return last_result
-
-
-# ---------------------------------------------------------------------------
-# LangFuse tracing (graceful if unavailable)
-# ---------------------------------------------------------------------------
-
-def _trace_langfuse(
+def _mock_input_package(
     url: str,
-    css_token_count: int,
-    scrape_word_count: int,
-    has_og_image: bool,
-    scrape_error: str | None,
-) -> None:
-    try:
-        from langfuse import Langfuse
+    run_id: str,
+    org_id: str | None = None,
+    user_image: bytes | None = None,
+    user_document: str | None = None,
+    user_document_filename: str | None = None,
+) -> InputPackage:
+    scraped_text = _MOCK_SCRAPED_TEXT
+    return InputPackage(
+        url=url,
+        run_id=run_id,
+        org_id=org_id,
+        scraped_text=scraped_text,
+        css_tokens=dict(_MOCK_CSS_TOKENS),
+        screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,
+        og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
+        og_image_url="https://linear.app/og.png",
+        user_image=user_image,
+        user_document=user_document,
+        user_document_filename=user_document_filename,
+        scrape_error=None,
+        scrape_word_count=_word_count(scraped_text),
+    )
 
-        lf = Langfuse(
-            public_key=settings.LANGFUSE_PUBLIC_KEY,
-            secret_key=settings.LANGFUSE_SECRET_KEY,
-        )
-        lf.trace(
-            name="input_processor",
-            input={"url": url},
-            output={
-                "css_token_count": css_token_count,
-                "scrape_word_count": scrape_word_count,
-                "has_og_image": has_og_image,
-                "scrape_error": scrape_error,
-            },
-        )
-    except Exception as exc:
-        logger.debug("LangFuse trace failed (non-fatal): %s", exc)
-
-
-# ---------------------------------------------------------------------------
-# Public interface
-# ---------------------------------------------------------------------------
 
 def run(
     url: str,
@@ -390,57 +346,63 @@ def run(
     user_document: str | None = None,
     user_document_filename: str | None = None,
 ) -> InputPackage:
-    """
-    Step 1 — Input Processor.
+    try:
+        if settings.MOCK_MODE:
+            return _mock_input_package(
+                url=url,
+                run_id=run_id,
+                org_id=org_id,
+                user_image=user_image,
+                user_document=user_document,
+                user_document_filename=user_document_filename,
+            )
 
-    In MOCK_MODE returns deterministic data for rapid local development.
-    In real mode renders the URL with Playwright, extracts CSS tokens,
-    screenshot, OG image, and rendered text.
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return InputPackage(
+                url=url,
+                run_id=run_id,
+                org_id=org_id,
+                user_image=user_image,
+                user_document=user_document,
+                user_document_filename=user_document_filename,
+                scrape_error="invalid URL",
+                scrape_word_count=0,
+            )
 
-    NEVER raises — returns a partial InputPackage with scrape_error on
-    failure so the pipeline can continue with user-provided data.
-    """
-    if settings.MOCK_MODE:
-        pkg = _mock_input_package(url, run_id, org_id, user_image, user_document)
-        _trace_langfuse(
-            url=url,
-            css_token_count=len(pkg.css_tokens),
-            scrape_word_count=pkg.scrape_word_count,
-            has_og_image=pkg.og_image_bytes is not None,
-            scrape_error=None,
+        result = _scrape_with_retry(
+            url,
+            settings.SCRAPE_TIMEOUT_SECONDS,
+            settings.SCRAPE_MAX_RETRIES,
         )
-        return pkg
+        scraped_text = str(result.get("scraped_text") or "")
+        css_tokens = result.get("css_tokens") if isinstance(result.get("css_tokens"), dict) else {}
+        css_tokens = {str(k): str(v) for k, v in css_tokens.items()}
 
-    # ── Real mode ────────────────────────────────────────────────────
-    timeout = settings.SCRAPE_TIMEOUT_SECONDS
-    max_retries = settings.SCRAPE_MAX_RETRIES
-
-    result = _scrape_with_retry(url, timeout, max_retries)
-
-    scraped_text: str = result.get("scraped_text", "") or ""
-    scrape_word_count = len(scraped_text.split()) if scraped_text else 0
-
-    pkg = InputPackage(
-        url=url,
-        run_id=run_id,
-        org_id=org_id,
-        scraped_text=scraped_text,
-        css_tokens=result.get("css_tokens") or {},
-        screenshot_bytes=result.get("screenshot_bytes"),
-        og_image_bytes=result.get("og_image_bytes"),
-        og_image_url=result.get("og_image_url"),
-        user_image=user_image,
-        user_document=user_document,
-        scrape_error=result.get("scrape_error"),
-        scrape_word_count=scrape_word_count,
-    )
-
-    _trace_langfuse(
-        url=url,
-        css_token_count=len(pkg.css_tokens),
-        scrape_word_count=pkg.scrape_word_count,
-        has_og_image=pkg.og_image_bytes is not None,
-        scrape_error=pkg.scrape_error,
-    )
-
-    return pkg
+        return InputPackage(
+            url=url,
+            run_id=run_id,
+            org_id=org_id,
+            scraped_text=scraped_text,
+            css_tokens=css_tokens,
+            screenshot_bytes=result.get("screenshot_bytes"),
+            og_image_bytes=result.get("og_image_bytes"),
+            og_image_url=result.get("og_image_url"),
+            user_image=user_image,
+            user_document=user_document,
+            user_document_filename=user_document_filename,
+            scrape_error=result.get("scrape_error"),
+            scrape_word_count=_word_count(scraped_text),
+        )
+    except Exception as exc:  # noqa: BLE001 — never crash callers
+        logger.exception("input_processor.run failed")
+        return InputPackage(
+            url=url,
+            run_id=run_id,
+            org_id=org_id,
+            user_image=user_image,
+            user_document=user_document,
+            user_document_filename=user_document_filename,
+            scrape_error=str(exc),
+            scrape_word_count=0,
+        )

@@ -1,0 +1,30 @@
+=== LINKEDIN ===
+UI Analyzer: LLM returned unparseable JSON; falling back to CSS-token heuristics
+[product_analysis] sending 1529 words to LLM
+[product_analysis] user message preview: 'Free webinar · Wed 25 March · Learn which prompts to target for AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI '
+product_name: None
+scrape_word_count: None
+passes: True  overall_score: 4.5
+scores: clarity=4 engagement=5 tone_match=4 accuracy=5
+hook (50 chars): Boost Your Brand's Online Presence with Searchable
+
+=== TWITTER ===
+[product_analysis] sending 1529 words to LLM
+[product_analysis] user message preview: 'Free webinar · Wed 25 March · Learn which prompts to target for AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI '
+Evaluator: non-JSON response; extracting scores from markdown text
+product_name: None
+scrape_word_count: None
+passes: True  overall_score: 3.0
+scores: clarity=3 engagement=3 tone_match=3 accuracy=3
+tweets: 4, over 280 chars: 0
+
+=== INSTAGRAM ===
+UI Analyzer: LLM returned unparseable JSON; falling back to CSS-token heuristics
+[product_analysis] sending 1529 words to LLM
+[product_analysis] user message preview: 'Free webinar · Wed 25 March · Learn which prompts to target for AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI '
+product_name: None
+scrape_word_count: None
+passes: True  overall_score: 4.25
+scores: clarity=4 engagement=5 tone_match=3 accuracy=5
+hashtags (21), placeholders: 0
+

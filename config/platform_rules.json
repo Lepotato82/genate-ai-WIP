@@ -6,17 +6,27 @@
     "hashtags_position": "end_only"
   },
   "twitter": {
+    "tweet_count": "4-8",
     "thread_min": 4,
     "thread_max": 8,
+    "max_chars_per_tweet": 280,
     "tweet_max_chars": 280,
     "hashtags_min": 1,
     "hashtags_max": 2,
-    "hashtags_position": "final_tweet_only"
+    "hashtag_count": "1-2",
+    "hashtag_placement": "final tweet only",
+    "hashtags_position": "final_tweet_only",
+    "first_tweet_standalone": true
   },
   "instagram": {
+    "first_chars": 125,
     "preview_max_chars": 125,
+    "first_chars_rule": "complete emotional statement",
     "hashtags_min": 20,
     "hashtags_max": 30,
+    "hashtag_count": "20-30",
+    "hashtag_placement": "after 5 line breaks",
+    "hashtags_inline": false,
     "line_breaks_before_hashtags": 5
   },
   "blog": {

@@ -128,6 +128,8 @@ system_prompt: |
     - Hashtags at the very end of the post only, 3–5 maximum
     - Short paragraphs with a blank line between each
     - Never open with a company name or product announcement
+    - Bullet symbols (•) in the body = clarity deduction
+    - CTA must align with cta_intent from the brief (else tone_match deduction)
 
   twitter:
     - Must be structured as a 4–8 tweet thread with numbered tweets
@@ -179,6 +181,28 @@ system_prompt: |
 
   Score 1 means: the element is entirely absent or entirely wrong.
   Opening with "We're thrilled to announce" = engagement 1, not 2.
+
+  STRICT CALIBRATION ANCHORS (additional — do not soften):
+
+  ENGAGEMENT score 5 requires: the hook names a specific daily friction OR uses
+  a surprising number OR creates genuine curiosity. Generic opening phrases
+  ("Your Daily Friction is...", "Are you struggling with...", "Discover how...")
+  are maximum engagement score 3.
+
+  TONE_MATCH score 5 requires: zero violations of writing_instruction.
+  Exclamation marks when instruction says corporate = score 2.
+  "revolutionize", "game-changing", "seamless" = score 1 on tone unless the
+  instruction explicitly invites hype.
+
+  ACCURACY score 5 requires: proof_point used verbatim or near-verbatim.
+  Score 3 if proof point is paraphrased but not fabricated.
+  Score 1 if any statistic appears that is NOT in the provided proof_point
+  or primary_claim.
+
+  Platform format violations always reduce the relevant dimension:
+  Bullet symbols (•) in LinkedIn body = clarity score minus 1.
+  CTA copy that doesn't match cta_intent = tone_match score minus 1.
+  Hashtags inline in body (not end) = tone_match score minus 1.
 
   ═══════════════════════════════════════════════════════════════
   REVISION HINT RULE

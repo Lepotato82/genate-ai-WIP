@@ -300,7 +300,9 @@ LLM_VISION_PROVIDER=anthropic            # anthropic | ollama | openai
 # Model names per provider (override defaults)
 LLM_TEXT_MODEL=llama-3.2-90b-text-preview   # Groq model string
 LLM_VISION_MODEL=claude-haiku-4-5           # Anthropic model string
-OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_BASE_URL=http://localhost:11434/v1   # MUST include /v1 — OpenAI SDK appends /chat/completions directly
+OLLAMA_TEXT_MODEL=llama3.2:latest           # Ollama text model (separate from LLM_TEXT_MODEL)
+OLLAMA_VISION_MODEL=llava:latest            # Ollama vision model (separate from LLM_VISION_MODEL)
 
 # API keys (only the active provider's key is required)
 GROQ_API_KEY=...

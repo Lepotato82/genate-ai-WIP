@@ -113,7 +113,7 @@ def test_ui_analyzer_real_mode_parsing_path(monkeypatch):
             "confidence": 0.86,
         }
     )
-    monkeypatch.setattr(ui_analyzer, "vision_completion", lambda *_a, **_k: fake_json)
+    monkeypatch.setattr(ui_analyzer, "chat_completion", lambda *_a, **_k: fake_json)
 
     profile = ui_analyzer.run(pkg)
     assert profile.run_id == "parse-ui-1"
@@ -143,13 +143,15 @@ def test_product_analysis_real_mode_parsing_and_coercion(monkeypatch):
         run_id="parse-pa-1",
         org_id=None,
         user_image=None,
-        user_document="User supplied source text",
+        user_document=(
+            "User supplied source text describing Linear as issue tracking for "
+            "modern software teams with roadmaps, cycles, and integrations."
+        ),
     )
 
     fake_json = json.dumps(
         {
             "product_name": "Linear",
-            "product_url": "https://linear.app",
             "tagline": "Issue tracking for modern software teams",
             "description": (
                 "Linear helps software teams plan, track, and execute product work "
@@ -157,22 +159,21 @@ def test_product_analysis_real_mode_parsing_and_coercion(monkeypatch):
                 "across sprint planning, issue management, release coordination, and "
                 "cross-team project visibility in complex engineering organizations."
             ),
-            "product_category": "developer-tool",
+            "product_category": "developer tool",
             "features": [
-                {"name": "Issue tracking", "description": "Track work with structured workflows"},
-                {"name": "Roadmaps", "description": "Plan releases and priorities"},
+                "Issue tracking: Track work with structured workflows",
+                "Roadmaps: Plan releases and priorities",
             ],
             "benefits": ["Faster execution", "Clearer team alignment"],
             "proof_points": [
-                {
-                    "text": "Used by over 10,000 engineering teams.",
-                    "proof_type": "user_count",
-                    "source": "scraped_page",
-                }
+                "Used by over ten thousand engineering teams worldwide with proven adoption.",
             ],
             "pain_points": ["Slow sprint coordination", "Fragmented backlog visibility"],
             "messaging_angles": ["Speed with structure"],
             "integrations": [{"name": "GitHub"}, "Slack"],
+            "pricing_mentioned": False,
+            "pricing_description": None,
+            "target_customer": None,
         }
     )
     monkeypatch.setattr(product_analysis, "chat_completion", lambda *_a, **_k: fake_json)

@@ -7,7 +7,7 @@ os.environ["MOCK_MODE"] = "false"
 
 from agents import input_processor, ui_analyzer
 
-pkg = input_processor.run("https://linear.app")
+pkg = input_processor.run(url="https://linear.app", run_id="vision-smoke")
 print(f"Input package ready: {len(pkg.css_tokens)} tokens, text={len(pkg.scraped_text)} chars")
 
 profile = ui_analyzer.run(pkg)

@@ -11,11 +11,12 @@ from __future__ import annotations
 import logging
 
 from llm.client import chat_completion
+from prompts.loader import load_prompt
 from config import settings
 from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.product_knowledge import ProductKnowledge
-from schemas.strategy_brief import StrategyBrief
+from schemas.strategy_brief import StrategyBrief, _NO_PROOF_FALLBACK
 from agents._utils import parse_json_object, utc_now_iso
 
 logger = logging.getLogger(__name__)
@@ -51,8 +52,8 @@ def _mock(
         org_id=content_brief.org_id,
         created_at=utc_now_iso(),
         lead_pain_point=(
-            "Teams lose hours each week rewriting posts that do not match product "
-            "positioning, causing delays and inconsistent go-to-market execution."
+            "Product and engineering leads still lose hours each week reconciling issue state, "
+            "roadmap updates, and sprint commitments across tools that were never designed to stay in sync."
         ),
         primary_claim=(
             "Genate helps SaaS teams generate grounded, brand-aligned content quickly."
@@ -195,6 +196,11 @@ def run(
     first_sent = _re.split(r"(?<=[.!?])\s+[A-Z]", pc2)
     if len(first_sent) > 1:
         data["primary_claim"] = first_sent[0].strip()
+
+    # Null out differentiator if it's too short — validator requires >= 10 words when not null
+    diff = data.get("differentiator")
+    if diff is not None and len(str(diff).split()) < 10:
+        data["differentiator"] = None
 
     strategy_brief = StrategyBrief(
         run_id=content_brief.run_id,

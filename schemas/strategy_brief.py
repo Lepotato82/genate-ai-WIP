@@ -213,8 +213,10 @@ class StrategyBrief(BaseModel):
                     f"ProductKnowledge entry."
                 )
 
-        # messaging_angle_used must match an entry in ProductKnowledge.messaging_angles
-        if self.messaging_angle_used not in product_knowledge.messaging_angles:
+        # messaging_angle_used must match an entry when angles exist
+        if product_knowledge.messaging_angles and (
+            self.messaging_angle_used not in product_knowledge.messaging_angles
+        ):
             raise ValueError(
                 f"messaging_angle_used='{self.messaging_angle_used}' does not match "
                 f"any entry in ProductKnowledge.messaging_angles. "

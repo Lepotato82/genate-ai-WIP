@@ -179,6 +179,15 @@ class ContentBrief(BaseModel):
         ),
     )
 
+    reasoning: str = Field(
+        ...,
+        min_length=20,
+        description=(
+            "Planner justification for content_type. Must reference signals "
+            "(counts, brand_tone, proof types) supplied to the Planner."
+        ),
+    )
+
     # ------------------------------------------------------------------
     # Validators
     # ------------------------------------------------------------------

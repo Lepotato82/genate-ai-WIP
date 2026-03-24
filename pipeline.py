@@ -4,10 +4,10 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Generator
+from typing import Generator, Literal, cast
 
 from agents import (
-    copywriting,
+    copywriter,
     evaluator,
     formatter,
     input_processor,
@@ -15,7 +15,6 @@ from agents import (
     product_analysis,
     strategy,
     ui_analyzer,
-    visual_gen,
 )
 from config import settings
 from knowledge import persist_run, query_context
@@ -23,11 +22,23 @@ from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.evaluator_output import EvaluatorOutput
 from schemas.formatted_content import FormattedContent
+from schemas.input_package import InputPackage
 from schemas.knowledge_context import KnowledgeContext
 from schemas.product_knowledge import ProductKnowledge
 from schemas.strategy_brief import StrategyBrief
 
 MAX_EVAL_RETRIES = 2
+
+PlatformName = Literal["linkedin", "twitter", "instagram", "blog"]
+
+
+def _norm_platform(platform: str) -> PlatformName:
+    p = platform.lower().strip()
+    if p == "x":
+        return "twitter"
+    if p in ("linkedin", "twitter", "instagram", "blog"):
+        return cast(PlatformName, p)
+    return "linkedin"
 
 
 @dataclass
@@ -38,6 +49,7 @@ class RunArtifacts:
     product_knowledge: ProductKnowledge
     content_brief: ContentBrief
     strategy_brief: StrategyBrief
+    raw_copy: str
     formatted_content: FormattedContent
     evaluator_output: EvaluatorOutput
 
@@ -55,83 +67,129 @@ def _event(step: int, agent: str, status: str, started: float, message: str) -> 
     }
 
 
-# ---------------------------------------------------------------------------
-# run_linkedin — simple chain for LinkedIn end-to-end validation
-# ---------------------------------------------------------------------------
+def _run_stages_after_input(
+    *,
+    run_id: str,
+    org_id: str | None,
+    pkg: InputPackage,
+    platform: str,
+    started: float,
+) -> tuple[
+    BrandProfile,
+    ProductKnowledge,
+    ContentBrief,
+    StrategyBrief,
+    str,
+    FormattedContent,
+    EvaluatorOutput,
+]:
+    plat = _norm_platform(platform)
 
-def run_linkedin(
-    url: str,
-    run_id: str | None = None,
-    org_id: str | None = None,
-) -> dict:
-    """
-    Full LinkedIn pipeline: input → brand → product → plan → strategy →
-    copy → format → evaluate (with up to 2 retries).
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_ui = pool.submit(ui_analyzer.run, pkg)
+        f_pa = pool.submit(product_analysis.run, pkg)
+        brand = f_ui.result()
+        product = f_pa.result()
 
-    Input layer uses MOCK_MODE setting. Generation agents (steps 4-9) always
-    call chat_completion (unless MOCK_MODE=true, which affects all agents).
-    """
-    run_id = run_id or str(uuid.uuid4())
+    knowledge_context: KnowledgeContext | None = None
+    if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
+        query_text = f"{product.product_name}: {product.tagline or ''}"
+        knowledge_context = query_context(org_id=org_id, query_text=query_text)
+    _ = knowledge_context
 
-    # Steps 1-3: Input layer
-    pkg = input_processor.run(url=url, run_id=run_id, org_id=org_id)
-    brand = ui_analyzer.run(pkg)
-    product = product_analysis.run(pkg)
-
-    # Step 4: Planner
-    content_brief = planner.run(brand, product, platform="linkedin")
-
-    # Step 5: Strategy
+    content_brief = planner.run(brand, product, plat)
     strategy_brief = strategy.run(content_brief, product, brand)
+    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
 
-    # Step 6: Copywriter (Visual Gen skipped for LinkedIn — Phase 3)
-    raw_copy = copywriting.run(strategy_brief, content_brief, brand)
-
-    # Step 8: Formatter + Step 9: Evaluator with retry loop
-    formatted: FormattedContent | None = None
-    evaluation: EvaluatorOutput | None = None
-
-    for attempt in range(MAX_EVAL_RETRIES + 1):
-        revision_hint = evaluation.revision_hint if (evaluation and not evaluation.passes) else None
+    formatted = formatter.run(
+        raw_copy,
+        content_brief,
+        strategy_brief,
+        brand,
+        revision_hint=None,
+        retry_count=0,
+        product_knowledge=product,
+    )
+    retry = 0
+    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+    while not evaluated.passes and retry < MAX_EVAL_RETRIES:
+        retry += 1
         formatted = formatter.run(
             raw_copy,
             content_brief,
             strategy_brief,
             brand,
-            revision_hint=revision_hint,
-            retry_count=attempt,
+            revision_hint=evaluated.revision_hint,
+            retry_count=retry,
+            product_knowledge=product,
         )
-        evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
-        if evaluation.passes or attempt == MAX_EVAL_RETRIES:
-            break
+        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
 
-    assert formatted is not None and evaluation is not None
+    return brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated
 
+
+def run_pipeline(
+    url: str,
+    platform: str = "linkedin",
+    user_image: bytes | None = None,
+    user_document: str | None = None,
+) -> dict:
+    """
+    End-to-end pipeline: input → brand + product (parallel) → planner → strategy →
+    copywriter → formatter → evaluator (with formatter retries).
+    """
+    run_id = str(uuid.uuid4())
+    started = perf_counter()
+    pkg = input_processor.run(
+        url=url,
+        run_id=run_id,
+        org_id=None,
+        user_image=user_image,
+        user_document=user_document,
+    )
+    brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated = _run_stages_after_input(
+        run_id=run_id,
+        org_id=None,
+        pkg=pkg,
+        platform=platform,
+        started=started,
+    )
+    artifacts = RunArtifacts(
+        run_id=run_id,
+        org_id=None,
+        brand_profile=brand,
+        product_knowledge=product,
+        content_brief=content_brief,
+        strategy_brief=strategy_brief,
+        raw_copy=raw_copy,
+        formatted_content=formatted,
+        evaluator_output=evaluated,
+    )
+    RUN_REGISTRY[run_id] = artifacts
     return {
         "run_id": run_id,
         "url": url,
+        "platform": platform,
         "brand_profile": brand.model_dump(),
         "product_knowledge": product.model_dump(),
         "content_brief": content_brief.model_dump(),
         "strategy_brief": strategy_brief.model_dump(),
+        "raw_copy": raw_copy,
         "formatted_content": formatted.model_dump(),
-        "evaluation": evaluation.model_dump(),
-        "passes": evaluation.passes,
-        "overall_score": evaluation.overall_score,
+        "evaluator_output": evaluated.model_dump(),
+        "passes": evaluated.passes,
+        "overall_score": evaluated.overall_score,
     }
 
 
-# ---------------------------------------------------------------------------
-# run_pipeline — blocking wrapper around run_stream
-# ---------------------------------------------------------------------------
-
-def run_pipeline(
+def run_pipeline_artifacts(
     *,
     url: str,
     platform: str,
     org_id: str | None = None,
     user_image: bytes | None = None,
     user_document: str | None = None,
+    user_document_filename: str | None = None,
 ) -> RunArtifacts:
     events = list(
         run_stream(
@@ -140,6 +198,7 @@ def run_pipeline(
             org_id=org_id,
             user_image=user_image,
             user_document=user_document,
+            user_document_filename=user_document_filename,
         )
     )
     final = events[-1]
@@ -160,6 +219,7 @@ def run_stream(
     org_id: str | None = None,
     user_image: bytes | None = None,
     user_document: str | None = None,
+    user_document_filename: str | None = None,
 ) -> Generator[dict, None, None]:
     run_id = str(uuid.uuid4())
     started = perf_counter()
@@ -172,6 +232,7 @@ def run_stream(
         org_id=org_id,
         user_image=user_image,
         user_document=user_document,
+        user_document_filename=user_document_filename,
     )
     yield _event(1, "input_processor", "complete", started, "Input package ready")
 
@@ -193,10 +254,11 @@ def run_stream(
         query_text = f"{product.product_name}: {product.tagline or ''}"
         knowledge_context = query_context(org_id=org_id, query_text=query_text)
         yield _event(0, "knowledge_query", "complete", started, "Memory query complete")
+    _ = knowledge_context
 
     # Step 4 — Planner
     yield _event(4, "planner", "start", started, "Planning content")
-    content_brief = planner.run(brand, product, platform=platform)
+    content_brief = planner.run(brand, product, _norm_platform(platform))
     yield _event(4, "planner", "complete", started, "Content brief created")
 
     # Step 5 — Strategy
@@ -206,44 +268,44 @@ def run_stream(
 
     # Steps 6+7 — Copywriter + Visual Gen (parallel)
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
-    yield _event(7, "visual_gen", "start", started, "Generating visual directions")
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        f_copy = pool.submit(copywriting.run, strategy_brief, content_brief, brand)
-        f_visual = pool.submit(visual_gen.run, strategy_brief, brand, content_brief)
-        raw_copy = f_copy.result()
-        _visual_payload = f_visual.result()  # stored but not passed to formatter yet
+    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
-    yield _event(7, "visual_gen", "complete", started, "Visual payload generated")
+
+    yield _event(8, "formatter", "start", started, "Applying platform formatting")
+    formatted = formatter.run(
+        raw_copy,
+        content_brief,
+        strategy_brief,
+        brand,
+        revision_hint=None,
+        retry_count=0,
+        product_knowledge=product,
+    )
+    yield _event(8, "formatter", "complete", started, "Formatting complete")
 
     # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
-    formatted: FormattedContent | None = None
-    evaluated: EvaluatorOutput | None = None
+    yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
+    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+    yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
 
-    while True:
-        revision_hint = evaluated.revision_hint if (evaluated and not evaluated.passes) else None
-        yield _event(8, "formatter", "start", started, "Applying platform formatting")
+    while not evaluated.passes and retry < MAX_EVAL_RETRIES:
+        retry += 1
+        yield _event(8, "formatter", "start", started, "Applying revision")
         formatted = formatter.run(
             raw_copy,
             content_brief,
             strategy_brief,
             brand,
-            revision_hint=revision_hint,
+            revision_hint=evaluated.revision_hint,
             retry_count=retry,
+            product_knowledge=product,
         )
         yield _event(8, "formatter", "complete", started, "Formatting complete")
-
-        yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
+        yield _event(9, "evaluator", "start", started, "Re-evaluating")
         evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
         yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
 
-        if evaluated.passes:
-            break
-        if retry >= MAX_EVAL_RETRIES:
-            break
-        retry += 1
-
-    assert formatted is not None and evaluated is not None
     artifacts = RunArtifacts(
         run_id=run_id,
         org_id=org_id,
@@ -251,6 +313,7 @@ def run_stream(
         product_knowledge=product,
         content_brief=content_brief,
         strategy_brief=strategy_brief,
+        raw_copy=raw_copy,
         formatted_content=formatted,
         evaluator_output=evaluated,
     )
@@ -272,6 +335,105 @@ def run_stream(
     done["run_id"] = run_id
     done["passes"] = evaluated.passes
     yield done
+
+
+def _run_entry(
+    url: str,
+    platform: str,
+    run_id: str | None,
+    org_id: str | None,
+) -> dict:
+    """Sequential pipeline for CLI / validation (no visual gen, no SSE)."""
+    max_retries = 2
+    rid = run_id or str(uuid.uuid4())
+    plat = _norm_platform(platform)
+
+    pkg = input_processor.run(url=url, run_id=rid, org_id=org_id)
+    brand = ui_analyzer.run(pkg)
+    product = product_analysis.run(pkg)
+    brief = planner.run(brand, product, platform=plat)
+    strategy_brief = strategy.run(brief, product, brand)
+    raw_copy = copywriter.run(strategy_brief, brief, brand)
+    formatted = formatter.run(
+        raw_copy,
+        brief,
+        strategy_brief,
+        brand,
+        revision_hint=None,
+        retry_count=0,
+        product_knowledge=product,
+    )
+
+    for attempt in range(max_retries + 1):
+        evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
+        if evaluation.passes or attempt == max_retries:
+            break
+        formatted = formatter.run(
+            raw_copy,
+            brief,
+            strategy_brief,
+            brand,
+            revision_hint=evaluation.revision_hint,
+            retry_count=attempt + 1,
+            product_knowledge=product,
+        )
+
+    return {
+        "run_id": rid,
+        "url": url,
+        "brand_profile": brand.model_dump(),
+        "product_knowledge": product.model_dump(),
+        "content_brief": brief.model_dump(),
+        "strategy_brief": strategy_brief.model_dump(),
+        "formatted_content": formatted.model_dump(),
+        "evaluation": evaluation.model_dump(),
+        "passes": evaluation.passes,
+        "overall_score": evaluation.overall_score,
+    }
+
+
+def run_linkedin(
+    url: str,
+    run_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    return _run_entry(url, "linkedin", run_id, org_id)
+
+
+def run_twitter(
+    url: str,
+    run_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    return _run_entry(url, "twitter", run_id, org_id)
+
+
+def run_instagram(
+    url: str,
+    run_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    return _run_entry(url, "instagram", run_id, org_id)
+
+
+def run(
+    url: str,
+    platform: str = "linkedin",
+    run_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    p = platform.lower().strip()
+    dispatch = {
+        "linkedin": run_linkedin,
+        "twitter": run_twitter,
+        "x": run_twitter,
+        "instagram": run_instagram,
+    }
+    if p not in dispatch:
+        raise ValueError(
+            f"Unsupported platform: {platform!r}. Valid: {list(dispatch.keys())}"
+        )
+    return dispatch[p](url, run_id=run_id, org_id=org_id)
 
 
 def _approved_copy(formatted: FormattedContent) -> str:
