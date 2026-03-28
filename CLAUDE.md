@@ -61,10 +61,11 @@ print(json.dumps(r['evaluation'], indent=2))
 The critical ones for local development:
 
 ```env
-MOCK_MODE=true                         # false = real LLM + real browser scrape
-LLM_PROVIDER=ollama                    # groq | openai | anthropic | ollama
+MOCK_MODE=false                        # false = real LLM + real browser scrape
+LLM_PROVIDER=groq                      # production default — groq | openai | anthropic | ollama
+LLM_TEXT_MODEL=llama-3.3-70b-versatile # production default
 LLM_VISION_PROVIDER=anthropic          # anthropic | ollama
-OLLAMA_BASE_URL=http://localhost:11434/v1   # /v1 suffix required for OpenAI SDK compat
+OLLAMA_BASE_URL=http://localhost:11434/v1   # /v1 suffix required for OpenAI SDK compat (inactive when LLM_PROVIDER=groq)
 OLLAMA_TEXT_MODEL=llama3.2:latest
 OLLAMA_VISION_MODEL=llava:latest
 KNOWLEDGE_LAYER_ENABLED=false          # true requires Qdrant + Supabase
@@ -260,6 +261,41 @@ This section documents bugs found in real-mode pipeline runs, their root causes,
 | instagram | 1         | 5       | False      | True    |
 
 **Watch for:** If fabrication recurs on Groq, the issue is in proof_point extraction quality (Product Analysis returning weak qualitative proof points instead of real stats from the page). The fix is to improve the Product Analysis prompt to extract only concrete, specific proof points and skip vague qualitative claims like "Proven results with measurable ROI".
+
+---
+
+### PROMPT UPDATE — v1 → v2 (Person B, March 2026)
+
+**Prompts updated:**
+- `ui_analyzer_v1.yaml` → v2.2
+- `copywriting_v1.yaml` → v1.3
+- `evaluator_v1.yaml` → v1.2
+
+**Key changes:**
+1. `writing_instruction` (ui_analyzer) — now outputs pure copywriting guidance (sentence structure, register, banned words, first-line pattern). Zero design references. Previously read like a design system doc.
+2. `hook_direction` rule (copywriting) — HOOK DIRECTION RULE section added. `hook_direction` is now binding, not a suggestion. Includes WRONG/RIGHT example pair from actual pipeline output.
+3. Instagram `preview_text` rule (copywriting) — complete rewrite. MUST/MUST NOT lists, three verbatim good examples, explicit subject+verb requirement.
+4. Engagement score-2 anchors (evaluator) — three real pipeline hooks added as explicit score-2 negative examples. Specificity test added: "Can a specific person at a specific time of day see themselves in this hook?"
+
+**Few-shot examples added:**
+- ui_analyzer: 6 examples (all 5 design categories + borderline Razorpay). All grounded in Indian SaaS companies.
+- copywriting: 6 examples across platforms and arcs. Indian SaaS: Leegality, Razorpay Payroll, Chargebee.
+- evaluator: 6 examples including FAIL cases with specific `revision_hint`s.
+
+**Validated results vs v1 Groq baseline (searchable.com):**
+
+| platform  | dim        | v1  | v2  | delta |
+|-----------|-----------|-----|-----|-------|
+| linkedin  | tone_match | 4   | 5   | +1    |
+| linkedin  | overall    | 4.0 | 4.25| +0.25 |
+| twitter   | tone_match | 3   | 4   | +1    |
+| twitter   | overall    | 4.0 | 4.25| +0.25 |
+| instagram | engagement | 3   | 4   | +1    |
+| instagram | tone_match | 4   | 3   | -1    |
+
+design_category consistent across all three runs: `minimal-saas` (was inconsistent in v1).
+
+**Watch for:** Chargebee 63% stat appears in copywriting few-shot example cw_ex_05 (TikTok). If this stat appears in copy for non-Chargebee products, it is a few-shot contamination issue. The FABRICATION PROHIBITION rule should prevent this but monitor. Also: Instagram tone_match dropped 4→3 in this run — possible conflict between new `preview_text` rule (complete sentence) and evaluator's tone calibration for the `minimal-saas` category. Worth re-running to check if this is variance or a regression.
 
 ---
 

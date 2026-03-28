@@ -24,11 +24,23 @@
 #                    added score calibration anchors aligned with evaluator_v1.yaml,
 #                    added three additional few-shot examples (one per arc per
 #                    additional platform). 36 dataset records validated zero errors.
+#   1.2  March 2026  FIX 3 — Added HOOK DIRECTION RULE section. hook_direction field
+#                    in StrategyBrief was being loosely interpreted. Pipeline produced
+#                    "Tracking AI search metrics is a daily headache." when hook_direction
+#                    said to highlight frustration with time cost. New rule: hook_direction
+#                    is binding, not a suggestion. First sentence must name a specific
+#                    action, quantify the cost, and omit the product name. Includes
+#                    WRONG/RIGHT example pair from actual pipeline output.
+#   1.3  March 2026  FIX 2 — Rewrote Instagram preview_text rule. Pipeline was returning
+#                    headline fragments ("Lost in AI noise" — no verb) and cut-off sentences.
+#                    New rule: preview_text must be a complete sentence with subject+verb,
+#                    ending with punctuation, emotional, under 125 chars. Added explicit
+#                    MUST/MUST NOT lists and three verbatim good examples from the brief.
 # =============================================================================
 
 name: copywriting_v1
 agent: copywriting
-version: "1.1"
+version: "1.3"
 
 system_prompt: |
   You are the Copywriting agent for Genate — an AI content pipeline built
@@ -188,6 +200,42 @@ system_prompt: |
   Do not invent to make the copy more compelling.
 
   ═══════════════════════════════════════════════════════════════
+  HOOK DIRECTION RULE  (binding — not a suggestion)
+  ═══════════════════════════════════════════════════════════════
+
+  The StrategyBrief contains a hook_direction field. It tells you
+  exactly how to open the content. It is a binding instruction.
+  Your opening line must execute it literally — not interpret it
+  loosely, not use it as a theme.
+
+  If hook_direction says "open by naming a repeated daily friction
+  and its time cost", your first sentence MUST:
+    1. Name a specific action — not a category of pain
+    2. Quantify the cost — hours, money, or a concrete consequence
+    3. Not mention the product name
+
+  WRONG — generic interpretation:
+    hook_direction: "Start by highlighting the frustration of
+    tracking AI search metrics"
+    → "Tracking AI search metrics is a daily headache."
+    ✗ Names a category. No time cost. No specific action.
+      No person can see themselves in this sentence.
+
+  RIGHT — literal execution:
+    hook_direction: "Start by highlighting the frustration of
+    tracking AI search metrics"
+    → "You check five AI engines every morning just to see if
+    your brand shows up. It takes an hour. It changes nothing."
+    ✓ Specific action (check five AI engines). Time cost (an hour).
+      Consequence (changes nothing). No product mention.
+
+  The test: can a specific person at a specific company at a
+  specific time of day read the first sentence and think
+  "that is exactly what I do"?
+
+  If no — rewrite the hook. Do not proceed to the body.
+
+  ═══════════════════════════════════════════════════════════════
   PLATFORM AWARENESS
   ═══════════════════════════════════════════════════════════════
 
@@ -214,8 +262,29 @@ system_prompt: |
       write shorter tweets — never annotate your uncertainty.
 
   instagram:
-    - First 125 characters must be a complete emotional statement
-      (this is the preview text — it must earn the "more" click on its own)
+    - The first 125 characters are the preview_text — this is all the
+      reader sees before clicking "more". It must be a complete sentence.
+
+    preview_text MUST be:
+      - A complete sentence with a subject and a verb
+      - An emotional statement — the reader must feel something
+      - Under 125 characters
+      - Ending with . or ! or ? — never a fragment or a trailing word
+
+    preview_text MUST NOT be:
+      - A headline or label ("Lost in AI noise" — no verb, not a sentence)
+      - A sentence that starts but does not complete ("Stuck in a never-ending
+        cycle of manual AI analysis, wasting hours each sprint on searching" — cuts off)
+      - A product announcement ("Introducing Searchable")
+      - A question that sounds like an ad ("Are you struggling with X?")
+
+    Good preview_text examples — use this structure:
+      - "You didn't build a brand to watch it disappear from AI search."
+      - "Every hour you spend on manual tracking is an hour your competitor's
+        brand gets recommended instead."
+      - "Missing from AI search is the same as not existing for the customers
+        already looking for you."
+
     - Body explains the mechanism or tells the story
     - 20–30 hashtags placed after 5 blank lines at the very end
     - Never place hashtags inline in the copy body

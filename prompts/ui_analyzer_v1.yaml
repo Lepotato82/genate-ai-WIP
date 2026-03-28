@@ -1,10 +1,38 @@
 # =============================================================================
 # ui_analyzer_v1.yaml — UI / brand analysis (flat JSON)
 # =============================================================================
+# Version:      2.1
+# Last updated: March 2026
+# Owner:        Person B
+# Agent:        UI Analyzer (Step 2 — parallel with Product Analysis)
+# Purpose:      Classify a SaaS brand's design category and extract brand
+#               tokens from CSS computed styles and screenshot. Returns
+#               BrandProfile including writing_instruction injected directly
+#               into the Copywriting agent's system prompt.
+#
+# HOW THIS FILE IS USED:
+#   - Person A loads system_prompt into the UI Analyzer agent at runtime
+#   - Input: CSS token JSON + optional screenshot from InputPackage
+#   - Output: flat JSON BrandProfile — feeds Copywriting + Visual Gen agents
+#   - few_shot_examples are injected as user/assistant turns
+#
+# CHANGE LOG:
+#   2.0  March 2026  Initial production version. Flat JSON schema. Five
+#                    design categories. Tone enum. writing_instruction rule.
+#   2.1  March 2026  Added six few-shot examples covering all five design
+#                    categories plus one contested/borderline case. All
+#                    examples validated against real Indian SaaS companies.
+#   2.2  March 2026  FIX 4 — Rewrote writing_instruction rule and all six
+#                    few-shot writing_instruction values. Previous output read
+#                    like a design system doc (font names, hex colors, spacing).
+#                    New output is a pure copywriting brief: sentence structure,
+#                    register, words to avoid, what the first line looks like.
+#                    Zero design references in any writing_instruction field.
+# =============================================================================
 
 name: ui_analyzer_v1
 agent: ui_analyzer
-version: "2.0"
+version: "2.2"
 
 system_prompt: |
   You classify a SaaS brand from CSS design tokens (and an optional screenshot).
@@ -33,10 +61,290 @@ system_prompt: |
 
   border_radius and spacing_unit: typical values as strings (e.g. "6px", "8px").
 
-  writing_instruction: At least 15 words. Must name specific brand signals you
-  observed: the font name, at least one color, and the design_category. Tell copy
-  writers how to match this brand voice.
+  writing_instruction: A direct copywriting instruction — not a design description.
+  Must answer four things:
+    1. Sentence structure: how long, how complex, how many ideas per sentence
+    2. Register: technical / warm / direct / story-led / data-first
+    3. What to avoid: specific banned words or phrases for this brand
+    4. What the first line of their content typically looks like
+
+  Do NOT mention fonts, colors, spacing, border radius, or any visual property.
+  The Copywriting agent cannot see the design — it only reads this instruction.
+  A human copywriter must be able to read this and immediately apply it
+  without asking any follow-up questions.
+
+  BAD (do not produce this):
+    "To match this brand voice, use the Geist font family and a muted color
+    palette with primary color #1A0F13... The tone is minimal, so keep the
+    language concise and straightforward."
+
+  GOOD (minimal-saas brand):
+    "One idea per sentence. Lead with the outcome, not the mechanism.
+    No jargon. No superlatives. The reader skims — the first line must earn
+    the second. Avoid: game-changer, seamless, powerful, revolutionize."
+
+  GOOD (developer-tool brand):
+    "Short declarative sentences. Lead with the daily friction before any
+    product mention. Assume a technical reader — do not explain what a sprint
+    is. No marketing language. Active voice throughout."
 
   confidence: a number from 0.0 to 1.0 for how confident you are.
 
   Return raw JSON only. No markdown. No preamble.
+
+few_shot_examples:
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 1 — developer-tool
+  # Linear — dark UI, monospace accents, fractional font weights
+  # Reference for: dark backgrounds, brand purple, precise token values
+  # ─────────────────────────────────────────────────────────────
+  - id: "ui_ex_01"
+    description: "developer-tool — Linear (dark, purple brand, fractional weights)"
+    input:
+      source: "linear.app"
+      css_tokens: |
+        --color-brand-bg: #5e6ad2
+        --color-accent: #7170ff
+        --color-background: #0f0f0f
+        --color-surface: #1a1a1a
+        --color-text-primary: #f2f2f2
+        --color-text-secondary: #8a8a8a
+        --font-family: "Inter var", Inter, sans-serif
+        --font-weight-regular: 510
+        --font-weight-medium: 590
+        --font-weight-bold: 700
+        --border-radius-sm: 4px
+        --border-radius-md: 6px
+        --spacing-unit: 8px
+    expected_output:
+      design_category: "developer-tool"
+      tone: "technical"
+      primary_color: "#5e6ad2"
+      secondary_color: "#7170ff"
+      background_color: "#0f0f0f"
+      font_family: "Inter"
+      font_weights: [510, 590, 700]
+      border_radius: "6px"
+      spacing_unit: "8px"
+      writing_instruction: >
+        Short declarative sentences. Lead with the specific daily friction the engineer
+        feels before any product mention. Assume a technical reader — do not explain
+        basic concepts. Active voice throughout. No marketing language, no adjectives
+        that inflate: avoid powerful, seamless, robust, game-changing. Every sentence
+        earns its place or it is cut. The first line names a friction, not a product.
+      confidence: 0.97
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 2 — minimal-saas
+  # Notion — whitespace-led, thin Inter, restrained neutral palette
+  # Reference for: white backgrounds, generous spacing, minimal tone
+  # ─────────────────────────────────────────────────────────────
+  - id: "ui_ex_02"
+    description: "minimal-saas — Notion (white, neutral, thin typography)"
+    input:
+      source: "notion.so"
+      css_tokens: |
+        --color-brand: #000000
+        --color-accent: #2383e2
+        --color-background: #ffffff
+        --color-surface: #f7f6f3
+        --color-text-primary: #37352f
+        --color-text-secondary: #9b9a97
+        --font-family: "Inter", ui-sans-serif, sans-serif
+        --font-weight-regular: 400
+        --font-weight-medium: 500
+        --font-weight-semibold: 600
+        --border-radius-sm: 3px
+        --border-radius-md: 6px
+        --spacing-unit: 16px
+    expected_output:
+      design_category: "minimal-saas"
+      tone: "minimal"
+      primary_color: "#000000"
+      secondary_color: "#2383e2"
+      background_color: "#ffffff"
+      font_family: "Inter"
+      font_weights: [400, 500, 600]
+      border_radius: "6px"
+      spacing_unit: "16px"
+      writing_instruction: >
+        One idea per sentence. Lead with the outcome, not the mechanism. No urgency
+        tactics, no superlatives. The reader skims — the first line must earn the second.
+        Calm and specific: name the exact thing, not the category. Avoid: game-changer,
+        seamless, powerful, revolutionize, cutting-edge. Copy should read like good
+        documentation — clear, concrete, no unnecessary words.
+      confidence: 0.95
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 3 — bold-enterprise
+  # Freshworks — strong green brand, large headlines, trust signals
+  # Reference for: Indian SaaS enterprise, bold contrast, scale cues
+  # ─────────────────────────────────────────────────────────────
+  - id: "ui_ex_03"
+    description: "bold-enterprise — Freshworks (strong green, large headlines, NASDAQ trust)"
+    input:
+      source: "freshworks.com"
+      css_tokens: |
+        --color-brand-primary: #1db954
+        --color-brand-secondary: #00b38a
+        --color-background: #ffffff
+        --color-dark: #1c1c1c
+        --color-text-primary: #1c1c1c
+        --color-text-secondary: #4a4a4a
+        --font-family: "Gilroy", "Inter", sans-serif
+        --font-weight-regular: 400
+        --font-weight-semibold: 600
+        --font-weight-bold: 700
+        --font-weight-extrabold: 800
+        --border-radius-sm: 4px
+        --border-radius-lg: 12px
+        --spacing-unit: 8px
+    expected_output:
+      design_category: "bold-enterprise"
+      tone: "bold"
+      primary_color: "#1db954"
+      secondary_color: "#00b38a"
+      background_color: "#ffffff"
+      font_family: "Gilroy"
+      font_weights: [400, 600, 700, 800]
+      border_radius: "12px"
+      spacing_unit: "8px"
+      writing_instruction: >
+        Lead with scale and proof — numbers before narrative. Authoritative but never
+        cold: enterprise buyers need to trust, not just be impressed. First sentence
+        names a customer outcome or a proof point, not a product feature. Short punchy
+        sentences followed by supporting evidence. Indian enterprise B2B context: use
+        Indian company names, Indian regulatory standards. Avoid: innovative, synergy,
+        world-class, best-in-class, leading provider.
+      confidence: 0.92
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 4 — consumer-friendly
+  # Groww — rounded UI, warm colors, friendly for first-time investors
+  # Reference for: Indian fintech consumer, soft palette, approachable
+  # ─────────────────────────────────────────────────────────────
+  - id: "ui_ex_04"
+    description: "consumer-friendly — Groww (rounded, warm green, first-time investor tone)"
+    input:
+      source: "groww.in"
+      css_tokens: |
+        --color-brand: #44cf74
+        --color-brand-dark: #00b386
+        --color-background: #f9f9f9
+        --color-surface: #ffffff
+        --color-text-primary: #1e1e1e
+        --color-text-secondary: #737373
+        --color-warning: #f6a609
+        --font-family: "DMSans", "Inter", sans-serif
+        --font-weight-regular: 400
+        --font-weight-medium: 500
+        --font-weight-bold: 700
+        --border-radius-sm: 8px
+        --border-radius-md: 16px
+        --border-radius-lg: 24px
+        --spacing-unit: 8px
+    expected_output:
+      design_category: "consumer-friendly"
+      tone: "playful"
+      primary_color: "#44cf74"
+      secondary_color: "#00b386"
+      background_color: "#f9f9f9"
+      font_family: "DMSans"
+      font_weights: [400, 500, 700]
+      border_radius: "16px"
+      spacing_unit: "8px"
+      writing_instruction: >
+        Warm and reassuring — speak to someone doing this for the first time. Simple
+        sentences, no financial jargon. Lead with the emotional relief, not the feature.
+        Use INR amounts to create local familiarity. First line names a feeling the reader
+        recognises, not a product capability. Avoid: portfolio, asset allocation, XIRR,
+        NAV (unless explained immediately). Make the complex feel manageable.
+      confidence: 0.93
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 5 — data-dense
+  # Zerodha Kite — compact tables, dark trading UI, data priority
+  # Reference for: financial data platform, compact spacing, analytical tone
+  # ─────────────────────────────────────────────────────────────
+  - id: "ui_ex_05"
+    description: "data-dense — Zerodha Kite (compact, dark trading UI, analytical tone)"
+    input:
+      source: "kite.zerodha.com"
+      css_tokens: |
+        --color-brand: #387ed1
+        --color-profit: #4baa4e
+        --color-loss: #e04141
+        --color-background: #1b2436
+        --color-surface: #253248
+        --color-text-primary: #d1d5db
+        --color-text-secondary: #8c98ad
+        --font-family: "Roboto", sans-serif
+        --font-weight-regular: 400
+        --font-weight-medium: 500
+        --border-radius-sm: 2px
+        --border-radius-md: 4px
+        --spacing-unit: 4px
+    expected_output:
+      design_category: "data-dense"
+      tone: "technical"
+      primary_color: "#387ed1"
+      secondary_color: "#4baa4e"
+      background_color: "#1b2436"
+      font_family: "Roboto"
+      font_weights: [400, 500]
+      border_radius: "4px"
+      spacing_unit: "4px"
+      writing_instruction: >
+        Data-first, no emotional language. Every claim has a number behind it. Traders
+        read for accuracy, not inspiration — do not persuade, inform. Compact sentences:
+        subject, verb, number. No padding. First line states a fact or a performance
+        metric, never a feeling. Use INR and Indian market terminology. Avoid: amazing,
+        powerful, game-changing, revolutionary, best. If a sentence has no data point,
+        question whether it belongs.
+      confidence: 0.94
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 6 — contested/borderline case
+  # Razorpay — sits between bold-enterprise and developer-tool
+  # Reference for: when visual signals and token signals disagree
+  # Shows: how to resolve ambiguity and explain the decision
+  # ─────────────────────────────────────────────────────────────
+  - id: "ui_ex_06"
+    description: "borderline — Razorpay (bold-enterprise chosen over developer-tool, explained)"
+    input:
+      source: "razorpay.com"
+      css_tokens: |
+        --color-brand-primary: #2d9cdb
+        --color-brand-secondary: #528ff0
+        --color-background: #0f0f0f
+        --color-surface: #1a1a1a
+        --color-text-primary: #ffffff
+        --color-text-secondary: #aaaaaa
+        --color-cta: #3395ff
+        --font-family: "Mabry Pro", "Inter", sans-serif
+        --font-weight-regular: 400
+        --font-weight-medium: 500
+        --font-weight-bold: 700
+        --border-radius-sm: 4px
+        --border-radius-md: 8px
+        --spacing-unit: 8px
+    expected_output:
+      design_category: "bold-enterprise"
+      tone: "bold"
+      primary_color: "#2d9cdb"
+      secondary_color: "#528ff0"
+      background_color: "#0f0f0f"
+      font_family: "Mabry Pro"
+      font_weights: [400, 500, 700]
+      border_radius: "8px"
+      spacing_unit: "8px"
+      writing_instruction: >
+        Lead with scale and financial proof: ₹ amounts and customer counts before any
+        feature description. The audience is a founder or CFO, not an engineer — do not
+        assume technical knowledge. Direct and confident: short sentences, no hedging.
+        First line states a number or a consequence, never a product name. Indian B2B
+        fintech context throughout. Avoid: cutting-edge, innovative, seamless, next-gen.
+        Numbers before narrative, outcomes before mechanisms.
+      confidence: 0.81
+
