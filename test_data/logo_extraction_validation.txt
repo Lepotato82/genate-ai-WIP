@@ -1,0 +1,35 @@
+Extracting: https://linear.app
+  logo_url:        https://linear.app/static/apple-touch-icon.png?v=2
+  logo_confidence: high
+  logo_bytes:      25274 bytes
+  has_logo:        True
+  format:          PNG
+
+Extracting: https://searchable.com
+  logo_url:        https://searchable.com/searchable-frame.png
+  logo_confidence: high
+  logo_bytes:      5402 bytes
+  has_logo:        True
+  format:          PNG
+
+Extracting: https://razorpay.com
+  logo_url:        https://framerusercontent.com/assets/KJ1tqmJ8dStXoXj7xeNbsNv6uQ.png
+  logo_confidence: medium
+  logo_bytes:      2301492 bytes
+  has_logo:        True
+  format:          PNG
+
+Extracting: https://chargebee.com
+  logo_url:        https://chargebee.com/static/resources/brand/apple-touch-icon.png?v=1
+  logo_confidence: high
+  logo_bytes:      4364 bytes
+  has_logo:        True
+  format:          PNG
+
+Extracting: https://www.freshworks.com
+  logo_url:        https://www.freshworks.com/favicons/apple-touch-icon.png
+  logo_confidence: high
+  logo_bytes:      22720 bytes
+  has_logo:        True
+  format:          PNG
+

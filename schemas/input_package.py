@@ -10,7 +10,7 @@ NOT a Pydantic output schema. NOT persisted. NOT returned from the API.
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class InputPackage(BaseModel):
@@ -31,6 +31,11 @@ class InputPackage(BaseModel):
     og_image_bytes: bytes | None = None
     og_image_url: str | None = None
 
+    # Logo extraction (Phase 2 compositing input)
+    logo_bytes: bytes | None = None
+    logo_url: str | None = None
+    logo_confidence: Literal["high", "medium", "low"] | None = None
+
     # User uploads (highest priority)
     user_image: bytes | None = None
     user_document: str | None = None
@@ -43,6 +48,17 @@ class InputPackage(BaseModel):
     )
 
     model_config = {"arbitrary_types_allowed": True}
+
+    @model_validator(mode="after")
+    def logo_fields_consistent(self) -> "InputPackage":
+        logo_fields = [self.logo_bytes, self.logo_url, self.logo_confidence]
+        none_count = sum(1 for f in logo_fields if f is None)
+        if none_count not in (0, 3):
+            raise ValueError(
+                "logo_bytes, logo_url, and logo_confidence must all be "
+                "None or all be non-None. Partial state is not permitted."
+            )
+        return self
 
     # ------------------------------------------------------------------
     # Priority accessors
@@ -71,6 +87,11 @@ class InputPackage(BaseModel):
     # ------------------------------------------------------------------
     # Derived properties
     # ------------------------------------------------------------------
+
+    @property
+    def has_logo(self) -> bool:
+        """True if logo was successfully extracted."""
+        return self.logo_bytes is not None
 
     @property
     def has_visual(self) -> bool:

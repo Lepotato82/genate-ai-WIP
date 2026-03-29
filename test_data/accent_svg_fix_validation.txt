@@ -1,0 +1,37 @@
+Accent bar + SVG logo extraction fix validation
+Date: 2026-03-29
+Tests: 269 passed
+
+=== UNIT TEST RESULTS ===
+
+_pick_accent_color — Linear run 2 simulation:
+  primary == background: #08090a
+  _pick_accent_color -> #5e6ad2 (secondary_color)
+  contrast vs background: 4.24  (threshold: 1.5)
+  PASS: accent bar now visible on Linear dark theme
+
+=== PIPELINE RUNS ===
+Groq 70B TPD exhausted (100K/day) — full pipeline validation deferred.
+_pick_accent_color unit test confirms the fix is correct.
+Re-run when quota resets.
+
+=== EXPECTED OUTCOMES WHEN QUOTA RESETS ===
+Linear:
+  - primary_color may still be #08090a (same as bg) depending on CSS token run
+  - accent_bar will use secondary_color (#5e6ad2) → 4.24:1 contrast → visible purple bar
+  - logo: apple-touch-icon (high confidence) — same as before
+  - SVG priority 3.5: Linear header uses <img> tag, not SVG — no change expected
+
+Lemon Health:
+  - background_color: #ffffff
+  - primary_color: #ffdc42 (yellow, contrast 1.07 against #ffffff — below 1.5!)
+  - _pick_accent_color will skip #ffdc42 and fall back to #000000
+  - This is correct — yellow on white is nearly invisible as an accent bar
+  - SVG priority 3.5: lemonhealth.ai may use SVG logo in Framer components
+    If SVG is found: logo_confidence upgrades from medium to high
+    If not found: stays at medium (og:image) — no regression
+
+=== KNOWN OPEN ITEMS (Phase 3) ===
+- Lemon Health yellow (#ffdc42) accent bar: _pick_accent_color correctly rejects it
+  but the #000000 fallback is brand-incorrect. Phase 3: allow user to override accent.
+- Apple-touch-icon black background: still baked in, needs Pillow crop. Phase 3.

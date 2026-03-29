@@ -1,14 +1,14 @@
 {
-  "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+  "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+    "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
     "org_id": null,
-    "created_at": "2026-03-24T13:27:37.576921+00:00",
+    "created_at": "2026-03-28T15:31:09.855859+00:00",
     "design_category": "minimal-saas",
     "primary_color": "#1a0f13",
     "secondary_color": "#65454e",
-    "background_color": "rgb(253, 251, 249)",
+    "background_color": "oklch(98.4% .006 85.5)",
     "font_family": "Geist",
     "font_weights": [
       400.0,
@@ -18,7 +18,7 @@
     "border_radius": ".625rem",
     "spacing_unit": "16px",
     "tone": "minimal",
-    "writing_instruction": "To match this brand voice, use the Geist font family and a muted color palette with primary color #1a0f13, secondary color #65454e, and background color rgb(253, 251, 249). The tone is minimal, so keep the language concise and straightforward. The design category is minimal-saas, so prioritize simplicity and clarity in your writing. Use font weights 400, 500, and 600 to create visual hierarchy and emphasis.",
+    "writing_instruction": "One idea per sentence. Focus on the outcome, not the process. Avoid jargon and superlatives. The first line must earn the second. Use active voice, clear and concise language.",
     "css_tokens": {
       "--radius": ".625rem",
       "--background": "oklch(98.4% .006 85.5)",
@@ -96,21 +96,21 @@
       "--_btn-color-6": "rgb(255, 255, 255)",
       "--_btn-bg-7": "rgb(193, 95, 60)",
       "--_btn-color-7": "rgb(255, 255, 255)",
-      "--_btn-bg-8": "rgb(59, 45, 34)",
+      "--_btn-bg-8": "rgb(46, 28, 34)",
       "--_btn-color-8": "rgb(255, 255, 255)",
-      "--_btn-bg-9": "rgb(59, 45, 34)",
+      "--_btn-bg-9": "rgb(46, 28, 34)",
       "--_btn-color-9": "rgb(255, 255, 255)"
     },
     "confidence": 0.8
   },
   "product_knowledge": {
-    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+    "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
     "org_id": null,
-    "created_at": "2026-03-24T13:27:48.639798+00:00",
+    "created_at": "2026-03-28T15:31:23.457915+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
     "tagline": "Visibility & Analytics from AI Search \u2014 and the actions to drive growth",
-    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines.",
+    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines. Searchable also provides real-time alerts, analytics dashboards, and expert support to help brands optimize their AI search presence.",
     "product_category": "data-analytics",
     "features": [
       {
@@ -128,13 +128,22 @@
       {
         "name": "Competitive Analysis",
         "description": "Track share of voice compared to competitors across AI engines"
+      },
+      {
+        "name": "Real-time Alerts",
+        "description": "Get notified when brand is mentioned or rankings change"
+      },
+      {
+        "name": "Analytics Dashboard",
+        "description": "Detailed insights into traffic, citations, and performance metrics"
       }
     ],
     "benefits": [
       "Improve AI search rankings",
       "Increase product discovery through AI shopping assistants",
       "Get recommended by AI for local searches",
-      "Deliver AI search optimization services to clients"
+      "Deliver AI search optimization services to clients",
+      "Capture millions of clicks from customers discovering products through AI-powered search engines"
     ],
     "proof_points": [
       {
@@ -146,15 +155,26 @@
         "text": "Generated over \u00a31 million in qualified pipeline from AI search",
         "proof_type": "stat",
         "source": "scraped_page"
+      },
+      {
+        "text": "Jonathan Kvarfordt, VP of GTM Strategy & Marketing",
+        "proof_type": "customer_name",
+        "source": "scraped_page"
       }
     ],
     "pain_points": [
       "Difficulty tracking brand mentions and rankings across AI engines",
       "Struggling to optimize content for AI search",
-      "Limited visibility into AI search performance metrics"
+      "Limited visibility into AI search performance metrics",
+      "Difficulty competing with other brands for AI search visibility",
+      "Limited resources to dedicate to AI search optimization"
     ],
     "messaging_angles": [
-      "Take control of AI search"
+      "Take control of AI search",
+      "Optimize for the future of search",
+      "Improve AI search rankings",
+      "Increase product discovery through AI shopping assistants",
+      "Get recommended by AI for local searches"
     ],
     "target_customer": "E-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
     "integrations": [
@@ -165,19 +185,19 @@
     ],
     "pricing_mentioned": false,
     "pricing_description": null,
-    "scrape_word_count": 1529,
+    "scrape_word_count": 1528,
     "user_document_filename": null,
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+    "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
     "org_id": null,
-    "created_at": "2026-03-24T13:27:50.893342+00:00",
-    "platform": "twitter",
-    "content_type": "thread",
+    "created_at": "2026-03-28T15:31:28.187991+00:00",
+    "platform": "instagram",
+    "content_type": "carousel",
     "narrative_arc": "pain-agitate-solve-cta",
     "content_pillar": "product_and_solution",
-    "funnel_stage": "tofu",
+    "funnel_stage": "mofu",
     "posting_strategy": {
       "recommended_frequency": "3x weekly",
       "best_days": [
@@ -187,66 +207,75 @@
       "best_time_window": "10:00-12:00 IST"
     },
     "word_count_target": null,
-    "slide_count_target": null,
-    "thread_length_target": 6,
+    "slide_count_target": 8,
+    "thread_length_target": null,
     "platform_rules_summary": [
-      "Thread of 4-8 tweets (4-8)",
-      "Each tweet max 280 chars",
-      "Hashtags (1-2): final tweet only"
+      "First 125 chars: complete emotional statement",
+      "20-30 hashtags; placement: after 5 line breaks; inline hashtags: False"
     ],
     "seo_keyword": null,
     "knowledge_context_used": false,
     "knowledge_context_summary": null,
-    "benchmark_reference": "Based on Twitter's character limit and user engagement patterns, a 6-tweet thread is optimal for conveying complex information without overwhelming our audience.",
-    "reasoning": "With 3 pain points and 4 features to highlight, a thread of 6 tweets allows us to effectively introduce the problem, agitate it by highlighting the consequences of not addressing it, and then provide a solution using our product, Searchable. The presence of 2 proof points and a strong stat will add credibility to our narrative, making a compelling case for taking control of AI search. Given the minimal brand tone, we'll focus on concise, informative tweets that resonate with our audience."
+    "benchmark_reference": "Similar data-analytics products on Instagram have seen success with carousels, achieving an average engagement rate of 2.5% and a click-through rate of 1.2%.",
+    "reasoning": "With 5 pain points and 3 proof points, a carousel can effectively showcase the problems and solutions offered by Searchable. The minimal brand tone suggests a straightforward, educational approach. The presence of a strong stat and a customer name can be used to build credibility and trust. Given the 6 features of Searchable, a carousel with 8 slides can provide a comprehensive overview of the product's benefits and value proposition, addressing the pain points and showcasing the features and proof points."
   },
   "strategy_brief": {
-    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+    "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
     "org_id": null,
-    "created_at": "2026-03-24T13:27:55.243958+00:00",
+    "created_at": "2026-03-28T15:31:32.619841+00:00",
     "lead_pain_point": "Difficulty tracking brand mentions and rankings across multiple AI engines daily",
-    "primary_claim": "Searchable drives growth through AI search optimization",
+    "primary_claim": "Searchable drives growth through AI search visibility and analytics",
     "proof_point": "206% share of voice improvements",
     "proof_point_type": "stat",
     "cta_intent": "start_trial",
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
     "target_icp_role": "Digital Marketing Manager",
-    "differentiator": "unlike traditional SEO platforms that fail to account for AI search",
-    "hook_direction": "Start by highlighting the frustration of tracking AI search metrics",
+    "differentiator": "unlike traditional SEO platforms that focus on human search engines",
+    "hook_direction": "Start by highlighting the daily struggle of tracking AI search performance",
     "positioning_mode": "category_challenging",
     "messaging_angle_used": "Take control of AI search",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+    "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
     "org_id": null,
-    "created_at": "2026-03-24T13:28:17.481403+00:00",
-    "platform": "twitter",
+    "created_at": "2026-03-28T15:31:57.483887+00:00",
+    "platform": "instagram",
     "linkedin_content": null,
-    "twitter_content": {
-      "tweets": [
-        "Tracking AI search metrics is a daily headache. Multiple engines, countless mentions, and rankings that shift constantly. How do you stay on top of it all?",
-        "The truth is, manual tracking is a huge time sink. And even then, you're likely to miss crucial insights that could inform your growth strategy. The complexity is overwhelming.",
-        "But what if you could simplify your search metric tracking and unlock real growth? That's where AI search optimization comes in \u2013 and it's been proven to drive results.",
-        "We've seen it firsthand: 206% share of voice improvements. This isn't just a incremental boost \u2013 it's a game-changer for businesses looking to expand their online presence.",
-        "So how can you start driving similar growth for your brand? It starts with Searchable, the AI search optimization solution that helps you cut through the noise and reach your target audience.",
-        "Ready to take the first step? Start your trial today and discover how Searchable can help you grow your brand's online presence and drive real results. #Searchable #AISearchOptimization"
-      ],
-      "tweet_char_counts": [
-        155,
-        176,
-        168,
-        172,
-        191,
-        185
-      ],
+    "twitter_content": null,
+    "instagram_content": {
+      "preview_text": "You're invisible in AI search.",
+      "body": "Every hour you spend tracking AI search performance is an hour your competitor gets ahead. Daily, you're checking multiple AI engines, trying to stay on top of your brand mentions and rankings. Searchable drives growth through AI search visibility and analytics, giving you the power to take control of your brand's online presence. Our users have seen 206% share of voice improvements. It's time to stop wasting time and start driving real growth. Start your trial today and discover a better way to manage your AI search performance.",
       "hashtags": [
+        "#AISearch",
+        "#SearchVisibility",
+        "#BrandMentions",
+        "#Rankings",
+        "#GrowthHacking",
+        "#DigitalMarketing",
+        "#OnlinePresence",
         "#Searchable",
-        "#AISearchOptimization"
-      ]
+        "#AIsearchperformance",
+        "#CompetitorAnalysis",
+        "#DataDrivenDecisions",
+        "#ShareOfVoice",
+        "#BrandSuccess",
+        "#TargetAudience",
+        "#Relevance",
+        "#GrowthPotential",
+        "#TrialNow",
+        "#ManageAISearch",
+        "#UnlockGrowth",
+        "#StartToday",
+        "#ResultsDriven",
+        "#GrowthMindset",
+        "#Innovation",
+        "#dataanalytics",
+        "#bi"
+      ],
+      "full_caption": "You're invisible in AI search.\nEvery hour you spend tracking AI search performance is an hour your competitor gets ahead. Daily, you're checking multiple AI engines, trying to stay on top of your brand mentions and rankings. Searchable drives growth through AI search visibility and analytics, giving you the power to take control of your brand's online presence. Our users have seen 206% share of voice improvements. It's time to stop wasting time and start driving real growth. Start your trial today and discover a better way to manage your AI search performance.\n\n\n\n\n#AISearch #SearchVisibility #BrandMentions #Rankings #GrowthHacking #DigitalMarketing #OnlinePresence #Searchable #AIsearchperformance #CompetitorAnalysis #DataDrivenDecisions #ShareOfVoice #BrandSuccess #TargetAudience #Relevance #GrowthPotential #TrialNow #ManageAISearch #UnlockGrowth #StartToday #ResultsDriven #GrowthMindset #Innovation #dataanalytics #bi"
     },
-    "instagram_content": null,
     "blog_content": null,
     "image_prompt": null,
     "suggested_format": null,
@@ -259,21 +288,21 @@
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "516652e6-48b2-407d-8613-e9b862faf6c0",
+    "run_id": "f7656b3b-910e-4cce-801a-a1b0099c1f50",
     "org_id": null,
-    "created_at": "2026-03-24T13:28:36.593562+00:00",
-    "platform": "twitter",
+    "created_at": "2026-03-28T15:32:17.165836+00:00",
+    "platform": "instagram",
     "clarity": 4,
     "engagement": 4,
-    "tone_match": 3,
+    "tone_match": 4,
     "accuracy": 5,
-    "overall_score": 4.0,
+    "overall_score": 4.25,
     "passes": true,
     "revision_hint": null,
     "lowest_dimension": null,
-    "scores_rationale": "The copy is easy to understand, and each tweet has a clear purpose, but the transition between tweets could be smoother to create a more cohesive narrative. The hook in tweet 1 is strong and creates curiosity, but it could be more specific about the daily friction of tracking AI search metrics to stop the scroll. The language is generally concise and straightforward, but the tone is not entirely minimal, with phrases like 'game-changer' that slightly deviate from the instructed minimal tone. The proof_point appears verbatim in tweet 4, directly supporting the primary_claim and demonstrating a clear connection to the provided accuracy baseline.",
+    "scores_rationale": "The copy is easy to understand, and the mechanism of how Searchable drives growth is self-explanatory, but the transition between sentences could be smoother. The hook is attention-grabbing and creates a sense of urgency, and the payoff is clear, but it could be stronger with a more specific daily friction. The tone mostly follows the writing instruction, using active voice and clear language, but there are a few instances of slightly promotional language, such as 'driving real growth' and 'unlock growth'. The copy accurately represents the primary claim and includes the proof point of 206% share of voice improvements, which is directly traceable to the primary claim.",
     "retry_count": 0
   },
   "passes": true,
-  "overall_score": 4.0
+  "overall_score": 4.25
 }

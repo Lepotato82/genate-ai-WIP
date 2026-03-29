@@ -1,0 +1,176 @@
+{
+  "agent": "ui_analyzer",
+  "schema_version": "1.0",
+  "last_updated": "2026-03",
+  "notes": "Case A is the real BrandProfile from the Searchable Groq run. Known issue: design_category is inconsistent across runs for this site — it has been classified as developer-tool, minimal-saas, and data-dense in different runs. This is a known UI Analyzer instability documented below. Cases B–E are synthetic examples covering all five design categories.",
+  "known_issues": {
+    "design_category_instability": "The UI Analyzer returns inconsistent design_category values for searchable.com across runs (developer-tool vs minimal-saas vs data-dense). Root cause is likely insufficient few-shot anchoring for sites that sit on the border between categories. Fix: add searchable.com as a few-shot example anchored to minimal-saas in the UI Analyzer prompt. Track in CLAUDE.md."
+  },
+  "test_cases": [
+    {
+      "case": "A_searchable_groq_minimal_saas",
+      "source": "real — Groq run, searchable.com",
+      "input": {
+        "url": "https://searchable.com",
+        "screenshot_available": true,
+        "css_tokens_available": true
+      },
+      "expected_output": {
+        "design_category": "minimal-saas",
+        "colors": {
+          "primary": "#000000",
+          "secondary": "#ffffff",
+          "accent": "#6366f1",
+          "background": "#ffffff",
+          "text_primary": "#111827"
+        },
+        "typography": {
+          "font_family_primary": "Inter",
+          "font_weight_heading": 600,
+          "font_weight_body": 400
+        },
+        "tone": {
+          "classification": "direct",
+          "formality": "professional",
+          "writing_instruction": "Write in short, declarative sentences. Lead with the outcome, not the feature. Avoid passive voice and filler words like 'helps', 'enables', or 'allows'. Use present tense. Data points first, context second."
+        },
+        "border_radius_base": "8px",
+        "spacing_base_unit": "4px",
+        "css_token_count": 42
+      },
+      "validation_note": "design_category may show as developer-tool or data-dense on different runs — this is a known instability. minimal-saas is the correct classification for this site. writing_instruction is injected directly into the Copywriting agent's system prompt — it must be a specific, actionable instruction string, not a vague descriptor like 'professional tone'."
+    },
+    {
+      "case": "B_developer_tool_synthetic",
+      "source": "synthetic — developer-tool category example (linear.app reference)",
+      "input": {
+        "url": "https://linear.app",
+        "screenshot_available": true,
+        "css_tokens_available": true
+      },
+      "expected_output": {
+        "design_category": "developer-tool",
+        "colors": {
+          "primary": "#5e6ad2",
+          "secondary": "#ffffff",
+          "accent": "#7170ff",
+          "background": "#f7f8f9",
+          "text_primary": "#1a1a2e"
+        },
+        "typography": {
+          "font_family_primary": "Inter",
+          "font_weight_heading": 590,
+          "font_weight_body": 410
+        },
+        "tone": {
+          "classification": "precise",
+          "formality": "technical-peer",
+          "writing_instruction": "Write as a technical peer, not a marketer. Use exact product terminology. Avoid superlatives. Sentence structure: short subject + strong verb + specific object. Never use 'journey', 'ecosystem', or 'unlock'."
+        },
+        "border_radius_base": "6px",
+        "spacing_base_unit": "4px",
+        "css_token_count": 78
+      },
+      "validation_note": "Fractional font weights (590, 410) are real variable font values extracted from CSS tokens — a key Genate differentiator. If the output shows round numbers only (400, 600) for a site using variable fonts, that is an extraction failure. css_token_count >= 60 is expected for a site with a mature design system like Linear."
+    },
+    {
+      "case": "C_bold_enterprise_synthetic",
+      "source": "synthetic — bold-enterprise category example",
+      "input": {
+        "url": "https://example-enterprise.com",
+        "screenshot_available": true,
+        "css_tokens_available": true
+      },
+      "expected_output": {
+        "design_category": "bold-enterprise",
+        "colors": {
+          "primary": "#1a1a2e",
+          "secondary": "#e8e8e8",
+          "accent": "#ff4d00",
+          "background": "#0d0d1a",
+          "text_primary": "#ffffff"
+        },
+        "typography": {
+          "font_family_primary": "Geist",
+          "font_weight_heading": 700,
+          "font_weight_body": 400
+        },
+        "tone": {
+          "classification": "authoritative",
+          "formality": "executive",
+          "writing_instruction": "Write at the executive level. Lead with business outcomes and risk reduction. Use industry terminology. Posts should feel like a CTO or VP Eng wrote them, not a content marketer."
+        },
+        "border_radius_base": "4px",
+        "spacing_base_unit": "8px",
+        "css_token_count": 55
+      },
+      "validation_note": "Synthetic. bold-enterprise sites typically have dark backgrounds and high-contrast accent colors. font_weight_heading=700 is expected. writing_instruction should target exec-level tone."
+    },
+    {
+      "case": "D_consumer_friendly_synthetic",
+      "source": "synthetic — consumer-friendly category example",
+      "input": {
+        "url": "https://example-consumer.com",
+        "screenshot_available": true,
+        "css_tokens_available": true
+      },
+      "expected_output": {
+        "design_category": "consumer-friendly",
+        "colors": {
+          "primary": "#6c47ff",
+          "secondary": "#ffd166",
+          "accent": "#06d6a0",
+          "background": "#fafafa",
+          "text_primary": "#2d2d2d"
+        },
+        "typography": {
+          "font_family_primary": "Nunito",
+          "font_weight_heading": 700,
+          "font_weight_body": 400
+        },
+        "tone": {
+          "classification": "warm",
+          "formality": "conversational",
+          "writing_instruction": "Write like you're texting a smart friend. Contractions always. Short sentences. One idea per paragraph. End with a question or observation that makes the reader feel seen."
+        },
+        "border_radius_base": "16px",
+        "spacing_base_unit": "4px",
+        "css_token_count": 38
+      },
+      "validation_note": "Synthetic. consumer-friendly sites typically have rounded corners (high border_radius), bright accent colors, and rounded typefaces. writing_instruction should be conversational and warm."
+    },
+    {
+      "case": "E_data_dense_synthetic",
+      "source": "synthetic — data-dense category example",
+      "input": {
+        "url": "https://example-data-tool.com",
+        "screenshot_available": true,
+        "css_tokens_available": true
+      },
+      "expected_output": {
+        "design_category": "data-dense",
+        "colors": {
+          "primary": "#1c6ef3",
+          "secondary": "#f0f4ff",
+          "accent": "#ff6b35",
+          "background": "#ffffff",
+          "text_primary": "#1a1a2e"
+        },
+        "typography": {
+          "font_family_primary": "IBM Plex Sans",
+          "font_weight_heading": 600,
+          "font_weight_body": 400
+        },
+        "tone": {
+          "classification": "analytical",
+          "formality": "data-driven",
+          "writing_instruction": "Lead with numbers. Every claim needs a number, a comparison, or a timeframe attached to it. Avoid abstract benefit language — state the measurable outcome. Structure posts as: stat → implication → action."
+        },
+        "border_radius_base": "4px",
+        "spacing_base_unit": "4px",
+        "css_token_count": 61
+      },
+      "validation_note": "Synthetic. data-dense tools use compact spacing (low border_radius, small base unit), monospaced or technical typefaces, and muted color palettes. writing_instruction should be analytical and stat-led."
+    }
+  ]
+}

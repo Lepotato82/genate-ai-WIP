@@ -1,0 +1,62 @@
+company_name,url,category,target_customer,linkedin_url,active_poster
+Razorpay,https://razorpay.com,payments,businesses and startups accepting online payments in India,https://www.linkedin.com/company/razorpay,yes
+Chargebee,https://www.chargebee.com,subscription billing,SaaS companies managing recurring revenue globally,https://www.linkedin.com/company/chargebee,yes
+Freshworks,https://www.freshworks.com,CRM and customer support,SMBs and mid-market support and sales teams,https://www.linkedin.com/company/freshworks,yes
+Postman,https://www.postman.com,developer tools,API developers and engineering teams,https://www.linkedin.com/company/postman-platform,yes
+Hasura,https://hasura.io,developer tools,developers building on GraphQL and Postgres,https://www.linkedin.com/company/hasura,yes
+Zerodha,https://zerodha.com,fintech trading platform,retail investors and traders in India,https://www.linkedin.com/company/zerodha,no
+Groww,https://groww.in,fintech investing,retail and first-time investors in India,https://www.linkedin.com/company/growwapp,yes
+Setu,https://setu.co,fintech infrastructure,developers and fintechs building on Indian financial APIs,https://www.linkedin.com/company/setu-co,yes
+CleverTap,https://clevertap.com,marketing automation,mobile-first consumer apps,https://www.linkedin.com/company/clevertap,yes
+WebEngage,https://webengage.com,marketing automation,e-commerce and SaaS retention teams,https://www.linkedin.com/company/webengage,yes
+Sprinklr,https://www.sprinklr.com,customer experience platform,enterprise marketing and CX teams,https://www.linkedin.com/company/sprinklr,yes
+Darwinbox,https://darwinbox.com,HR tech,enterprise HR and people teams in Asia,https://www.linkedin.com/company/darwinbox,yes
+Leegality,https://www.leegality.com,document signing,legal and compliance teams in Indian enterprises,https://www.linkedin.com/company/leegality,yes
+Sarvam AI,https://www.sarvam.ai,AI and language models,developers building Indian language AI products,https://www.linkedin.com/company/sarvam-ai,yes
+Eka Care,https://www.eka.care,health tech,patients and doctors managing health records in India,https://www.linkedin.com/company/eka-care,yes
+Zoho,https://www.zoho.com,business software suite,SMBs across CRM finance HR and operations,https://www.linkedin.com/company/zoho,yes
+BrowserStack,https://www.browserstack.com,developer tools,QA engineers and developers doing cross-browser testing,https://www.linkedin.com/company/browserstack,yes
+Zenoti,https://www.zenoti.com,salon and spa management,wellness and beauty businesses globally,https://www.linkedin.com/company/zenoti,yes
+Innovaccer,https://innovaccer.com,health data platform,healthcare systems and payers in the US,https://www.linkedin.com/company/innovaccer,yes
+Druva,https://www.druva.com,data protection and backup,IT and security teams in enterprises,https://www.linkedin.com/company/druva,yes
+Icertis,https://www.icertis.com,contract lifecycle management,enterprise legal and procurement teams,https://www.linkedin.com/company/icertis,yes
+Mindtickle,https://www.mindtickle.com,sales readiness,sales enablement and revenue teams,https://www.linkedin.com/company/mindtickle,yes
+Uniphore,https://www.uniphore.com,conversational AI,enterprise contact centres and CX teams,https://www.linkedin.com/company/uniphore,yes
+Haptik,https://www.haptik.ai,conversational AI,enterprises building customer-facing chatbots,https://www.linkedin.com/company/haptik,yes
+Exotel,https://exotel.com,cloud communications,businesses running customer call and SMS workflows in India,https://www.linkedin.com/company/exotel,yes
+Kaleyra,https://www.kaleyra.com,cloud communications,enterprises running omnichannel customer messaging,https://www.linkedin.com/company/kaleyra,yes
+Signzy,https://signzy.com,digital onboarding,fintechs and banks doing KYC and digital contracts in India,https://www.linkedin.com/company/signzy,yes
+Locus,https://locus.sh,logistics tech,logistics and supply chain teams,https://www.linkedin.com/company/locus-sh,yes
+Whatfix,https://whatfix.com,digital adoption platform,enterprise IT and L&D teams,https://www.linkedin.com/company/whatfix,yes
+Kissflow,https://kissflow.com,workflow automation,operations and IT teams in SMBs and enterprises,https://www.linkedin.com/company/kissflow,yes
+MoEngage,https://www.moengage.com,customer engagement,growth and marketing teams at mobile-first companies,https://www.linkedin.com/company/moengage,yes
+Cashfree Payments,https://www.cashfree.com,payments,businesses and platforms needing payouts and collections in India,https://www.linkedin.com/company/cashfree-payments,yes
+Open,https://open.money,business banking,SMBs managing business finances and payroll in India,https://www.linkedin.com/company/open-financial-technologies,yes
+Perfios,https://www.perfios.com,financial data,banks and fintechs doing income and credit verification,https://www.linkedin.com/company/perfios,yes
+HyperVerge,https://hyperverge.co,AI identity verification,fintechs and banks running digital KYC,https://www.linkedin.com/company/hyperverge,yes
+Netcore Cloud,https://netcorecloud.com,marketing automation,enterprise marketing and CRM teams,https://www.linkedin.com/company/netcore-cloud,yes
+LeadSquared,https://www.leadsquared.com,CRM and marketing automation,education and healthcare sales teams in India,https://www.linkedin.com/company/leadsquared,yes
+Capillary Technologies,https://www.capillarytech.com,loyalty and CRM,retail and consumer brand teams in Asia,https://www.linkedin.com/company/capillary-technologies,yes
+Hevo Data,https://hevodata.com,data pipeline,data engineers and analytics teams,https://www.linkedin.com/company/hevo-data,yes
+Fynd,https://www.fynd.com,retail tech,omnichannel retailers managing inventory and commerce in India,https://www.linkedin.com/company/fynd,yes
+iZooto,https://www.izooto.com,push notifications,publishers and e-commerce teams driving repeat traffic,https://www.linkedin.com/company/izooto,yes
+PaperFlite,https://www.paperflite.com,content management,B2B sales and marketing teams,https://www.linkedin.com/company/paperflite,yes
+Kovai.co,https://www.kovai.co,SaaS developer tools,developers and IT teams on Azure and BizTalk,https://www.linkedin.com/company/kovai-co,yes
+Helpshift,https://www.helpshift.com,customer support,mobile app and gaming customer support teams,https://www.linkedin.com/company/helpshift,yes
+Instamojo,https://www.instamojo.com,payments and e-commerce,D2C brands and solo entrepreneurs selling online in India,https://www.linkedin.com/company/instamojo,no
+Ninjacart,https://www.ninjacart.com,agri supply chain,FMCG companies and farmers in fresh produce supply,https://www.linkedin.com/company/ninjacart,yes
+Manthan,https://www.manthan.com,retail analytics,retail and CPG analytics and planning teams,https://www.linkedin.com/company/manthan,yes
+Stellapps,https://www.stellapps.com,dairy tech,dairy companies and milk procurement cooperatives in India,https://www.linkedin.com/company/stellapps,no
+Zetwerk,https://www.zetwerk.com,manufacturing marketplace,procurement teams sourcing custom manufactured parts,https://www.linkedin.com/company/zetwerk,yes
+Recko,https://www.recko.io,revenue reconciliation,finance and operations teams at fintechs and marketplaces,https://www.linkedin.com/company/recko,yes
+Pepper Content,https://www.peppercontent.io,content marketplace,marketing teams scaling content production,https://www.linkedin.com/company/pepper-content,yes
+Spendflo,https://www.spendflo.com,SaaS spend management,finance and IT teams optimising SaaS subscriptions,https://www.linkedin.com/company/spendflo,yes
+Zinghr,https://www.zinghr.com,HR tech,HR and payroll teams at Indian enterprises,https://www.linkedin.com/company/zinghr,yes
+Keka,https://www.keka.com,HR tech,HR teams at Indian SMBs managing payroll and attendance,https://www.linkedin.com/company/keka-hr,yes
+Kredx,https://kredx.com,supply chain finance,CFOs and finance teams doing invoice discounting in India,https://www.linkedin.com/company/kredx,yes
+Zaggle,https://www.zaggle.in,expense management,corporate finance and HR teams managing employee spend,https://www.linkedin.com/company/zaggle,yes
+Fampay,https://fampay.in,fintech,teenagers and parents managing money with a prepaid card,https://www.linkedin.com/company/fampay,yes
+Juspay,https://juspay.in,payments infrastructure,developers and fintechs building payment flows in India,https://www.linkedin.com/company/juspay,yes
+Zuddl,https://www.zuddl.com,virtual events,enterprise marketing teams running webinars and conferences,https://www.linkedin.com/company/zuddl,yes
+Airmeet,https://www.airmeet.com,virtual events,community managers and marketing teams running online events,https://www.linkedin.com/company/airmeet,yes
+Smallcase,https://www.smallcase.com,fintech investing,retail investors building thematic stock portfolios,https://www.linkedin.com/company/smallcase,yes

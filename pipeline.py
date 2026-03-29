@@ -10,6 +10,7 @@ from agents import (
     copywriter,
     evaluator,
     formatter,
+    image_gen,
     input_processor,
     planner,
     product_analysis,
@@ -18,6 +19,7 @@ from agents import (
 )
 from config import settings
 from knowledge import persist_run, query_context
+from schemas.brand_identity import BrandIdentity, _to_hex
 from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.evaluator_output import EvaluatorOutput
@@ -52,6 +54,7 @@ class RunArtifacts:
     raw_copy: str
     formatted_content: FormattedContent
     evaluator_output: EvaluatorOutput
+    images: dict | None = None
 
 
 RUN_REGISTRY: dict[str, RunArtifacts] = {}
@@ -67,6 +70,49 @@ def _event(step: int, agent: str, status: str, started: float, message: str) -> 
     }
 
 
+def build_brand_identity(
+    pkg: InputPackage,
+    brand: BrandProfile,
+    product: ProductKnowledge,
+) -> BrandIdentity:
+    """
+    Assemble BrandIdentity from Input Processor + UI Analyzer outputs.
+    Deterministic — no LLM, no network calls.
+    """
+    # Extract mono font from raw css_tokens if present
+    mono_font = None
+    if pkg.css_tokens:
+        for key, val in pkg.css_tokens.items():
+            if "mono" in key.lower() and isinstance(val, str):
+                mono_font = val.split(",")[0].strip().strip("\"'")
+                break
+
+    return BrandIdentity(
+        product_name=product.product_name or "Unknown",
+        product_url=str(pkg.url),
+        run_id=pkg.run_id,
+        logo_bytes=pkg.logo_bytes,
+        logo_url=pkg.logo_url,
+        logo_confidence=pkg.logo_confidence,
+        og_image_url=getattr(pkg, "og_image_url", None),
+        og_image_bytes=None,
+        primary_color=_to_hex(brand.primary_color) or "#000000",
+        secondary_color=_to_hex(brand.secondary_color),
+        accent_color=None,
+        background_color=_to_hex(brand.background_color) or "#ffffff",
+        foreground_color=None,
+        font_family_heading=brand.font_family,
+        font_family_body=brand.font_family,
+        font_family_mono=mono_font,
+        font_weights=brand.font_weights or [],
+        border_radius=brand.border_radius,
+        spacing_unit=brand.spacing_unit,
+        design_category=brand.design_category,
+        tone=brand.tone,
+        writing_instruction=brand.writing_instruction,
+    )
+
+
 def _run_stages_after_input(
     *,
     run_id: str,
@@ -77,6 +123,7 @@ def _run_stages_after_input(
 ) -> tuple[
     BrandProfile,
     ProductKnowledge,
+    BrandIdentity,
     ContentBrief,
     StrategyBrief,
     str,
@@ -90,6 +137,8 @@ def _run_stages_after_input(
         f_pa = pool.submit(product_analysis.run, pkg)
         brand = f_ui.result()
         product = f_pa.result()
+
+    brand_identity = build_brand_identity(pkg, brand, product)
 
     knowledge_context: KnowledgeContext | None = None
     if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
@@ -125,7 +174,7 @@ def _run_stages_after_input(
         )
         evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
 
-    return brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated
+    return brand, product, brand_identity, content_brief, strategy_brief, raw_copy, formatted, evaluated
 
 
 def run_pipeline(
@@ -147,13 +196,14 @@ def run_pipeline(
         user_image=user_image,
         user_document=user_document,
     )
-    brand, product, content_brief, strategy_brief, raw_copy, formatted, evaluated = _run_stages_after_input(
+    brand, product, brand_identity, content_brief, strategy_brief, raw_copy, formatted, evaluated = _run_stages_after_input(
         run_id=run_id,
         org_id=None,
         pkg=pkg,
         platform=platform,
         started=started,
     )
+    images = image_gen.run(formatted, brand_identity)
     artifacts = RunArtifacts(
         run_id=run_id,
         org_id=None,
@@ -164,6 +214,7 @@ def run_pipeline(
         raw_copy=raw_copy,
         formatted_content=formatted,
         evaluator_output=evaluated,
+        images=images,
     )
     RUN_REGISTRY[run_id] = artifacts
     return {
@@ -171,6 +222,7 @@ def run_pipeline(
         "url": url,
         "platform": platform,
         "brand_profile": brand.model_dump(),
+        "brand_identity": brand_identity.model_dump(exclude={"logo_bytes", "og_image_bytes"}),
         "product_knowledge": product.model_dump(),
         "content_brief": content_brief.model_dump(),
         "strategy_brief": strategy_brief.model_dump(),
@@ -179,6 +231,7 @@ def run_pipeline(
         "evaluator_output": evaluated.model_dump(),
         "passes": evaluated.passes,
         "overall_score": evaluated.overall_score,
+        "images": images,
     }
 
 
@@ -247,6 +300,8 @@ def run_stream(
     yield _event(2, "ui_analyzer", "complete", started, "Brand profile extracted")
     yield _event(3, "product_analysis", "complete", started, "Product knowledge extracted")
 
+    brand_identity = build_brand_identity(input_pkg, brand, product)
+
     # Step K — Knowledge Layer query (optional)
     knowledge_context: KnowledgeContext | None = None
     if settings.KNOWLEDGE_LAYER_ENABLED and org_id:
@@ -283,6 +338,12 @@ def run_stream(
     )
     yield _event(8, "formatter", "complete", started, "Formatting complete")
 
+    # Phase 2 — Image generation
+    images = image_gen.run(formatted, brand_identity)
+    if images.get("generation_enabled"):
+        yield _event(7, "image_gen", "complete", started,
+                     f"Generated {len(images['image_urls'])} slides")
+
     # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
     yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
@@ -316,6 +377,7 @@ def run_stream(
         raw_copy=raw_copy,
         formatted_content=formatted,
         evaluator_output=evaluated,
+        images=images,
     )
     RUN_REGISTRY[run_id] = artifacts
 
@@ -351,6 +413,7 @@ def _run_entry(
     pkg = input_processor.run(url=url, run_id=rid, org_id=org_id)
     brand = ui_analyzer.run(pkg)
     product = product_analysis.run(pkg)
+    brand_identity = build_brand_identity(pkg, brand, product)
     brief = planner.run(brand, product, platform=plat)
     strategy_brief = strategy.run(brief, product, brand)
     raw_copy = copywriter.run(strategy_brief, brief, brand)
@@ -363,6 +426,9 @@ def _run_entry(
         retry_count=0,
         product_knowledge=product,
     )
+
+    # Phase 2 — Image generation (runs on first formatted output, before retry loop)
+    images = image_gen.run(formatted, brand_identity)
 
     for attempt in range(max_retries + 1):
         evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
@@ -382,6 +448,7 @@ def _run_entry(
         "run_id": rid,
         "url": url,
         "brand_profile": brand.model_dump(),
+        "brand_identity": brand_identity.model_dump(exclude={"logo_bytes", "og_image_bytes"}),
         "product_knowledge": product.model_dump(),
         "content_brief": brief.model_dump(),
         "strategy_brief": strategy_brief.model_dump(),
@@ -389,6 +456,7 @@ def _run_entry(
         "evaluation": evaluation.model_dump(),
         "passes": evaluation.passes,
         "overall_score": evaluation.overall_score,
+        "images": images,
     }
 
 

@@ -61,13 +61,18 @@ print(json.dumps(r['evaluation'], indent=2))
 The critical ones for local development:
 
 ```env
-MOCK_MODE=true                         # false = real LLM + real browser scrape
-LLM_PROVIDER=ollama                    # groq | openai | anthropic | ollama
+MOCK_MODE=false                        # false = real LLM + real browser scrape
+LLM_PROVIDER=groq                      # production default — groq | openai | anthropic | ollama
+LLM_TEXT_MODEL=llama-3.3-70b-versatile # production default
 LLM_VISION_PROVIDER=anthropic          # anthropic | ollama
-OLLAMA_BASE_URL=http://localhost:11434/v1   # /v1 suffix required for OpenAI SDK compat
+OLLAMA_BASE_URL=http://localhost:11434/v1   # /v1 suffix required for OpenAI SDK compat (inactive when LLM_PROVIDER=groq)
 OLLAMA_TEXT_MODEL=llama3.2:latest
 OLLAMA_VISION_MODEL=llava:latest
 KNOWLEDGE_LAYER_ENABLED=false          # true requires Qdrant + Supabase
+IMAGE_GENERATION_ENABLED=false         # true enables Bannerbear carousel slide generation
+BANNERBEAR_API_KEY=bb_pr_...           # Bannerbear project API key
+BANNERBEAR_TEMPLATE_UID=YJBpekZX8X9wZ2XPnO  # template UID — must have layers: background_color, accent_bar, logo, slide_label, headline, body_text
+BANNERBEAR_TIMEOUT_SECONDS=30          # HTTP timeout for Bannerbear API calls
 ```
 
 Only the active provider's API key is required (e.g. only `GROQ_API_KEY` when `LLM_PROVIDER=groq`).
@@ -117,6 +122,7 @@ Pydantic models in `schemas/` enforce hard invariants. Key ones to know:
 - `StrategyBrief`: `proof_point` must match verbatim from `ProductKnowledge.proof_points[].text`; `narrative_arc` must match `ContentBrief.narrative_arc` exactly. Cross-schema validation is called explicitly via `validate_against_product_knowledge()` and `validate_against_content_brief()` — these warn but do not crash in agent real mode.
 - `EvaluatorOutput`: `passes` and `overall_score` are **always computed by Pydantic validators** — never set by the LLM. Strip them from LLM output before parsing.
 - `FormattedContent`: exactly one platform content field (`linkedin_content`, `twitter_content`, etc.) must be non-null, and it must match `platform`.
+- `BrandIdentity`: consolidated brand visual data assembled by `pipeline.build_brand_identity()` from `InputPackage` + `BrandProfile` + `ProductKnowledge`. No LLM — deterministic construction only. Logo fields (`logo_bytes`, `logo_url`, `logo_confidence`) enforce an all-or-nothing contract (all None or all non-None). `logo_compositing_enabled` is computed: `True` only when `logo_confidence == "high"`. Binary fields (`logo_bytes`, `og_image_bytes`) are excluded from JSON output via `model_dump(exclude=...)`. Consumed by Visual Gen (Step 7) and Phase 2 image pipeline. **Color normalisation:** all color fields (`primary_color`, `secondary_color`, `accent_color`, `background_color`, `foreground_color`) are guaranteed `#rrggbb` hex at construction time. `_to_hex()` in `schemas/brand_identity.py` converts rgb/rgba, oklch, oklab, hsl/hsla, and 3/8-digit hex. A `field_validator` enforces hex as a second layer. `build_brand_identity()` wraps every color with `_to_hex()` before passing to the constructor. Transparent/inherit/currentColor map to None. Unknown formats log a warning and return None (fallback `#000000`/`#ffffff` applied in `build_brand_identity`). **Phase 2 note:** Bannerbear requires hex — never pass `BrandProfile` color values directly to Bannerbear. Always use `BrandIdentity.css_color_vars` which is the correct interface for template injection and is always hex.
 
 ### Prompt Files
 
@@ -155,6 +161,12 @@ These are known and accepted for now. Return to them after switching to Groq and
 **font_family returns [object Object] on some sites**
 The Playwright JS evaluation returns a font-face object instead of a string on some sites. The extractor needs to handle this and stringify the value before storing in css_tokens.
 
+**primary_color falls back to #000000 on some sites**
+BrowserStack and Hasura returned #000000. Likely the CSS `--sx-` token prefix filter or the color extraction logic didn't find a distinctive brand color variable. May require expanding the CSS token name patterns searched for primary color.
+
+**design_category accuracy with Llama 4 Scout is poor (4/10 on Indian SaaS)**
+Session 4 ran against `llama-4-scout-17b-16e-instruct` due to Groq 70B daily quota exhaustion. Only 4/10 sites classified correctly vs 10/10 expected design_category. Both v2.2 few-shot anchors (Razorpay→bold-enterprise, Chargebee→minimal-saas) were wrong. This is a model capability gap on 4 Scout, not a prompt regression. Re-validate with 70B — the v2.2 prompts were calibrated for and validated against 70B only.
+
 **Impact**: Low while running on mock input or weak models. Becomes important when switching to real input + Groq, because writing_instruction feeds directly into Copywriter system prompt.
 Priority: fix after first successful Groq real-mode run.
 
@@ -167,6 +179,23 @@ Priority: fix after first successful Groq real-mode run.
 - instagram carousel: ✅ working — real hashtags from product category, no placeholder tags
 - instagram single_image: schema ready, not wired
 - blog: schema ready, not wired
+
+## Logo Extraction Status
+
+- InputPackage.logo_bytes/logo_url/logo_confidence: ✅ implemented
+- Extraction priority: apple-touch-icon → large icon (≥192px) → header img with "logo" attr → inline SVG → og:image → favicon
+- MOCK_MODE: returns deterministic PNG mock bytes (1208 bytes, "high" confidence)
+- Phase 2 usage: Pillow compositing (not yet wired — Phase 2)
+- All-or-nothing contract enforced by Pydantic `model_validator`
+- Validation results (5/5 sites extracted):
+
+| Site | Confidence | Source | Size |
+|---|---|---|---|
+| linear.app | high | apple-touch-icon | 25 KB |
+| searchable.com | high | header img | 5 KB |
+| razorpay.com | medium | og:image | 2.3 MB |
+| chargebee.com | high | apple-touch-icon | 4 KB |
+| freshworks.com | high | apple-touch-icon | 23 KB |
 
 ## Formatter Behaviour Notes
 
@@ -260,6 +289,183 @@ This section documents bugs found in real-mode pipeline runs, their root causes,
 | instagram | 1         | 5       | False      | True    |
 
 **Watch for:** If fabrication recurs on Groq, the issue is in proof_point extraction quality (Product Analysis returning weak qualitative proof points instead of real stats from the page). The fix is to improve the Product Analysis prompt to extract only concrete, specific proof points and skip vague qualitative claims like "Proven results with measurable ROI".
+
+---
+
+### PROMPT UPDATE — v1 → v2 (Person B, March 2026)
+
+**Prompts updated:**
+- `ui_analyzer_v1.yaml` → v2.2
+- `copywriting_v1.yaml` → v1.3
+- `evaluator_v1.yaml` → v1.2
+
+**Key changes:**
+1. `writing_instruction` (ui_analyzer) — now outputs pure copywriting guidance (sentence structure, register, banned words, first-line pattern). Zero design references. Previously read like a design system doc.
+2. `hook_direction` rule (copywriting) — HOOK DIRECTION RULE section added. `hook_direction` is now binding, not a suggestion. Includes WRONG/RIGHT example pair from actual pipeline output.
+3. Instagram `preview_text` rule (copywriting) — complete rewrite. MUST/MUST NOT lists, three verbatim good examples, explicit subject+verb requirement.
+4. Engagement score-2 anchors (evaluator) — three real pipeline hooks added as explicit score-2 negative examples. Specificity test added: "Can a specific person at a specific time of day see themselves in this hook?"
+
+**Few-shot examples added:**
+- ui_analyzer: 6 examples (all 5 design categories + borderline Razorpay). All grounded in Indian SaaS companies.
+- copywriting: 6 examples across platforms and arcs. Indian SaaS: Leegality, Razorpay Payroll, Chargebee.
+- evaluator: 6 examples including FAIL cases with specific `revision_hint`s.
+
+**Validated results vs v1 Groq baseline (searchable.com):**
+
+| platform  | dim        | v1  | v2  | delta |
+|-----------|-----------|-----|-----|-------|
+| linkedin  | tone_match | 4   | 5   | +1    |
+| linkedin  | overall    | 4.0 | 4.25| +0.25 |
+| twitter   | tone_match | 3   | 4   | +1    |
+| twitter   | overall    | 4.0 | 4.25| +0.25 |
+| instagram | engagement | 3   | 4   | +1    |
+| instagram | tone_match | 4   | 3   | -1    |
+
+design_category consistent across all three runs: `minimal-saas` (was inconsistent in v1).
+
+**Watch for:** Chargebee 63% stat appears in copywriting few-shot example cw_ex_05 (TikTok). If this stat appears in copy for non-Chargebee products, it is a few-shot contamination issue. The FABRICATION PROHIBITION rule should prevent this but monitor. Also: Instagram tone_match dropped 4→3 in this run — possible conflict between new `preview_text` rule (complete sentence) and evaluator's tone calibration for the `minimal-saas` category. Worth re-running to check if this is variance or a regression.
+
+---
+
+### BUG-005 — StrategyBrief crashes when LLM returns proof_point_type=null
+
+**Found:** Real-mode run against razorpay.com, Session 4 (Llama 4 Scout)
+**Symptom:** Pipeline crashed with `ValidationError: proof_point_type — Input should be 'stat', 'customer_name', ... [input_value=None]`
+
+**Root cause:** Llama 4 Scout (17B MoE) omitted `proof_point_type` from JSON output, returning null for a required Literal field. The strategy agent had no fallback before passing `**data` to the Pydantic constructor.
+
+**Fix:** Added normalization in `agents/strategy.py` after `parse_json_object()`:
+1. Check if `proof_point_type` is a valid literal value
+2. If not: try to infer from the matching proof_point entry in `ProductKnowledge.proof_points` (by text match)
+3. If no match: default to `"stat"` (most common type)
+
+**Watch for:** Any StrategyBrief construction. Other required Literal fields (cta_intent, appeal_type, narrative_arc) could have the same problem on weaker models. `narrative_arc` is already force-set from `content_brief.narrative_arc` in code (immune). `cta_intent` and `appeal_type` have no fallback yet — add if they crash.
+
+---
+
+### BUG-006 — rgb() and oklch() color values reaching BrandIdentity
+
+**Found:** Session 4 — Indian SaaS validation run (6/10 sites affected)
+**Symptom:** `primary_color` stored as `rgb(193, 95, 60)`, `oklch(98.4% .006 85.5)`, or `rgb(1, 1, 1)` — not hex. Bannerbear template API requires hex. Phase 2 image generation would fail silently or raise on color injection.
+
+**Root cause:** CSS `getComputedStyle()` returns colors in the browser's computed format, which is not necessarily hex. Modern sites increasingly use oklch/oklab color spaces. The UI Analyzer returned whatever format the browser computed.
+
+**Fix:** Added `_to_hex()` in `schemas/brand_identity.py`. Handles: `#hex` (3/6/8-digit), `rgb`/`rgba`, `oklch`, `oklab`, `hsl`/`hsla`. Applied in `build_brand_identity()` for all five color fields. `BrandIdentity` `field_validator` provides a second enforcement layer.
+
+**Watch for:** New CSS color spaces (`color()`, `display-p3`, `rec2020`) may appear on cutting-edge sites. `_to_hex()` will log a warning and return `None` for unknown formats — Phase 2 falls back to `#000000`/`#ffffff` rather than crashing.
+
+---
+
+### BUG-007 — Accent bar invisible when primary_color == background_color
+
+**Found:** Phase 2 validation — Linear run 2
+**Symptom:** `accent_bar` rendered same color as background — completely invisible. Linear `primary_color` extracted as `#08090a` (near-black) matching `background_color` `#08090a` exactly.
+
+**Root cause:** CSS token extraction is not deterministic for which token becomes `primary_color`. On some runs the foreground token wins (`#f7f8f8`), on others the background token wins (`#08090a`). When background wins, `primary == background` and the accent bar disappears. Contrast ratio in that case is 1.0.
+
+**Fix:** Added `_pick_accent_color()` in `agents/image_gen.py`. Tries `primary_color` → `secondary_color` → `accent_color` in order, picking the first with `contrast_ratio > 1.5` against background. Falls back to `#ffffff` or `#000000` when all candidates are too close to bg. `_luminance()` and `_contrast_ratio()` use WCAG 2.1 linearisation formula.
+
+**Validated:** Unit test confirms Linear scenario: `primary=#08090a == background=#08090a` → `_pick_accent_color` returns `#5e6ad2` (secondary_color, contrast 4.24).
+
+**Watch for:** Brands where all three color fields (`primary`, `secondary`, `accent`) are very close to the background — monochrome brands. The `#ffffff`/`#000000` fallback handles it but is not brand-specific. Also: Lemon Health `primary_color=#ffdc42` (yellow) on `#ffffff` background has contrast 1.07, below threshold — `_pick_accent_color` correctly falls back to `#000000`. This is visually correct (yellow accent bar on white is nearly invisible) but brand-incorrect. Phase 3: allow user accent color override.
+
+---
+
+### IMPROVEMENT — Logo extraction priority 3.5 (SVG in header/nav)
+
+**Added:** Session after Phase 2 validation
+**Problem:** Sites built on Framer/Webflow/component frameworks render logos as inline SVGs inside JS components. The previous priority 4 (basic SVG extraction) only took the first SVG in `header` without any quality checks — it could grab a decorative icon instead of the logo. Confirmed affected: `lemonhealth.ai`, `browserstack.com`, `moengage.com`.
+
+**Fix:** Replaced the simple priority 4 SVG block with an enhanced version in `_extract_logo()` in `agents/input_processor.py`:
+- Extended selectors: `header svg, nav svg, [role="banner"] svg, .navbar svg, .nav svg, .header svg`
+- Color match: checks if brand color from `css_tokens` appears as a fill value in the SVG
+- Label match: checks for `logo`, `brand`, `mark`, `icon`, `aria-label`, `title` in SVG markup
+- Size validation: bounding box ≥ 24×24px
+- Path-count fallback: first SVG with ≥2 `<path>` elements at valid size (catches logos with no explicit label)
+- `_extract_logo()` now accepts `css_tokens: dict | None = None` — passed from `_scrape_page_sync()`
+
+Priority order in docstring updated: old priority 4 (inline SVG) is now labeled "Priority 3.5", og:image becomes "Priority 4".
+
+**Still deferred to Phase 3:**
+- Apple-touch-icon black background baked in — needs Pillow background removal before compositing on light backgrounds
+- Font injection into Bannerbear — template uses default font, brand fonts not yet applied to text layers
+
+---
+
+## Indian SaaS Validation — Session 4 Results
+
+Date: March 2026
+URLs: 10 Indian SaaS companies from test_data/indian_saas_companies.csv
+Platform: LinkedIn only
+Model: **Llama 4 Scout (meta-llama/llama-4-scout-17b-16e-instruct) via Groq** — NOT llama-3.3-70b-versatile. Daily 100K token quota exhausted. Results should be re-validated with 70B.
+
+Results summary:
+- Pipeline passes:      10/10 (after BUG-005 fix)
+- Category correct:     4/10 (bold-enterprise: Freshworks, Zoho, CleverTap, MoEngage — Razorpay, Chargebee, Postman, Hasura, BrowserStack, Darwinbox all wrong)
+- Logo high confidence: 6/10 (Chargebee, Freshworks, Postman, Hasura, Zoho, CleverTap)
+- Phase 2 ready:        8/10 (BrowserStack and MoEngage have no logo or OG image)
+
+Sites where design_category was wrong: Razorpay (got minimal-saas), Chargebee (got bold-enterprise), Postman (got bold-enterprise), Hasura (got minimal-saas), BrowserStack (got minimal-saas), Darwinbox (got minimal-saas)
+— NOTE: Razorpay and Chargebee are v2.2 few-shot anchors that should be immune to misclassification with 70B. The 6/10 wrong rate is a Llama 4 Scout capability issue, not a prompt issue. Re-run with 70B to confirm.
+
+Sites where logo was medium or missing: Razorpay (medium — og:image), Darwinbox (medium — Framer site), BrowserStack (None), MoEngage (None)
+
+Sites where proof points were empty or boilerplate: Razorpay (0 real proof points — homepage is marketing-only, no stats in scraped text)
+
+Sites that crashed: 0 (Razorpay crashed on first run, fixed by BUG-005 fix, re-ran successfully)
+
+Key finding: The pipeline completes for all 10 Indian SaaS URLs once BUG-005 is fixed. The fabrication retry system worked correctly — Chargebee and Postman both had initial fabrications caught and corrected on retry. The input layer gaps are: (1) rgb() color format stored in BrandIdentity needs hex normalization before Phase 2; (2) thin scrapes on JS-heavy sites (Postman 307 words, Freshworks 568 words) limit proof point quality; (3) logo extraction failed for BrowserStack and MoEngage. Design category accuracy cannot be assessed until re-run with 70B model.
+
+---
+
+## Phase 2 — Image Generation (Bannerbear)
+
+`agents/image_gen.py` produces branded carousel slide images via the Bannerbear template API. Runs after `formatter` and before the evaluator retry loop. Gated by `IMAGE_GENERATION_ENABLED=true` (default: false).
+
+### Bannerbear template layer names
+
+The template UID (`BANNERBEAR_TEMPLATE_UID`) must expose these named layers:
+
+| Layer name         | Type   | Content                                     |
+|--------------------|--------|---------------------------------------------|
+| `background_color` | color  | `BrandIdentity.background_color` (hex)      |
+| `accent_bar`       | color  | `BrandIdentity.primary_color` (hex)         |
+| `slide_label`      | text   | `"01 / 05"` format; color = secondary_color |
+| `headline`         | text   | Slide headline (max 120 chars + ellipsis)   |
+| `body_text`        | text   | Slide body copy (max 280 chars + ellipsis)  |
+| `logo`             | image  | Only injected when `logo_compositing_enabled=True` or `logo_confidence=="medium"` |
+
+**Color values:** Always use `BrandIdentity` color fields — never pass raw `BrandProfile` values. All `BrandIdentity` colors are guaranteed `#rrggbb` hex at construction time.
+
+### Copy splitting rules (LinkedIn carousel)
+
+- **Slide 1:** `hook` as headline, first body paragraph as body_text
+- **Slides 2–N:** remaining paragraphs split into pairs (para[i] = headline, para[i+1] = body_text)
+- **Cap:** max 8 slides
+- **Labels:** `f"{i+1:02d} / {total:02d}"` — added after splitting
+
+### Logo behaviour
+
+- `logo_compositing_enabled=True` (i.e. `logo_confidence=="high"`) → injects `logo` layer with `logo_url`
+- `logo_confidence=="medium"` → also injects `logo` layer (may be an OG marketing image — logs warning)
+- `logo_confidence` is `None` or `"low"` → omits `logo` modification; template default is used
+
+### Disabled / degraded behaviour
+
+| Condition                            | `generation_enabled` | `image_urls` | `error`         |
+|--------------------------------------|----------------------|--------------|-----------------|
+| `MOCK_MODE=true`                     | `False`              | 3 mock URLs  | `None`          |
+| `IMAGE_GENERATION_ENABLED=false`     | `False`              | `[]`         | `None`          |
+| `BANNERBEAR_API_KEY` not set         | `False`              | `[]`         | string message  |
+| Individual slide API call fails      | `True`               | partial list | `"slide N failed"` |
+
+### Known gaps (Phase 2)
+
+- Images are generated from the **first** formatted output, not the final evaluator-approved copy. If the evaluator triggers a retry and the second copy is used, the images correspond to copy v1. Fix: defer image generation to after the final evaluator approval. Deferred to Phase 3.
+- Bannerbear `synchronous=True` is not honored by all Bannerbear plan tiers. `_poll_bannerbear()` is the async fallback — called when the initial response has a `uid` but no `image_url`.
+- Instagram and Twitter content types are not yet split into slides — `_split_into_slides()` only handles `linkedin_content`. Instagram uses `preview_text` + `body` as a single slide.
+- **Apple-touch-icon black background** — icon files include a background fill; shows as a black box when composited on light-background brands. Fix requires Pillow background-removal before compositing. Deferred to Phase 3.
+- ~~**primary_color == background_color**~~ — **Fixed** via `_pick_accent_color()`. See BUG-007.
 
 ---
 

@@ -197,6 +197,22 @@ def run(
     if len(first_sent) > 1:
         data["primary_claim"] = first_sent[0].strip()
 
+    # Normalize proof_point_type — infer from matched proof_point when LLM returns null
+    _VALID_PP_TYPES = {
+        "stat", "customer_name", "g2_badge", "integration_count",
+        "uptime_claim", "award", "user_count",
+    }
+    ppt = data.get("proof_point_type")
+    if ppt not in _VALID_PP_TYPES:
+        # Try to match from ProductKnowledge proof_points
+        selected_pp = data.get("proof_point", "")
+        matched_type = None
+        for pp in product_knowledge.proof_points:
+            if pp.text == selected_pp or pp.text in selected_pp:
+                matched_type = pp.proof_type
+                break
+        data["proof_point_type"] = matched_type if matched_type in _VALID_PP_TYPES else "stat"
+
     # Null out differentiator if it's too short — validator requires >= 10 words when not null
     diff = data.get("differentiator")
     if diff is not None and len(str(diff).split()) < 10:

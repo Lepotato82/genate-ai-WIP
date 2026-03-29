@@ -1,0 +1,97 @@
+company_name,url,category,target_customer,linkedin_url,active_poster
+Salesforce,https://www.salesforce.com,CRM,enterprise sales and customer success teams,https://www.linkedin.com/company/salesforce,yes
+HubSpot,https://www.hubspot.com,CRM and marketing,SMB and mid-market marketing and sales teams,https://www.linkedin.com/company/hubspot,yes
+Notion,https://www.notion.so,productivity,teams managing docs wikis and projects,https://www.linkedin.com/company/notionhq,yes
+Linear,https://linear.app,developer tools,engineering teams managing issues and sprints,https://www.linkedin.com/company/linear-app,yes
+Vercel,https://vercel.com,developer tools,frontend developers deploying web applications,https://www.linkedin.com/company/vercel,yes
+Supabase,https://supabase.com,developer tools,developers building on Postgres and real-time APIs,https://www.linkedin.com/company/supabase,yes
+Stripe,https://stripe.com,payments,developers and businesses accepting online payments,https://www.linkedin.com/company/stripe,yes
+Figma,https://www.figma.com,design tools,product designers and design teams,https://www.linkedin.com/company/figma,yes
+Slack,https://slack.com,team communication,engineering and business teams,https://www.linkedin.com/company/slack-studio,yes
+Zoom,https://zoom.us,video conferencing,remote and hybrid teams,https://www.linkedin.com/company/zoom-video-communications,yes
+Intercom,https://www.intercom.com,customer support,customer success and support teams at SaaS companies,https://www.linkedin.com/company/intercom,yes
+Zendesk,https://www.zendesk.com,customer support,support teams at SMBs and enterprises,https://www.linkedin.com/company/zendesk,yes
+Atlassian,https://www.atlassian.com,developer tools,software teams managing projects and documentation,https://www.linkedin.com/company/atlassian,yes
+GitHub,https://github.com,developer tools,developers and engineering teams,https://www.linkedin.com/company/github,yes
+GitLab,https://about.gitlab.com,developer tools,DevOps and engineering teams,https://www.linkedin.com/company/gitlab-com,yes
+Datadog,https://www.datadoghq.com,observability,DevOps and SRE teams monitoring infrastructure,https://www.linkedin.com/company/datadog,yes
+PagerDuty,https://www.pagerduty.com,incident management,SRE and on-call engineering teams,https://www.linkedin.com/company/pagerduty,yes
+Twilio,https://www.twilio.com,cloud communications,developers building messaging voice and email APIs,https://www.linkedin.com/company/twilio,yes
+Segment,https://segment.com,customer data platform,data and growth teams managing user analytics,https://www.linkedin.com/company/segment-io,yes
+Amplitude,https://amplitude.com,product analytics,product managers and growth teams,https://www.linkedin.com/company/amplitude-analytics,yes
+Mixpanel,https://mixpanel.com,product analytics,product and growth teams tracking user behaviour,https://www.linkedin.com/company/mixpanel,yes
+Airtable,https://www.airtable.com,no-code database,operations and product teams building internal tools,https://www.linkedin.com/company/airtable,yes
+Monday.com,https://monday.com,project management,cross-functional business and operations teams,https://www.linkedin.com/company/mondaydotcom,yes
+Asana,https://asana.com,project management,project managers and cross-functional teams,https://www.linkedin.com/company/asana,yes
+ClickUp,https://clickup.com,project management,teams replacing multiple productivity tools with one,https://www.linkedin.com/company/clickup-app,yes
+Loom,https://www.loom.com,async video,remote teams communicating without meetings,https://www.linkedin.com/company/loomdotcom,yes
+Calendly,https://calendly.com,scheduling,sales and recruiting teams reducing scheduling back-and-forth,https://www.linkedin.com/company/calendly,yes
+Typeform,https://www.typeform.com,forms and surveys,marketing and research teams collecting data,https://www.linkedin.com/company/typeform,yes
+Webflow,https://webflow.com,no-code web builder,designers and marketing teams building websites,https://www.linkedin.com/company/webflow-inc-,yes
+Framer,https://www.framer.com,no-code web builder,designers building interactive websites and prototypes,https://www.linkedin.com/company/framer,yes
+Contentful,https://www.contentful.com,headless CMS,developer and content teams managing structured content,https://www.linkedin.com/company/contentful,yes
+Sanity,https://www.sanity.io,headless CMS,developers and content teams building content platforms,https://www.linkedin.com/company/sanity-io,yes
+Retool,https://retool.com,internal tools,developers and ops teams building internal dashboards,https://www.linkedin.com/company/retool,yes
+Postman,https://www.postman.com,developer tools,API developers and engineering teams,https://www.linkedin.com/company/postman-platform,yes
+Hasura,https://hasura.io,developer tools,developers building on GraphQL and Postgres,https://www.linkedin.com/company/hasura,yes
+Algolia,https://www.algolia.com,search API,developers adding search to web and mobile products,https://www.linkedin.com/company/algolia,yes
+LaunchDarkly,https://launchdarkly.com,feature management,engineering teams managing feature flags and releases,https://www.linkedin.com/company/launchdarkly,yes
+Split.io,https://www.split.io,feature management,engineering and product teams doing progressive rollouts,https://www.linkedin.com/company/split-software,yes
+Hotjar,https://www.hotjar.com,user behaviour analytics,product and UX teams understanding how users behave,https://www.linkedin.com/company/hotjar,yes
+FullStory,https://www.fullstory.com,digital experience analytics,product and support teams replaying user sessions,https://www.linkedin.com/company/fullstory,yes
+Heap,https://www.heap.io,product analytics,product teams with auto-captured behavioural data,https://www.linkedin.com/company/heap-inc-,yes
+Braze,https://www.braze.com,customer engagement,mobile and growth marketing teams,https://www.linkedin.com/company/braze,yes
+Customer.io,https://customer.io,marketing automation,SaaS companies sending lifecycle and transactional email,https://www.linkedin.com/company/customer.io,yes
+Klaviyo,https://www.klaviyo.com,email marketing,e-commerce brands driving revenue through email and SMS,https://www.linkedin.com/company/klaviyo,yes
+ActiveCampaign,https://www.activecampaign.com,marketing automation,SMBs automating email CRM and sales,https://www.linkedin.com/company/activecampaign,yes
+Pipedrive,https://www.pipedrive.com,CRM,small sales teams managing pipelines,https://www.linkedin.com/company/pipedrive,yes
+Close,https://www.close.com,CRM,inside sales teams at SMBs and startups,https://www.linkedin.com/company/closeio,yes
+Apollo.io,https://www.apollo.io,sales intelligence,SDRs and sales teams doing outbound prospecting,https://www.linkedin.com/company/apolloio,yes
+Outreach,https://www.outreach.io,sales engagement,enterprise SDR and AE teams,https://www.linkedin.com/company/outreach-,yes
+Gong,https://www.gong.io,revenue intelligence,sales managers coaching teams with call analysis,https://www.linkedin.com/company/gong-io,yes
+Chorus.ai,https://www.chorus.ai,conversation intelligence,sales teams analysing calls and deal risk,https://www.linkedin.com/company/chorus-ai,yes
+Loom by Atlassian,https://www.loom.com,async communication,remote engineering and product teams,https://www.linkedin.com/company/loomdotcom,yes
+Miro,https://miro.com,visual collaboration,product and design teams doing workshops and planning,https://www.linkedin.com/company/mirohq,yes
+Lucidspark,https://lucidspark.com,visual collaboration,teams brainstorming and running retrospectives,https://www.linkedin.com/company/lucid-software,yes
+Coda,https://coda.io,productivity,teams replacing docs and spreadsheets with interactive documents,https://www.linkedin.com/company/codahq,yes
+Guru,https://www.getguru.com,knowledge management,customer-facing teams needing verified internal knowledge,https://www.linkedin.com/company/guru-technologies,yes
+Confluence,https://www.atlassian.com/software/confluence,documentation,engineering and product teams managing internal docs,https://www.linkedin.com/company/atlassian,yes
+Slab,https://slab.com,documentation,engineering and ops teams building internal wikis,https://www.linkedin.com/company/slabapp,yes
+Descript,https://www.descript.com,video and podcast editing,content creators and marketing teams editing video,https://www.linkedin.com/company/descript,yes
+Riverside.fm,https://riverside.fm,podcast and video recording,podcasters and content teams recording remote interviews,https://www.linkedin.com/company/riverside-fm,yes
+Domo,https://www.domo.com,business intelligence,executive and data teams with real-time BI dashboards,https://www.linkedin.com/company/domo-inc-,yes
+Looker,https://cloud.google.com/looker,business intelligence,data teams building embedded analytics,https://www.linkedin.com/company/looker,yes
+Metabase,https://www.metabase.com,business intelligence,non-technical teams exploring data without SQL,https://www.linkedin.com/company/metabase,yes
+dbt Labs,https://www.getdbt.com,data transformation,data engineers and analytics engineers,https://www.linkedin.com/company/dbt-labs,yes
+Fivetran,https://www.fivetran.com,data pipeline,data engineers automating data ingestion,https://www.linkedin.com/company/fivetran,yes
+Airbyte,https://airbyte.com,data pipeline,data engineering teams building open-source ETL,https://www.linkedin.com/company/airbyte,yes
+Snowflake,https://www.snowflake.com,data cloud,data teams storing and querying large-scale data,https://www.linkedin.com/company/snowflake-computing,yes
+Databricks,https://www.databricks.com,data and AI platform,data scientists and ML engineers,https://www.linkedin.com/company/databricks,yes
+Weights and Biases,https://wandb.ai,ML experiment tracking,ML engineers and data scientists tracking model training,https://www.linkedin.com/company/wandb,yes
+Hugging Face,https://huggingface.co,AI and ML platform,developers and researchers working with open-source models,https://www.linkedin.com/company/huggingface,yes
+Replicate,https://replicate.com,AI model hosting,developers running open-source AI models via API,https://www.linkedin.com/company/replicate-ai,yes
+Modal,https://modal.com,cloud infrastructure,developers running GPU workloads and ML pipelines,https://www.linkedin.com/company/modal-labs,yes
+Render,https://render.com,cloud hosting,developers deploying full-stack apps without DevOps,https://www.linkedin.com/company/rendercloud,yes
+Railway,https://railway.app,cloud hosting,developers deploying backends and databases fast,https://www.linkedin.com/company/railwayapp,yes
+Fly.io,https://fly.io,cloud hosting,developers deploying apps close to users globally,https://www.linkedin.com/company/fly-io,no
+Clerk,https://clerk.com,authentication,developers adding auth and user management to apps,https://www.linkedin.com/company/clerkdev,yes
+Auth0,https://auth0.com,authentication,developers and enterprises securing apps with identity,https://www.linkedin.com/company/auth0,yes
+WorkOS,https://workos.com,enterprise auth,developers adding SSO and SCIM for enterprise customers,https://www.linkedin.com/company/workos,yes
+Stytch,https://stytch.com,authentication,developers building passwordless auth experiences,https://www.linkedin.com/company/stytch,yes
+Resend,https://resend.com,transactional email,developers sending product emails via API,https://www.linkedin.com/company/resendlabs,yes
+Loops,https://loops.so,email for SaaS,SaaS teams sending onboarding and lifecycle emails,https://www.linkedin.com/company/loops-so,yes
+Plaid,https://plaid.com,fintech infrastructure,developers building on bank account and financial data APIs,https://www.linkedin.com/company/plaid-,yes
+Chargebee,https://www.chargebee.com,subscription billing,SaaS companies managing recurring revenue,https://www.linkedin.com/company/chargebee,yes
+Paddle,https://www.paddle.com,payments and billing,SaaS companies selling globally with tax compliance,https://www.linkedin.com/company/paddlehq,yes
+Lemon Squeezy,https://www.lemonsqueezy.com,payments and billing,indie developers and SaaS founders selling software,https://www.linkedin.com/company/lemonsqueezy,yes
+Rewardful,https://www.rewardful.com,affiliate management,SaaS companies running affiliate and referral programs,https://www.linkedin.com/company/rewardful,no
+Profitwell,https://www.profitwell.com,subscription analytics,SaaS founders and finance teams tracking MRR and churn,https://www.linkedin.com/company/profitwell,yes
+ChartMogul,https://chartmogul.com,subscription analytics,SaaS founders tracking MRR ARR and churn metrics,https://www.linkedin.com/company/chartmogul,yes
+Baremetrics,https://baremetrics.com,subscription analytics,bootstrapped and early-stage SaaS founders,https://www.linkedin.com/company/baremetrics,yes
+Pendo,https://www.pendo.io,product analytics,product teams tracking in-app behaviour and NPS,https://www.linkedin.com/company/pendo-io,yes
+Appcues,https://www.appcues.com,user onboarding,product teams building in-app onboarding flows,https://www.linkedin.com/company/appcues,yes
+Chameleon,https://www.chameleon.io,user onboarding,SaaS product teams building product tours,https://www.linkedin.com/company/trychameleon,yes
+Userflow,https://userflow.com,user onboarding,product and growth teams building in-app guides,https://www.linkedin.com/company/userflow,yes
+Freshworks,https://www.freshworks.com,CRM and customer support,SMBs and mid-market support and sales teams,https://www.linkedin.com/company/freshworks,yes
+Zoho,https://www.zoho.com,business software suite,SMBs across CRM finance HR and operations,https://www.linkedin.com/company/zoho,yes
+Razorpay,https://razorpay.com,payments,businesses and startups in India accepting online payments,https://www.linkedin.com/company/razorpay,yes

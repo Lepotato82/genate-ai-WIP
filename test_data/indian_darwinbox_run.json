@@ -1,0 +1,247 @@
+{
+  "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+  "url": "https://darwinbox.com",
+  "brand_profile": {
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "org_id": null,
+    "created_at": "2026-03-28T16:37:57.805431+00:00",
+    "design_category": "minimal-saas",
+    "primary_color": "#007aff",
+    "secondary_color": null,
+    "background_color": "rgba(0, 0, 0, 0)",
+    "font_family": "aktiv-grotesk",
+    "font_weights": [
+      300.0,
+      500.0,
+      600.0,
+      700.0
+    ],
+    "border_radius": "6px",
+    "spacing_unit": "4px",
+    "tone": "minimal",
+    "writing_instruction": "One idea per sentence. Lead with the outcome, not the mechanism. No jargon. No superlatives. The reader skims \u2014 the first line must earn the second. Avoid: game-changer, seamless, powerful, revolutionize.",
+    "css_tokens": {
+      "--spara-nav-y-offset": "0px",
+      "--spara-vv-height": "720px",
+      "--spara-vv-offset-top": "0px",
+      "--spara-smartbar-height": "300px",
+      "--swiper-theme-color": "#007aff",
+      "--swiper-navigation-size": "44px",
+      "--_font-family-h1": "switzer, sans-serif",
+      "--_font-weight-h1": "300",
+      "--_font-size-h1": "48px",
+      "--_color-h1": "rgb(255, 255, 255)",
+      "--_font-family-h2": "aktiv-grotesk, sans-serif",
+      "--_font-weight-h2": "600",
+      "--_font-size-h2": "12px",
+      "--_color-h2": "rgb(0, 0, 0)",
+      "--_font-family-h3": "aktiv-grotesk, sans-serif",
+      "--_font-weight-h3": "700",
+      "--_font-size-h3": "18px",
+      "--_color-h3": "rgb(255, 255, 255)",
+      "--_font-family-p": "aktiv-grotesk, sans-serif",
+      "--_font-weight-p": "500",
+      "--_font-size-p": "13px",
+      "--_color-p": "rgb(0, 0, 0)",
+      "--_font-family-a": "aktiv-grotesk, sans-serif",
+      "--_font-weight-a": "500",
+      "--_font-size-a": "13px",
+      "--_color-a": "rgb(0, 0, 0)",
+      "--_font-family-button": "aktiv-grotesk, sans-serif",
+      "--_font-weight-button": "300",
+      "--_font-size-button": "18px",
+      "--_color-button": "rgb(7, 7, 7)",
+      "--_bg-body": "rgba(0, 0, 0, 0)",
+      "--_btn-bg-0": "rgb(255, 255, 255)",
+      "--_btn-color-0": "rgb(0, 0, 0)",
+      "--_btn-bg-1": "rgba(255, 255, 255, 0.5)",
+      "--_btn-color-1": "rgb(0, 0, 0)"
+    },
+    "confidence": 0.8
+  },
+  "brand_identity": {
+    "product_name": "Darwinbox",
+    "product_url": "https://darwinbox.com",
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "logo_url": "https://a-us.storyblok.com/f/1019507/1198x1180/c173294fa8/ushomebanner.webp",
+    "logo_confidence": "medium",
+    "og_image_url": null,
+    "primary_color": "#007aff",
+    "secondary_color": null,
+    "accent_color": null,
+    "background_color": "rgba(0, 0, 0, 0)",
+    "foreground_color": null,
+    "font_family_heading": "aktiv-grotesk",
+    "font_family_body": "aktiv-grotesk",
+    "font_family_mono": null,
+    "font_weights": [
+      300.0,
+      500.0,
+      600.0,
+      700.0
+    ],
+    "border_radius": "6px",
+    "spacing_unit": "4px",
+    "design_category": "minimal-saas",
+    "tone": "minimal",
+    "writing_instruction": "One idea per sentence. Lead with the outcome, not the mechanism. No jargon. No superlatives. The reader skims \u2014 the first line must earn the second. Avoid: game-changer, seamless, powerful, revolutionize.",
+    "logo_compositing_enabled": false
+  },
+  "product_knowledge": {
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "org_id": null,
+    "created_at": "2026-03-28T16:37:59.427410+00:00",
+    "product_name": "Darwinbox",
+    "product_url": "https://darwinbox.com",
+    "tagline": "AI-Native HCM for Global Enterprises",
+    "description": "Darwinbox is a modern HR platform with AI at its core, designed to delight employees and empower HR teams. It automates day-to-day HR processes, simplifies human interactions, and delivers actionable insights to build better workplaces. The platform offers a complete HCM suite for enterprises, including core HR, talent management, workforce management, payroll, analytics, and employee engagement.",
+    "product_category": "hr-people",
+    "features": [
+      {
+        "name": "Core HR",
+        "description": "Centralize employee data, org structures, and workflows from hire to exit."
+      },
+      {
+        "name": "Talent Management",
+        "description": "Unified goals, performance reviews, development, and succession."
+      },
+      {
+        "name": "Workforce Management",
+        "description": "Track time, leave, and shifts with policy and compliance controls."
+      },
+      {
+        "name": "Payroll",
+        "description": "End-to-end, compliant multi-country payroll, taxes, and settlements."
+      },
+      {
+        "name": "Analytics & Reporting",
+        "description": "Prebuilt dashboards and custom reports for HR and talent KPIs."
+      },
+      {
+        "name": "Employee Engagement",
+        "description": "Measure and boost morale with surveys, recognition, and analytics."
+      }
+    ],
+    "benefits": [
+      "Turn hours of HR work into minutes",
+      "Delight employees and empower HR teams"
+    ],
+    "proof_points": [
+      {
+        "text": "Recognized by Global Analysts and Platforms",
+        "proof_type": "g2_badge",
+        "source": "scraped_page"
+      }
+    ],
+    "pain_points": [
+      "HR process automation",
+      "Simplification of human interactions",
+      "Actionable insights for better workplaces"
+    ],
+    "messaging_angles": [
+      "AI-Native HCM for Global Enterprises"
+    ],
+    "target_customer": "Global Enterprises",
+    "integrations": [],
+    "pricing_mentioned": false,
+    "pricing_description": null,
+    "scrape_word_count": 632,
+    "user_document_filename": null,
+    "data_source": "scraped_only"
+  },
+  "content_brief": {
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "org_id": null,
+    "created_at": "2026-03-28T16:38:00.286852+00:00",
+    "platform": "linkedin",
+    "content_type": "carousel",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "content_pillar": "product_and_solution",
+    "funnel_stage": "tofu",
+    "posting_strategy": {
+      "recommended_frequency": "3x weekly",
+      "best_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "best_time_window": "10:00-12:00 IST"
+    },
+    "word_count_target": null,
+    "slide_count_target": 8,
+    "thread_length_target": null,
+    "platform_rules_summary": [
+      "Hook must be standalone in first 180 characters",
+      "3-5 hashtags at end only, never inline",
+      "Short paragraphs with blank line between each"
+    ],
+    "seo_keyword": null,
+    "knowledge_context_used": false,
+    "knowledge_context_summary": null,
+    "benchmark_reference": "HR tech companies often use carousels to showcase their feature-rich platforms and address multiple pain points in the HR process.",
+    "reasoning": "The product has 6 distinct features and 3 pain points, making it suitable for a carousel content type. The brand tone is minimal, which aligns with the educational and step-by-step approach of a carousel. Although there is only 1 proof point, the multiple pain points and features provide a strong case for a carousel. The lack of a strong stat or customer name does not hinder the choice of carousel."
+  },
+  "strategy_brief": {
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "org_id": null,
+    "created_at": "2026-03-28T16:38:01.534821+00:00",
+    "lead_pain_point": "HR teams struggle to automate day-to-day processes, leading to manual errors and wasted time",
+    "primary_claim": "Darwinbox automates HR processes, simplifies human interactions, and delivers actionable insights for better workplaces",
+    "proof_point": "[g2_badge] Recognized by Global Analysts and Platforms",
+    "proof_point_type": "g2_badge",
+    "cta_intent": "learn_more",
+    "appeal_type": "rational",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "target_icp_role": "HR Business Partner",
+    "differentiator": "Unlike traditional HR platforms, Darwinbox uses AI to empower HR teams and delight employees",
+    "hook_direction": "Start by highlighting the pain of manual HR processes",
+    "positioning_mode": "category_challenging",
+    "messaging_angle_used": "AI-Native HCM for Global Enterprises",
+    "knowledge_context_applied": false
+  },
+  "formatted_content": {
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "org_id": null,
+    "created_at": "2026-03-28T16:38:05.121592+00:00",
+    "platform": "linkedin",
+    "linkedin_content": {
+      "hook": "Manual HR processes mean hours of tedious paperwork every week.",
+      "body": "Manual HR processes take time away from strategic planning and employee engagement. \nHR teams are bogged down in administrative tasks.\n\nErrors are common when manual processes are used. \nThese mistakes can lead to compliance issues and damaged employee trust. \nThe cost of these errors is significant.\n\nAutomation can free up HR teams from these tasks. \nDarwinbox helps automate HR processes and reduce manual errors. \nThis leads to more efficient workplaces.\n\nWith automation, HR teams can focus on employee engagement. \nThey can make data-driven decisions to improve workplaces. \nThis leads to better employee experiences.\n\nDarwinbox provides actionable insights to HR teams. \nThese insights help HR teams make informed decisions. \nThey can optimize HR processes.\n\nDarwinbox has earned [g2_badge] recognition from Global Analysts. \nIt is a trusted platform for HR automation.\n\nTo learn more about Darwinbox and its benefits, visit our website.",
+      "hashtags": [
+        "#HRautomation",
+        "#workplaceefficiency",
+        "#HRtechnology"
+      ],
+      "full_post": "Manual HR processes mean hours of tedious paperwork every week.\n\nManual HR processes take time away from strategic planning and employee engagement. \nHR teams are bogged down in administrative tasks.\n\nErrors are common when manual processes are used. \nThese mistakes can lead to compliance issues and damaged employee trust. \nThe cost of these errors is significant.\n\nAutomation can free up HR teams from these tasks. \nDarwinbox helps automate HR processes and reduce manual errors. \nThis leads to more efficient workplaces.\n\nWith automation, HR teams can focus on employee engagement. \nThey can make data-driven decisions to improve workplaces. \nThis leads to better employee experiences.\n\nDarwinbox provides actionable insights to HR teams. \nThese insights help HR teams make informed decisions. \nThey can optimize HR processes.\n\nDarwinbox has earned [g2_badge] recognition from Global Analysts. \nIt is a trusted platform for HR automation.\n\nTo learn more about Darwinbox and its benefits, visit our website.\n\n#HRautomation #workplaceefficiency #HRtechnology"
+    },
+    "twitter_content": null,
+    "instagram_content": null,
+    "blog_content": null,
+    "image_prompt": null,
+    "suggested_format": null,
+    "video_script": null,
+    "video_hook": null,
+    "retry_count": 0,
+    "revision_hint_applied": null,
+    "approved": false,
+    "approved_at": null,
+    "user_edited_copy": null
+  },
+  "evaluation": {
+    "run_id": "ec349252-bfc7-495f-9369-c59ea79b4053",
+    "org_id": null,
+    "created_at": "2026-03-28T16:38:06.169474+00:00",
+    "platform": "linkedin",
+    "clarity": 4,
+    "engagement": 3,
+    "tone_match": 4,
+    "accuracy": 4,
+    "overall_score": 3.75,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "The copy is clear overall, but some sentences feel a bit disconnected, requiring a minor effort to follow the train of thought. The hook 'Manual HR processes mean hours of tedious paperwork every week' establishes a relatable problem but doesn't create immediate urgency or curiosity. The copy mostly follows the writing instruction, but a few sentences feel like they could be more concise and outcome-focused. The core claim is accurate, and the supporting details are mostly traceable to the primary_claim, but one or two details could be more directly linked.",
+    "retry_count": 0
+  },
+  "passes": true,
+  "overall_score": 3.75
+}

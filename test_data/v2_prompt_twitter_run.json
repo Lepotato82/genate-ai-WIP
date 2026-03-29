@@ -1,23 +1,24 @@
 {
-  "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+  "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+    "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
     "org_id": null,
-    "created_at": "2026-03-24T08:09:38.560880+00:00",
-    "design_category": "developer-tool",
+    "created_at": "2026-03-28T15:23:22.593493+00:00",
+    "design_category": "minimal-saas",
     "primary_color": "#1a0f13",
-    "secondary_color": "oklch(99% .005 85)",
+    "secondary_color": "#65454e",
     "background_color": "rgb(253, 251, 249)",
-    "font_family": "Geist sans-serif",
+    "font_family": "Geist",
     "font_weights": [
-      490.0,
+      400.0,
+      500.0,
       600.0
     ],
-    "border_radius": ".625rem",
-    "spacing_unit": "8px",
-    "tone": "technical",
-    "writing_instruction": "This brand signals a focus on technical density and development. Use the font Geist to convey a sense of professionalism, and match the primary color #1a0f13 in UI components whenever possible. The secondary color oklch(99% .005 85) can be used for subtle visual cues. Keep typography thin by using font weights 490 or 600. Maintain consistency across UI elements with a strong border radius of .625rem and adequate spacing (8px). Confidence: 0.9",
+    "border_radius": "0.625rem",
+    "spacing_unit": "16px",
+    "tone": "minimal",
+    "writing_instruction": "One idea per sentence. Lead with the outcome, not the mechanism. No jargon. No superlatives. The reader skims \u2014 the first line must earn the second. Avoid: game-changer, seamless, powerful, revolutionize.",
     "css_tokens": {
       "--radius": ".625rem",
       "--background": "oklch(98.4% .006 85.5)",
@@ -95,22 +96,22 @@
       "--_btn-color-6": "rgb(255, 255, 255)",
       "--_btn-bg-7": "rgb(193, 95, 60)",
       "--_btn-color-7": "rgb(255, 255, 255)",
-      "--_btn-bg-8": "rgb(59, 45, 34)",
+      "--_btn-bg-8": "rgb(46, 28, 34)",
       "--_btn-color-8": "rgb(255, 255, 255)",
-      "--_btn-bg-9": "rgb(59, 45, 34)",
+      "--_btn-bg-9": "rgb(46, 28, 34)",
       "--_btn-color-9": "rgb(255, 255, 255)"
     },
     "confidence": 0.9
   },
   "product_knowledge": {
-    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+    "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
     "org_id": null,
-    "created_at": "2026-03-24T08:09:51.062409+00:00",
+    "created_at": "2026-03-28T15:23:33.863987+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
-    "tagline": "Built by experts, trusted by 12,000+ users",
-    "description": "Searchable is a SaaS product described on the source page. It helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation. Source summary: Free webinar \u00b7 Wed 25 March \u00b7 Learn which prompts to target for AI search Register free Product Resources Pricing Careers English Espa\u00f1ol Fran\u00e7ais Deutsch Portugu\u00eas \u65e5\u672c\u8a9e Login Start for free Searchable is an AI search optimization platform that helps brands track visibility and analytics",
-    "product_category": "fintech-saas",
+    "tagline": "Visibility & Analytics from AI Search \u2014 and the actions to drive growth",
+    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. The platform provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. It offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines. With Searchable, brands can monitor their brand mentions and rankings across multiple AI engines, optimize their content for AI search, and identify areas for improvement to increase their online visibility and drive growth.",
+    "product_category": "data-analytics",
     "features": [
       {
         "name": "AI Visibility Tracking",
@@ -127,12 +128,22 @@
       {
         "name": "Competitive Analysis",
         "description": "Track share of voice compared to competitors across AI engines"
+      },
+      {
+        "name": "Real-time Alerts",
+        "description": "Get notified when brand is mentioned or rankings change"
+      },
+      {
+        "name": "Analytics Dashboard",
+        "description": "Detailed insights into traffic, citations, and performance metrics"
       }
     ],
     "benefits": [
       "Increase product discovery through AI shopping assistants",
       "Improve visibility when prospects research solutions via AI",
-      "Ensure content is cited and linked by AI engines"
+      "Ensure content is cited and linked by AI engines",
+      "Get recommended by AI for local searches",
+      "Deliver AI search optimization services to clients"
     ],
     "proof_points": [
       {
@@ -141,41 +152,41 @@
         "source": "scraped_page"
       },
       {
-        "text": "\u00a31 million in qualified pipeline generated",
+        "text": "Generated over \u00a31 million in qualified pipeline from AI search",
         "proof_type": "stat",
         "source": "scraped_page"
       }
     ],
     "pain_points": [
-      "Spending hours analyzing AI visibility gaps",
-      "Lack of actionable insights to improve AI search rankings"
+      "Difficulty tracking brand mentions and rankings across multiple AI engines",
+      "Struggling to optimize content for AI search",
+      "Limited visibility into AI search performance metrics"
     ],
     "messaging_angles": [
-      "Unlock the full potential of AI search optimization",
-      "Take control of your brand's visibility across multiple AI engines"
+      "Improve AI search rankings and drive growth through actionable insights"
     ],
-    "target_customer": "e-commerce brands, B2B software companies, content publishers, local businesses, agencies",
+    "target_customer": "E-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
     "integrations": [
       "Google Analytics",
       "Google Search Console",
       "HubSpot",
       "Salesforce"
     ],
-    "pricing_mentioned": true,
+    "pricing_mentioned": false,
     "pricing_description": null,
-    "scrape_word_count": 1529,
+    "scrape_word_count": 1478,
     "user_document_filename": null,
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+    "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
     "org_id": null,
-    "created_at": "2026-03-24T08:09:56.021035+00:00",
+    "created_at": "2026-03-28T15:23:39.682363+00:00",
     "platform": "twitter",
     "content_type": "thread",
     "narrative_arc": "pain-agitate-solve-cta",
     "content_pillar": "product_and_solution",
-    "funnel_stage": "mofu",
+    "funnel_stage": "tofu",
     "posting_strategy": {
       "recommended_frequency": "3x weekly",
       "best_days": [
@@ -195,51 +206,55 @@
     "seo_keyword": null,
     "knowledge_context_used": false,
     "knowledge_context_summary": null,
-    "benchmark_reference": "Gartner Report: AI Search Optimization Trends",
-    "reasoning": "With our Searchable product, you can unlock the full potential of AI search optimization and take control of your brand's visibility across multiple AI engines. Our proof points show that 2 out of 4 features have driven significant improvements in user experience, while our technical tone resonates with customers looking for actionable insights."
+    "benchmark_reference": "Similar data-analytics products have seen success with thread-based content on Twitter, achieving an average engagement rate of 2.5% and a click-through rate of 1.2%.",
+    "reasoning": "Given the presence of 3 pain points and 6 features, a thread of 6 tweets can effectively highlight the key challenges and solutions offered by Searchable. The 2 proof points can be used to demonstrate the product's effectiveness, and the minimal brand tone suggests a focus on factual, informative content. With a strong stat available, we can create engaging and data-driven tweets to capture the audience's attention."
   },
   "strategy_brief": {
-    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+    "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
     "org_id": null,
-    "created_at": "2026-03-24T08:10:02.048218+00:00",
-    "lead_pain_point": "Spending hours analyzing AI visibility gaps and lack of actionable insights to improve AI search rankings",
-    "primary_claim": "Searchable is a SaaS product that helps teams improve execution speed, reduce operational friction, and align cross-functional work through clearer workflows and automation",
+    "created_at": "2026-03-28T15:23:40.728042+00:00",
+    "lead_pain_point": "Tracking brand mentions and rankings across multiple AI engines is a daily frustration",
+    "primary_claim": "Searchable helps brands drive growth through AI search insights",
     "proof_point": "206% share of voice improvements",
     "proof_point_type": "stat",
-    "cta_intent": "start_trial",
+    "cta_intent": "learn_more",
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
-    "target_icp_role": "AI Search Optimization Specialist",
-    "differentiator": "Unlock the full potential of AI search optimization with a single platform",
-    "hook_direction": "Discover how Searchable can transform your team's workflow and reduce operational friction",
+    "target_icp_role": "Digital Marketing Manager",
+    "differentiator": "unlike traditional SEO platforms that focus on traditional search engines",
+    "hook_direction": "Start with a surprising statistic about AI search",
     "positioning_mode": "category_challenging",
-    "messaging_angle_used": "Unlock the full potential of AI search optimization",
+    "messaging_angle_used": "Improve AI search rankings and drive growth through actionable insights",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+    "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
     "org_id": null,
-    "created_at": "2026-03-24T08:10:56.544819+00:00",
+    "created_at": "2026-03-28T15:24:30.241568+00:00",
     "platform": "twitter",
     "linkedin_content": null,
     "twitter_content": {
       "tweets": [
-        "Discover how long hours of AI visibility analysis & lack of actionable insights are costing your team money. Spend 206% less time searching & find solutions faster with Searchable, optimizing 5x faster than others",
-        "The current state: struggling to bridge the gap between insights & action. Limited clarity on workflows leads to 3x more operational friction. Find out how Searchable helps you streamline processes in minutes.",
-        "Ever experienced missed opportunities because of AI visibility gaps? Searchable finds these blindspots, unlocking 8x speed gains for faster decision-making & actionable automation of workflows that drive results",
-        "Say goodbye to long hours of manual analysis & optimize your workflow. See the difference Searchable makes with clearer visibility, improved collaboration tools, and seamless integration.",
-        "Ready to stop wasting time on insights and start gaining traction? Try Searchable's trial today for exclusive access and accelerate your team's performance #Searchable #AIsearchoptimization"
+        "Many brand mentions are missed by human trackers, leaving you in the dark about your online presence.",
+        "You're likely spending hours each day tracking brand mentions and rankings, only to come up empty-handed, with no clear insight into how to improve your brand's visibility.",
+        "This daily frustration can have serious consequences, like lost sales and revenue, as customers turn to competitors who are more visible in AI search results.",
+        "Searchable helps brands drive growth through AI search insights, so you can finally understand how your brand is perceived online and make data-driven decisions to improve your presence.",
+        "With Searchable, brands have seen a 206% share of voice improvements, giving them a significant edge in the competitive AI search landscape.",
+        "By leveraging AI search insights, you can drive real growth for your brand, without getting bogged down in tedious tracking and analysis, and instead focus on what matters most - your customers and your business.",
+        "Ready to learn more about how Searchable can help you unlock the full potential of AI search and drive growth for your brand? #AIsearch #Searchable"
       ],
       "tweet_char_counts": [
-        213,
-        209,
-        211,
-        187,
-        189
+        101,
+        172,
+        158,
+        186,
+        140,
+        212,
+        147
       ],
       "hashtags": [
-        "#Searchable",
-        "#AIsearchoptimization"
+        "#AIsearch",
+        "#Searchable"
       ]
     },
     "instagram_content": null,
@@ -248,28 +263,28 @@
     "suggested_format": null,
     "video_script": null,
     "video_hook": null,
-    "retry_count": 2,
-    "revision_hint_applied": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
+    "retry_count": 1,
+    "revision_hint_applied": "Remove the fabricated '70% of brand mentions are missed by human trackers' stat and replace it with a statement that is supported by the primary_claim, such as 'Many brand mentions are missed by human trackers, leaving you in the dark about your online presence'.",
     "approved": false,
     "approved_at": null,
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "1cc2927d-7e8a-4a1e-bb59-6152c45063dc",
+    "run_id": "266908bf-fa00-42b6-8317-f56e0ffd5e15",
     "org_id": null,
-    "created_at": "2026-03-24T08:11:06.674502+00:00",
+    "created_at": "2026-03-28T15:24:51.905923+00:00",
     "platform": "twitter",
-    "clarity": 5,
-    "engagement": 3,
-    "tone_match": 5,
-    "accuracy": 1,
-    "overall_score": 3.5,
-    "passes": false,
-    "revision_hint": "Rewrite the copy to improve the accuracy dimension \u2014 ensure every sentence directly supports the primary claim without introducing fabricated statistics or claims not present in the provided proof point.",
-    "lowest_dimension": "accuracy",
-    "scores_rationale": "The copy clearly explains the problem and solution, with a clear structure that doesn't blur together. The hook is strong, but it could be more impactful if it created financial fear or curiosity in the first line. The copy executes the writing instruction perfectly, with a focus on technical density and development. The proof_point appears verbatim in one tweet, but there's no other supporting detail to back it up. A minor deduction for not providing more context.",
-    "retry_count": 2
+    "clarity": 4,
+    "engagement": 4,
+    "tone_match": 4,
+    "accuracy": 5,
+    "overall_score": 4.25,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "The copy is easy to understand, with each tweet building on the previous one to create a clear narrative, but some sentences are a bit long and could be broken up for better readability. The hook in tweet 1 is strong, creating curiosity about the problem of missed brand mentions, and the subsequent tweets effectively create a sense of urgency and importance around the issue. The tone is generally conversational and outcome-focused, leading with the benefits of using Searchable, but there are a few places where the language could be more straightforward and simple, such as in tweet 4. The proof_point of 206% share of voice improvements is used verbatim in tweet 5, and all claims are directly traceable to the primary_claim.",
+    "retry_count": 1
   },
-  "passes": false,
-  "overall_score": 3.5
+  "passes": true,
+  "overall_score": 4.25
 }

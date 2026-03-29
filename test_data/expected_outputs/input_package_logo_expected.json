@@ -1,0 +1,86 @@
+{
+  "agent": "input_processor",
+  "spec": "logo_extraction",
+  "schema_version": "1.0",
+  "last_updated": "2026-03",
+  "notes": "Tests the three logo extraction fields added to InputPackage. linear.app case expects high confidence (apple-touch-icon). searchable.com case expects medium confidence (og:image or icon fallback — extraction source uncertain until a real run is done). lemonhealth.ai is explicitly UNCERTAIN — documented as such per task spec.",
+  "test_cases": [
+    {
+      "case": "linear_app_high_confidence",
+      "source": "expected — not yet confirmed by real run. linear.app is known to have a well-formed apple-touch-icon.",
+      "input": {
+        "url": "https://linear.app"
+      },
+      "expected_output": {
+        "logo_bytes": "<non-null bytes, PNG or WebP, > 1000 bytes>",
+        "logo_url": "https://linear.app/apple-touch-icon.png",
+        "logo_confidence": "high"
+      },
+      "validation_checks": [
+        "logo_bytes is not None",
+        "logo_bytes starts with b'\\x89PNG' or b'RIFF' (WebP)",
+        "logo_bytes length > 1000",
+        "logo_url contains 'apple-touch-icon'",
+        "logo_confidence == 'high'"
+      ],
+      "validation_note": "linear.app has a standard apple-touch-icon link tag. If the extractor returns logo_confidence='medium' or 'low' for this site, the priority order in the extractor is not working correctly — apple-touch-icon should always be tried first."
+    },
+    {
+      "case": "searchable_com_medium_confidence",
+      "source": "expected — extraction source uncertain until a real run is done. searchable.com may not have an apple-touch-icon. OG image or a header img fallback is the likely extraction path.",
+      "input": {
+        "url": "https://searchable.com"
+      },
+      "expected_output": {
+        "logo_bytes": "<non-null bytes, > 1000 bytes>",
+        "logo_url": "<url from og:image or header img — confirm on real run>",
+        "logo_confidence": "medium"
+      },
+      "validation_checks": [
+        "logo_bytes is not None",
+        "logo_bytes length > 1000",
+        "logo_confidence is one of: 'high', 'medium' — not 'low'",
+        "logo_url is not None"
+      ],
+      "validation_note": "Update logo_url and logo_confidence to exact values once Person A runs the extractor against this URL. If the site has an apple-touch-icon that was missed, confidence should be 'high' — update this spec to match the real output."
+    },
+    {
+      "case": "lemonhealth_ai_uncertain",
+      "source": "UNCERTAIN — lemonhealth.ai has only been used for input layer testing. Logo extraction has not been run. Do not use this case for automated testing until confirmed by a real run.",
+      "input": {
+        "url": "https://lemonhealth.ai"
+      },
+      "expected_output": {
+        "logo_bytes": "UNKNOWN — could be non-null (site likely has standard icon tags) or None (site may block scraping)",
+        "logo_url": "UNKNOWN",
+        "logo_confidence": "UNKNOWN"
+      },
+      "validation_checks": [
+        "If logo_bytes is None: logo_url must be None and logo_confidence must be None (all-None contract holds)",
+        "If logo_bytes is not None: logo_bytes length > 1000 and logo_confidence is one of the three valid values",
+        "Pipeline must not crash regardless of outcome"
+      ],
+      "validation_note": "This case is marked UNCERTAIN per the task spec. Run the extractor against lemonhealth.ai and replace this entry with the real output. The key thing to confirm is that the pipeline continues without error regardless of whether extraction succeeds or fails."
+    },
+    {
+      "case": "extraction_failure_all_null",
+      "source": "synthetic — failure case for a site that blocks scraping or has no logo elements",
+      "input": {
+        "url": "https://blocked-or-no-logo-site.com"
+      },
+      "expected_output": {
+        "logo_bytes": null,
+        "logo_url": null,
+        "logo_confidence": null
+      },
+      "validation_checks": [
+        "logo_bytes is None",
+        "logo_url is None",
+        "logo_confidence is None",
+        "Pipeline continues — no exception raised",
+        "Failure is logged with URL and reason"
+      ],
+      "validation_note": "All three fields must be None together. A logo_bytes=null with a non-null logo_url or logo_confidence is a schema violation. The pipeline must not crash — this is the most important thing to test in this case."
+    }
+  ]
+}

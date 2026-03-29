@@ -1,10 +1,10 @@
 {
-  "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+  "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
     "org_id": null,
-    "created_at": "2026-03-24T13:28:48.698719+00:00",
+    "created_at": "2026-03-28T15:25:06.594522+00:00",
     "design_category": "minimal-saas",
     "primary_color": "#1a0f13",
     "secondary_color": "#65454e",
@@ -15,10 +15,10 @@
       500.0,
       600.0
     ],
-    "border_radius": ".625rem",
+    "border_radius": "0.625rem",
     "spacing_unit": "16px",
     "tone": "minimal",
-    "writing_instruction": "To match this brand voice, use the Geist font family and a restrained color palette featuring shades of dark gray and burgundy. Employ a minimalist approach with ample whitespace and thin type. When writing, use clear and concise language, avoiding jargon and overly technical terms, to create a sense of approachability and simplicity reminiscent of minimal-saas design. Incorporate the primary color #1a0f13 for accents and headings, and use the secondary color #65454e for supporting text and backgrounds.",
+    "writing_instruction": "One idea per sentence. Lead with the outcome, not the mechanism. No jargon. No superlatives. The reader skims \u2014 the first line must earn the second. Avoid: game-changer, seamless, powerful, revolutionize.",
     "css_tokens": {
       "--radius": ".625rem",
       "--background": "oklch(98.4% .006 85.5)",
@@ -96,21 +96,21 @@
       "--_btn-color-6": "rgb(255, 255, 255)",
       "--_btn-bg-7": "rgb(193, 95, 60)",
       "--_btn-color-7": "rgb(255, 255, 255)",
-      "--_btn-bg-8": "rgb(59, 45, 34)",
+      "--_btn-bg-8": "rgb(46, 28, 34)",
       "--_btn-color-8": "rgb(255, 255, 255)",
-      "--_btn-bg-9": "rgb(59, 45, 34)",
+      "--_btn-bg-9": "rgb(46, 28, 34)",
       "--_btn-color-9": "rgb(255, 255, 255)"
     },
     "confidence": 0.8
   },
   "product_knowledge": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
     "org_id": null,
-    "created_at": "2026-03-24T13:28:59.496840+00:00",
+    "created_at": "2026-03-28T15:25:15.160942+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
-    "tagline": "Take control of AI search",
-    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines.",
+    "tagline": "Visibility & Analytics from AI Search \u2014 and the actions to drive growth",
+    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines. With Searchable, brands can monitor their brand mentions and rankings across multiple AI engines, optimize their content for AI search, and identify areas for improvement to increase their online visibility and drive growth.",
     "product_category": "data-analytics",
     "features": [
       {
@@ -128,11 +128,20 @@
       {
         "name": "Competitive Analysis",
         "description": "Track your share of voice compared to competitors across AI engines"
+      },
+      {
+        "name": "Real-time Alerts",
+        "description": "Get notified when your brand is mentioned or rankings change"
+      },
+      {
+        "name": "Analytics Dashboard",
+        "description": "Detailed insights into traffic, citations, and performance metrics"
       }
     ],
     "benefits": [
-      "Improve AI search rankings",
       "Increase product discovery through AI shopping assistants",
+      "Improve visibility when prospects research solutions via AI",
+      "Ensure your content is cited and linked by AI engines",
       "Get recommended by AI for local searches",
       "Deliver AI search optimization services to clients"
     ],
@@ -146,15 +155,24 @@
         "text": "Generated over \u00a31 million in qualified pipeline from AI search",
         "proof_type": "stat",
         "source": "scraped_page"
+      },
+      {
+        "text": "3x increase in content output while maintaining or improving engagement metrics",
+        "proof_type": "stat",
+        "source": "scraped_page"
       }
     ],
     "pain_points": [
-      "Difficulty in tracking brand visibility across AI engines",
-      "Limited understanding of how AI engines process websites",
-      "Struggling to optimize content for AI search"
+      "Difficulty tracking brand mentions and rankings across multiple AI engines",
+      "Struggling to optimize content for AI search",
+      "Limited visibility into AI search engine understanding and ranking factors",
+      "Inability to compete with other brands in AI search results",
+      "Lack of actionable insights to improve AI search rankings"
     ],
     "messaging_angles": [
-      "Take control of AI search"
+      "Get ahead of the competition with AI search optimization",
+      "Unlock the power of AI search to drive growth and revenue",
+      "Stay ahead of the curve with the latest AI search trends and best practices"
     ],
     "target_customer": "E-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
     "integrations": [
@@ -165,14 +183,14 @@
     ],
     "pricing_mentioned": false,
     "pricing_description": null,
-    "scrape_word_count": 1484,
+    "scrape_word_count": 1476,
     "user_document_filename": null,
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:02.132605+00:00",
+    "created_at": "2026-03-28T15:25:19.998501+00:00",
     "platform": "instagram",
     "content_type": "carousel",
     "narrative_arc": "pain-agitate-solve-cta",
@@ -196,65 +214,65 @@
     "seo_keyword": null,
     "knowledge_context_used": false,
     "knowledge_context_summary": null,
-    "benchmark_reference": "Similar data-analytics products on Instagram have seen success with carousels showcasing product features and customer success stories.",
-    "reasoning": "With 3 pain points and 2 proof points, we can create a compelling narrative arc for the carousel. The minimal brand tone suggests a focus on clean visuals and concise messaging. Given the presence of a strong stat, we can use data to support our claims. The lack of a customer name means we'll focus on product features and benefits. The 4 features of Searchable can be highlighted across 8 slides, with 2 slides dedicated to proof points and 2 slides dedicated to addressing pain points, all while maintaining a minimal tone and emphasizing the 'Take control of AI search' messaging angle."
+    "benchmark_reference": "SaaS engagement benchmarks for the selected format.",
+    "reasoning": "With 5 pain points and 3 proof points, a carousel can effectively showcase the problems and solutions offered by Searchable. The minimal brand tone suggests a focus on functionality, and the presence of a strong stat can be used to grab attention. Given the lack of a customer name, the content will focus on the features (6) and benefits of the product, such as getting ahead of the competition with AI search optimization. The narrative arc will take the audience through the challenges of AI search and introduce Searchable as the solution, highlighting its key features and proof points along the way."
   },
   "strategy_brief": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:06.412236+00:00",
-    "lead_pain_point": "Difficulty in tracking brand visibility and analytics across multiple AI engines and search platforms",
+    "created_at": "2026-03-28T15:25:23.304111+00:00",
+    "lead_pain_point": "Difficulty tracking brand mentions and rankings across multiple AI engines and struggling to optimize content for AI search",
     "primary_claim": "Searchable helps brands track visibility and analytics across AI engines",
     "proof_point": "206% share of voice improvements",
     "proof_point_type": "stat",
-    "cta_intent": "start_trial",
+    "cta_intent": "learn_more",
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
     "target_icp_role": "Digital Marketing Manager",
-    "differentiator": "unlike traditional SEO platforms that focus on human search engines",
-    "hook_direction": "Start by highlighting the growing importance of AI search",
-    "positioning_mode": "category_challenging",
-    "messaging_angle_used": "Take control of AI search",
+    "differentiator": "unlike traditional SEO platforms that focus on human search engines, Searchable is specifically designed for AI search optimization",
+    "hook_direction": "Start by highlighting the challenges of tracking brand mentions across multiple AI engines",
+    "positioning_mode": "category_creation",
+    "messaging_angle_used": "Get ahead of the competition with AI search optimization",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:27.523897+00:00",
+    "created_at": "2026-03-28T15:25:48.434478+00:00",
     "platform": "instagram",
     "linkedin_content": null,
     "twitter_content": null,
     "instagram_content": {
-      "preview_text": "Lost in AI noise",
-      "body": "Tracking brand visibility is a nightmare across multiple engines and platforms. Your brand's voice is drowned out. Search is changing, and AI search is on the rise, making it harder to keep up. Searchable helps brands track visibility and analytics across AI engines. With Searchable, brands have seen 206% share of voice improvements. Start your trial today and discover a simpler way to track your brand's analytics.",
+      "preview_text": "You're losing visibility in AI search.",
+      "body": "Every hour you spend tracking brand mentions is an hour your competitor gains. Manual tracking is a never-ending cycle, wasting hours each sprint. Tracking brand mentions across multiple AI engines is a daily struggle. Searchable helps brands track visibility and analytics across AI engines. By using Searchable, brands have seen 206% share of voice improvements. With Searchable, you can optimize your content for AI search and take control of your brand's visibility. You can learn more about how Searchable can help your brand thrive in AI search.",
       "hashtags": [
-        "#AISearch",
-        "#BrandVisibility",
-        "#AnalyticsSimplified",
-        "#Searchable",
-        "#AIEngineTracking",
-        "#BrandAnalytics",
-        "#SimplifiedWorkflow",
-        "#RegainControl",
-        "#TrialNow",
-        "#MinimalistDesign",
-        "#SaaSsolution",
-        "#DigitalMarketing",
-        "#BrandManagement",
+        "#AIsearch",
+        "#brandvisibility",
+        "#searchengineoptimization",
+        "#AIsearchoptimization",
+        "#contentoptimization",
+        "#digitalmarketing",
+        "#marketingstrategy",
+        "#brandmanagement",
+        "#onlinemarketing",
+        "#searchmarketing",
+        "#AItechnology",
+        "#innovation",
+        "#marketinginnovation",
+        "#digitalinnovation",
+        "#brandperformance",
+        "#marketingsolutions",
+        "#businessgrowth",
+        "#marketinggrowth",
         "#AIpowered",
-        "#SearchEngineOptimization",
-        "#SEOalternative",
-        "#AIfuture",
-        "#MarketingSolutions",
-        "#BrandInsights",
-        "#DataDriven",
-        "#MarketingStrategy",
-        "#GrowthHacking",
+        "#searchengine",
+        "#marketingtools",
+        "#branding",
         "#dataanalytics",
         "#bi",
         "#datascience"
       ],
-      "full_caption": "Lost in AI noise\nTracking brand visibility is a nightmare across multiple engines and platforms. Your brand's voice is drowned out. Search is changing, and AI search is on the rise, making it harder to keep up. Searchable helps brands track visibility and analytics across AI engines. With Searchable, brands have seen 206% share of voice improvements. Start your trial today and discover a simpler way to track your brand's analytics.\n\n\n\n\n#AISearch #BrandVisibility #AnalyticsSimplified #Searchable #AIEngineTracking #BrandAnalytics #SimplifiedWorkflow #RegainControl #TrialNow #MinimalistDesign #SaaSsolution #DigitalMarketing #BrandManagement #AIpowered #SearchEngineOptimization #SEOalternative #AIfuture #MarketingSolutions #BrandInsights #DataDriven #MarketingStrategy #GrowthHacking #dataanalytics #bi #datascience"
+      "full_caption": "You're losing visibility in AI search.\nEvery hour you spend tracking brand mentions is an hour your competitor gains. Manual tracking is a never-ending cycle, wasting hours each sprint. Tracking brand mentions across multiple AI engines is a daily struggle. Searchable helps brands track visibility and analytics across AI engines. By using Searchable, brands have seen 206% share of voice improvements. With Searchable, you can optimize your content for AI search and take control of your brand's visibility. You can learn more about how Searchable can help your brand thrive in AI search.\n\n\n\n\n#AIsearch #brandvisibility #searchengineoptimization #AIsearchoptimization #contentoptimization #digitalmarketing #marketingstrategy #brandmanagement #onlinemarketing #searchmarketing #AItechnology #innovation #marketinginnovation #digitalinnovation #brandperformance #marketingsolutions #businessgrowth #marketinggrowth #AIpowered #searchengine #marketingtools #branding #dataanalytics #bi #datascience"
     },
     "blog_content": null,
     "image_prompt": null,
@@ -268,19 +286,19 @@
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "6301c41a-e1b4-4f6a-9e98-55393a217fca",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:45.979079+00:00",
+    "created_at": "2026-03-28T15:26:08.780872+00:00",
     "platform": "instagram",
     "clarity": 4,
-    "engagement": 3,
-    "tone_match": 4,
+    "engagement": 4,
+    "tone_match": 3,
     "accuracy": 5,
     "overall_score": 4.0,
     "passes": true,
     "revision_hint": null,
     "lowest_dimension": null,
-    "scores_rationale": "The copy clearly explains the problem of tracking brand visibility and introduces Searchable as a solution, but the transition to the trial call-to-action feels slightly abrupt. The opening line 'Lost in AI noise' creates some emotional resonance, but it does not specifically name a daily friction or use a surprising number to stop the scroll. The language is generally clear and concise, aligning with the minimalist approach specified in the writing instruction, but the tone could be more approachable and simple in a few places. The copy accurately states the primary claim and includes the proof point of '206% share of voice improvements' without fabricating any statistics.",
+    "scores_rationale": "The copy is easy to understand, and the mechanism of Searchable is self-explanatory, but the structure could be improved for better flow. The hook is effective in stopping the scroll, and the first line creates a sense of urgency, but it could be stronger with a more specific daily friction. The copy partially follows the writing instruction, but some sentences lead with the mechanism, and the tone is not entirely consistent, with a few sentences feeling like they are listing features rather than focusing on the outcome. The claim about 206% share of voice improvements is directly supported by the proof_point, and no statistics are invented.",
     "retry_count": 0
   },
   "passes": true,

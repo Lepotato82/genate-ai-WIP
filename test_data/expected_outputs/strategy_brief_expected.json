@@ -1,0 +1,72 @@
+{
+  "agent": "strategy",
+  "schema_version": "1.0",
+  "last_updated": "2026-03",
+  "notes": "Case A is a real StrategyBrief from the Searchable Groq run. proof_point matches ProductKnowledge verbatim and narrative_arc matches ContentBrief — both cross-schema contracts pass. Cases B and C are synthetic edge cases retained for unit testing.",
+  "test_cases": [
+    {
+      "case": "A_searchable_groq_pass",
+      "source": "real — Groq run, searchable.com, platform=linkedin",
+      "input": {
+        "url": "https://searchable.com",
+        "platform": "linkedin",
+        "product_knowledge_proof_points": [
+          "206% share of voice improvements"
+        ],
+        "content_brief_narrative_arc": "pain-agitate-solve-cta"
+      },
+      "expected_output": {
+        "lead_pain_point": "Difficulty tracking brand mentions and rankings across multiple AI engines daily",
+        "primary_claim": "Searchable surfaces where your brand appears — and where it doesn't — across every major AI engine",
+        "proof_point": "206% share of voice improvements",
+        "cta_intent": "start_trial",
+        "appeal_type": "rational",
+        "narrative_arc": "pain-agitate-solve-cta"
+      },
+      "validation_note": "proof_point matches ProductKnowledge.proof_points[0].text verbatim — Contract 1 passes. narrative_arc matches ContentBrief.narrative_arc — Contract 2 passes. lead_pain_point is specific daily friction (tracking across multiple engines), not a generic statement like 'brand visibility is hard'."
+    },
+    {
+      "case": "B_developer_tool_before_after_synthetic",
+      "source": "synthetic — developer tool, before-after-bridge arc",
+      "input": {
+        "url": "https://linear.app",
+        "platform": "twitter",
+        "product_knowledge_proof_points": [
+          "Used by Vercel, Raycast, and Mercury teams",
+          "Issues close 40% faster on average"
+        ],
+        "content_brief_narrative_arc": "before-after-bridge-cta"
+      },
+      "expected_output": {
+        "lead_pain_point": "Sprint planning meetings that exist only to copy ticket statuses into Slack",
+        "primary_claim": "Linear removes the status update layer by keeping issue state, git, and comms in one place",
+        "proof_point": "Used by Vercel, Raycast, and Mercury teams",
+        "cta_intent": "start_trial",
+        "appeal_type": "rational",
+        "narrative_arc": "before-after-bridge-cta"
+      },
+      "validation_note": "Synthetic case. proof_point must be drawn from the product_knowledge_proof_points list exactly — not paraphrased. If the model wrote 'trusted by teams like Vercel and Raycast' that would be a Contract 1 violation."
+    },
+    {
+      "case": "C_fail_fabricated_proof_point",
+      "source": "synthetic — failure case, fabricated proof point",
+      "input": {
+        "url": "https://searchable.com",
+        "platform": "instagram",
+        "product_knowledge_proof_points": [
+          "206% share of voice improvements"
+        ],
+        "content_brief_narrative_arc": "stat-hook-problem-solution-cta"
+      },
+      "expected_output": {
+        "lead_pain_point": "AI search tools are deciding who gets found — and most brands have no idea where they rank",
+        "primary_claim": "Searchable tracks your brand's AI search presence and shows you how to improve it",
+        "proof_point": "INVALID — model wrote '4x more AI search visibility' which does not appear in proof_points",
+        "cta_intent": "learn_more",
+        "appeal_type": "emotional",
+        "narrative_arc": "stat-hook-problem-solution-cta"
+      },
+      "validation_note": "This is a Contract 1 failure. proof_point must be rejected at validation because '4x more AI search visibility' does not appear verbatim in ProductKnowledge.proof_points. The Evaluator should score accuracy=1 and return a revision_hint telling the agent to use '206% share of voice improvements' instead."
+    }
+  ]
+}

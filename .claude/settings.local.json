@@ -6,7 +6,21 @@
       "Bash(uv sync:*)",
       "Read(//e/genate-ai/**)",
       "Bash(python -c \":*)",
-      "Bash(curl -s http://localhost:11434/api/tags)"
+      "Bash(curl -s http://localhost:11434/api/tags)",
+      "Bash(tee test_data/v2_prompt_summary.txt)",
+      "Bash(tee test_data/v2_prompt_summary2.txt)",
+      "Bash(python -c \"import httpx; print\\(''httpx already installed''\\)\")",
+      "Bash(pytest --co -q)",
+      "Bash(python -m pytest tests/test_logo_extraction.py tests/test_input_processor_unit.py -v)",
+      "Bash(python -m pytest -q)",
+      "Bash(tee test_data/logo_extraction_validation.txt)",
+      "Bash(tee test_data/indian_saas_validation_summary.txt)",
+      "Bash(tee test_data/color_normalisation_validation.txt)",
+      "Bash(python -m pytest tests/test_image_gen.py -v)",
+      "Bash(tee test_data/image_gen_validation.txt)",
+      "Bash(python -m pytest tests/test_image_gen.py tests/test_logo_extraction.py -v)",
+      "Bash(tee test_data/accent_svg_fix_validation.txt)",
+      "Bash(\"E:\\\\genate-ai\\\\.claude\\\\worktrees\\\\cool-taussig\\\\test_data\\\\accent_svg_fix_validation.txt\":*)"
     ]
   }
 }
