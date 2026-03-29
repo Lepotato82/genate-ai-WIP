@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # ─── Image Generation ─────────────────────────────────────────────────
     FAL_API_KEY: str = ""
     BANNERBEAR_API_KEY: str = ""
+    BANNERBEAR_TEMPLATE_UID: str = ""
+    BANNERBEAR_TIMEOUT_SECONDS: int = 30
+    IMAGE_GENERATION_ENABLED: bool = False
     IDEOGRAM_API_KEY: str = ""
 
     # ─── Video Generation ─────────────────────────────────────────────────

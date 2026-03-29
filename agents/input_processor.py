@@ -194,6 +194,212 @@ def _download_image(url: str, timeout: int = 10) -> bytes | None:
         return None
 
 
+# ---------------------------------------------------------------------------
+# Logo extraction helpers
+# ---------------------------------------------------------------------------
+
+_VALID_IMAGE_MAGIC = [
+    b"\x89PNG",       # PNG
+    b"\xff\xd8\xff",  # JPEG
+    b"RIFF",          # WebP (starts with RIFF....WEBP)
+    b"GIF8",          # GIF
+    b"<svg",          # SVG (inline serialized)
+    b"<?xml",         # SVG with XML declaration
+]
+
+MIN_LOGO_BYTES = 1000
+
+
+def _is_valid_image(data: bytes) -> bool:
+    """Check that bytes look like a real image and are above minimum size."""
+    if len(data) < MIN_LOGO_BYTES:
+        return False
+    return any(data.startswith(magic) for magic in _VALID_IMAGE_MAGIC)
+
+
+def _download_logo(url: str) -> bytes | None:
+    """Download a URL with httpx (sync) and return bytes, or None on failure."""
+    try:
+        with httpx.Client(
+            timeout=8.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; Genate/1.0)"},
+        ) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                return resp.content
+    except Exception as exc:
+        logger.debug("Logo download failed for %s: %s", url, exc)
+    return None
+
+
+def _extract_logo(
+    page,
+    base_url: str,
+    css_tokens: dict | None = None,
+) -> tuple[bytes | None, str | None, str | None]:
+    """
+    Extract the brand logo from a fully-rendered Playwright page (sync API).
+    Returns (logo_bytes, logo_url, confidence) or (None, None, None).
+    Never raises — all exceptions are caught and logged.
+
+    Priority order:
+      1. apple-touch-icon link tag                        -> high
+      2. <link rel="icon"> size >= 192px                  -> high
+      3. <img> in <header> with logo in attr              -> high
+      3.5. SVG in header/nav matching brand color/label   -> high
+      4. og:image meta tag                                -> medium
+      5. Any declared favicon                             -> low
+    """
+
+    # ── Priority 1: apple-touch-icon ──────────────────────────────
+    try:
+        el = page.query_selector(
+            'link[rel="apple-touch-icon"], '
+            'link[rel="apple-touch-icon-precomposed"]'
+        )
+        if el:
+            href = el.get_attribute("href")
+            if href:
+                resolved = urljoin(base_url, href)
+                data = _download_logo(resolved)
+                if data and _is_valid_image(data):
+                    return data, resolved, "high"
+    except Exception as exc:
+        logger.debug("logo: apple-touch-icon failed: %s", exc)
+
+    # ── Priority 2: large declared icon (>= 192px) ───────────────
+    try:
+        els = page.query_selector_all('link[rel~="icon"][sizes]')
+        for el in els:
+            sizes = el.get_attribute("sizes") or ""
+            match = re.search(r"(\d+)x\d+", sizes)
+            if match and int(match.group(1)) >= 192:
+                href = el.get_attribute("href")
+                if href:
+                    resolved = urljoin(base_url, href)
+                    data = _download_logo(resolved)
+                    if data and _is_valid_image(data):
+                        return data, resolved, "high"
+    except Exception as exc:
+        logger.debug("logo: large icon failed: %s", exc)
+
+    # ── Priority 3: <img> in <header> with logo in class/id/alt ──
+    try:
+        imgs = page.query_selector_all('header img, [role="banner"] img')
+        for img in imgs:
+            cls = (img.get_attribute("class") or "").lower()
+            id_ = (img.get_attribute("id") or "").lower()
+            alt = (img.get_attribute("alt") or "").lower()
+            src = img.get_attribute("src") or ""
+            if any("logo" in x for x in [cls, id_, alt, src.lower()]):
+                resolved = urljoin(base_url, src)
+                data = _download_logo(resolved)
+                if data and _is_valid_image(data):
+                    return data, resolved, "high"
+    except Exception as exc:
+        logger.debug("logo: header img failed: %s", exc)
+
+    # ── Priority 3.5: SVG in header/nav matching brand color or label ──
+    try:
+        # Extract brand color from css_tokens to match against SVG fill values
+        brand_color: str | None = None
+        if css_tokens:
+            color_keys = [
+                "--color-brand", "--color-primary", "--brand-color",
+                "--primary", "--color-accent", "--accent",
+                "--color-brand-primary", "--color-brand-bg",
+            ]
+            for key in color_keys:
+                val = css_tokens.get(key)
+                if val and isinstance(val, str) and val.startswith("#"):
+                    brand_color = val.lower()
+                    break
+
+        svg_els = page.query_selector_all(
+            "header svg, nav svg, [role=\"banner\"] svg, "
+            ".navbar svg, .nav svg, .header svg"
+        )
+
+        svg_fallback: tuple[bytes, str] | None = None
+
+        for svg_el in svg_els:
+            svg_html = svg_el.evaluate("el => el.outerHTML")
+            if not svg_html:
+                continue
+
+            svg_lower = svg_html.lower()
+
+            color_match = bool(
+                brand_color and brand_color.lstrip("#") in svg_lower
+            )
+            label_match = any(
+                term in svg_lower
+                for term in ["logo", "brand", "mark", "icon", "aria-label", "title"]
+            )
+
+            box = svg_el.bounding_box()
+            size_ok = box and box["width"] >= 24 and box["height"] >= 24
+
+            if (color_match or label_match) and size_ok:
+                svg_bytes = svg_html.encode("utf-8")
+                if len(svg_bytes) >= MIN_LOGO_BYTES:
+                    url = f"{base_url}#svg-header-logo"
+                    logger.info(
+                        "logo: found header SVG (%s) for %s",
+                        "color match" if color_match else "label match",
+                        base_url,
+                    )
+                    return svg_bytes, url, "high"
+
+            # Collect the first size-ok multi-path SVG as a fallback
+            if svg_fallback is None and size_ok and svg_html.count("<path") >= 2:
+                svg_bytes = svg_html.encode("utf-8")
+                if len(svg_bytes) >= MIN_LOGO_BYTES:
+                    svg_fallback = (svg_bytes, f"{base_url}#svg-header-logo-fallback")
+
+        if svg_fallback:
+            logger.info("logo: using header SVG (path-count heuristic) for %s", base_url)
+            return svg_fallback[0], svg_fallback[1], "high"
+
+    except Exception as exc:
+        logger.debug("logo: SVG header extraction failed: %s", exc)
+
+    # ── Priority 4: og:image ─────────────────────────────────────
+    try:
+        el = page.query_selector('meta[property="og:image"]')
+        if el:
+            content = el.get_attribute("content")
+            if content:
+                resolved = urljoin(base_url, content)
+                data = _download_logo(resolved)
+                if data and _is_valid_image(data):
+                    return data, resolved, "medium"
+    except Exception as exc:
+        logger.debug("logo: og:image failed: %s", exc)
+
+    # ── Priority 6: any favicon (last resort) ────────────────────
+    try:
+        favicon_url = urljoin(base_url, "/favicon.ico")
+        data = _download_logo(favicon_url)
+        if data and _is_valid_image(data):
+            return data, favicon_url, "low"
+
+        el = page.query_selector('link[rel~="icon"]')
+        if el:
+            href = el.get_attribute("href")
+            if href:
+                resolved = urljoin(base_url, href)
+                data = _download_logo(resolved)
+                if data and _is_valid_image(data):
+                    return data, resolved, "low"
+    except Exception as exc:
+        logger.debug("logo: favicon failed: %s", exc)
+
+    logger.info("logo: no logo found for %s", base_url)
+    return None, None, None
+
+
 def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
     timeout_ms = max(1000, int(timeout_seconds * 1000))
     proxy = _playwright_proxy()
@@ -203,6 +409,9 @@ def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
     screenshot_bytes: bytes | None = None
     og_image_url: str | None = None
     og_image_bytes: bytes | None = None
+    logo_bytes: bytes | None = None
+    logo_url: str | None = None
+    logo_confidence: str | None = None
     scrape_error: str | None = None
 
     with sync_playwright() as p:
@@ -268,6 +477,13 @@ def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
             except Exception as exc:
                 logger.warning("Screenshot failed: %s", exc)
 
+            try:
+                logo_bytes, logo_url, logo_confidence = _extract_logo(
+                    page, url, css_tokens=css_tokens
+                )
+            except Exception as exc:
+                logger.warning("Logo extraction failed: %s", exc)
+
             context.close()
         except Exception as exc:  # noqa: BLE001
             scrape_error = str(exc)
@@ -287,6 +503,9 @@ def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
         "screenshot_bytes": screenshot_bytes,
         "og_image_url": og_image_url,
         "og_image_bytes": og_image_bytes,
+        "logo_bytes": logo_bytes,
+        "logo_url": logo_url,
+        "logo_confidence": logo_confidence,
         "scrape_error": scrape_error,
     }
 
@@ -308,6 +527,9 @@ def _scrape_with_retry(url: str, timeout: int, max_retries: int) -> dict:
         "screenshot_bytes": None,
         "og_image_url": None,
         "og_image_bytes": None,
+        "logo_bytes": None,
+        "logo_url": None,
+        "logo_confidence": None,
         "scrape_error": "scrape failed",
     }
 
@@ -330,6 +552,9 @@ def _mock_input_package(
         screenshot_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 128,
         og_image_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 64,
         og_image_url="https://linear.app/og.png",
+        logo_bytes=b"\x89PNG\r\n\x1a\n" + b"\x00" * 1200,
+        logo_url="https://mock.example.com/logo.png",
+        logo_confidence="high",
         user_image=user_image,
         user_document=user_document,
         user_document_filename=user_document_filename,
@@ -388,6 +613,9 @@ def run(
             screenshot_bytes=result.get("screenshot_bytes"),
             og_image_bytes=result.get("og_image_bytes"),
             og_image_url=result.get("og_image_url"),
+            logo_bytes=result.get("logo_bytes"),
+            logo_url=result.get("logo_url"),
+            logo_confidence=result.get("logo_confidence"),
             user_image=user_image,
             user_document=user_document,
             user_document_filename=user_document_filename,

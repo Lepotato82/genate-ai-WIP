@@ -1,0 +1,38 @@
+[product_analysis] sending 1655 words to LLM
+[product_analysis] user message preview: '___\nPress Alt+1 for screen-reader mode, Alt+0 to cancel\nAccessibility Screen-Reader Guide, Feedback, and Issue Reporting | New window\nChargebee’s flagship billing & monetization conference for leaders at the forefront of monetization in SaaS, AI, and beyond ->\nChargebee\nProducts\nSolutions\nPricing\nPa'
+[product_analysis] sending 1207 words to LLM
+[product_analysis] user message preview: 'Skip to content →\nProduct\nResources\nCustomers\nPricing\nNow\nContact\nLog in\nSign up\nThe product development\nsystem for teams and agents\nThe product development system for teams and agents\n\nPurpose-built for planning and building products. Designed for the AI era.\n\nIssue tracking is dead\nlinear.app/next'
+=== Chargebee ===
+  generation_enabled: True
+  slide_count:        5
+  error:              None
+  image_urls:
+    slide 1: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/089/990/APW1bDp49YKXNjRJzjmVoORax/7b852c9213276d48d9e0dcd1ed1ac1dd5137fc8e.png
+    slide 2: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/089/999/9BvRDJ724zWXpjbq6lAKNOd03/6fd5115418c2a0589a7e676c91f6d0749949dec8.png
+    slide 3: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/001/9e2VGL0qn6VXPj5vYEAv5mxr1/10c7bdfb47ec4c169a7e76b1364184b520c83192.png
+    slide 4: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/003/NWlVkgmbMQEXNjkr6ZyAqEwDo/426aa9b7cd9c13b85fdecf72b780f17aa41933eb.png
+    slide 5: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/008/5nDZ3xmVezbXGjN5Qy2qpdWj9/fbf655d1711799a518df7d9511174e1cbb9cfabe.png
+
+  BrandIdentity:
+    primary_color:            #012a38  hex=True
+    background_color:         #000000  hex=True
+    logo_url:                 https://www.chargebee.com/static/resources/brand/apple-touch-icon.png?v=1
+    logo_compositing_enabled: True
+
+=== Linear ===
+  generation_enabled: True
+  slide_count:        5
+  error:              None
+  image_urls:
+    slide 1: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/028/XwJBnmPj46w1K97rYvLqob2xG/6a105cf8622f5184acc684f92d0eed9551ed4533.png
+    slide 2: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/030/LWXrA1qRoQvdVL1RzypMJegBj/07587a4a768117a2ab11d6166e8f6a1fc93e484d.png
+    slide 3: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/035/MRj52Zwoa6xNE3q0YxWkdO3eE/792702cf925dae23085ff2dc5c5315256723a354.png
+    slide 4: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/037/ZwVbKlDe9Y8g4MenQ8moa3jPM/b156f7de3c035a893a5a11ff79488fe117363ee9.png
+    slide 5: https://images.bannerbear.com/direct/JNodmlzoW94jzjAgPE/requests/000/139/090/040/5R7NlW8nEzjP1KyoQmvbxgLyP/fd3bef48772522f4084d14506cf410a29e35d37c.png
+
+  BrandIdentity:
+    primary_color:            #f7f8f8  hex=True
+    background_color:         #08090a  hex=True
+    logo_url:                 https://linear.app/static/apple-touch-icon.png?v=2
+    logo_compositing_enabled: True
+

@@ -1,0 +1,108 @@
+{
+  "agent": "evaluator",
+  "schema_version": "1.0",
+  "last_updated": "2026-03",
+  "notes": "Cases A–C from real pipeline runs against searchable.com. Case A = Groq run (pass). Case B = Ollama run (fail, fabricated stat). Case C = Ollama run (max retries, fabricated percentage). Cases D–E are synthetic baselines retained for unit testing.",
+  "test_cases": [
+    {
+      "case": "A_twitter_accuracy_pass",
+      "source": "real — Groq run, searchable.com, platform=twitter",
+      "input": {
+        "platform": "twitter",
+        "copy_excerpt": "Tweet 4 referenced '206% share of voice improvements' verbatim from ProductKnowledge.proof_points",
+        "proof_point_in_strategy_brief": "206% share of voice improvements",
+        "writing_instruction": "Direct, data-led, no fluff. Lead with the stat."
+      },
+      "expected_output": {
+        "clarity": 4,
+        "engagement": 4,
+        "tone_match": 4,
+        "accuracy": 5,
+        "passes": true,
+        "retry_count": 0,
+        "revision_hint": null
+      },
+      "validation_note": "accuracy=5 is correct. Proof point used verbatim in tweet 4, not paraphrased or embellished. This is the target behaviour for the accuracy dimension."
+    },
+    {
+      "case": "B_linkedin_accuracy_fail_fabricated_stat",
+      "source": "real — Ollama run, searchable.com, platform=linkedin",
+      "input": {
+        "platform": "linkedin",
+        "copy_excerpt": "Searchable has helped over 200 companies improve their AI search rankings.",
+        "proof_point_in_strategy_brief": "206% share of voice improvements",
+        "writing_instruction": "Direct, data-led, no fluff. Lead with the stat."
+      },
+      "expected_output": {
+        "clarity": 4,
+        "engagement": 3,
+        "tone_match": 3,
+        "accuracy": 1,
+        "passes": false,
+        "retry_count": 0,
+        "revision_hint": "Remove the claim 'Searchable has helped over 200 companies' — this stat does not appear in the product page or proof points. Replace with the verified proof point: '206% share of voice improvements'. Do not invent customer counts or outcome figures."
+      },
+      "validation_note": "accuracy=1 is correct. The model introduced a statistic not present in ProductKnowledge.proof_points. revision_hint must name the fabricated claim explicitly and state the replacement — not a generic 'improve accuracy' instruction."
+    },
+    {
+      "case": "C_instagram_accuracy_fail_max_retries",
+      "source": "real — Ollama run, searchable.com, platform=instagram",
+      "input": {
+        "platform": "instagram",
+        "copy_excerpt": "63% of brands are invisible on AI search. You could be next.",
+        "proof_point_in_strategy_brief": "206% share of voice improvements",
+        "writing_instruction": "Conversational, aspirational tone. Ground every claim in evidence."
+      },
+      "expected_output": {
+        "clarity": 3,
+        "engagement": 3,
+        "tone_match": 3,
+        "accuracy": 1,
+        "passes": false,
+        "retry_count": 2,
+        "revision_hint": "The figure '63%' does not exist in the verified proof points and must be removed. The only verified stat is '206% share of voice improvements'. Use that or remove the percentage entirely. Do not fabricate new figures on retry."
+      },
+      "validation_note": "MAX_EVAL_RETRIES=2 terminal failure case. The model re-introduced a fabricated figure across both retry attempts despite the prohibition rule. passes=false is the correct terminal state. Pipeline should surface this run for manual review rather than silently failing."
+    },
+    {
+      "case": "D_normal_pass_synthetic_baseline",
+      "source": "synthetic — baseline regression check",
+      "input": {
+        "platform": "linkedin",
+        "copy_excerpt": "Sprint status updates are eating your Mondays. [Product] closes the loop automatically — 200+ integrations, zero manual updates.",
+        "proof_point_in_strategy_brief": "200+ integrations",
+        "writing_instruction": "Direct, technical, no fluff."
+      },
+      "expected_output": {
+        "clarity": 4,
+        "engagement": 4,
+        "tone_match": 5,
+        "accuracy": 4,
+        "passes": true,
+        "retry_count": 0,
+        "revision_hint": null
+      },
+      "validation_note": "Synthetic baseline retained for unit testing agent logic independently of scraper. All scores >= 3 → passes=true. passes is computed by Pydantic validator, not by the LLM."
+    },
+    {
+      "case": "E_fail_low_engagement_synthetic",
+      "source": "synthetic — low engagement regression case",
+      "input": {
+        "platform": "linkedin",
+        "copy_excerpt": "Our product helps teams work better together by providing useful features for collaboration.",
+        "proof_point_in_strategy_brief": "200+ integrations",
+        "writing_instruction": "Direct, technical, no fluff."
+      },
+      "expected_output": {
+        "clarity": 3,
+        "engagement": 2,
+        "tone_match": 2,
+        "accuracy": 2,
+        "passes": false,
+        "retry_count": 0,
+        "revision_hint": "The hook is generic — 'helps teams work better together' applies to any product. Rewrite the opening line to name a specific daily pain point. Replace vague benefit language with the verified proof point: '200+ integrations'. The writing instruction calls for direct and technical — remove filler phrases like 'useful features'."
+      },
+      "validation_note": "engagement=2 fails the >= 3 threshold → passes=false. revision_hint must be a targeted rewrite instruction with specific replacements — not 'improve engagement'."
+    }
+  ]
+}

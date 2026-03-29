@@ -1,0 +1,112 @@
+{
+  "agent": "product_analysis",
+  "schema_version": "1.0",
+  "last_updated": "2026-03",
+  "notes": "Case A is the real ProductKnowledge from the Searchable Groq run. Features and proof_points are real extractions from the page — no boilerplate. Known issue: the description field still shows boilerplate text ('We help teams...') on some runs — logged in validation_log.md and tracked in CLAUDE.md bug fixes. Case B is a synthetic edge case for the feature-vs-benefit distinction.",
+  "test_cases": [
+    {
+      "case": "A_searchable_groq_real_extraction",
+      "source": "real — Groq run, searchable.com",
+      "input": {
+        "url": "https://searchable.com",
+        "scraped_text_available": true,
+        "user_document_uploaded": false
+      },
+      "expected_output": {
+        "product_name": "Searchable",
+        "description": "AI search visibility and brand monitoring platform that tracks where brands appear across major AI engines",
+        "features": [
+          "Real-time tracking of brand mentions across AI engines (ChatGPT, Perplexity, Gemini, etc.)",
+          "Share of voice measurement across AI search results",
+          "Competitor visibility benchmarking"
+        ],
+        "benefits": [
+          "Know exactly where your brand ranks in AI-generated answers",
+          "Identify gaps in AI search visibility before competitors do",
+          "Quantify share of voice improvement over time"
+        ],
+        "proof_points": [
+          {
+            "text": "206% share of voice improvements",
+            "type": "stat",
+            "source": "product page"
+          }
+        ],
+        "pain_points": [
+          "Brands have no visibility into how AI engines represent them",
+          "Difficulty tracking brand mentions and rankings across multiple AI engines daily"
+        ],
+        "messaging_angles": [
+          "AI search is the new SEO — and most brands are flying blind"
+        ],
+        "pricing_tier": null
+      },
+      "validation_note": "proof_points[0].text must be the exact string '206% share of voice improvements' — this is the value that flows into StrategyBrief.proof_point. Any paraphrase breaks Contract 1. description field shows boilerplate on some Ollama runs — this is a known issue tracked in CLAUDE.md. The Groq run produces a real description."
+    },
+    {
+      "case": "B_feature_vs_benefit_edge_case_synthetic",
+      "source": "synthetic — edge case for feature/benefit classification",
+      "input": {
+        "url": "https://example-saas.com",
+        "scraped_text_available": true,
+        "user_document_uploaded": false
+      },
+      "expected_output": {
+        "product_name": "Flowbase",
+        "description": "Project management SaaS for engineering teams integrating with GitHub and Slack",
+        "features": [
+          "GitHub PR status sync to issues",
+          "Slack notification routing by priority",
+          "Sprint velocity tracking dashboard"
+        ],
+        "benefits": [
+          "Eliminates manual status updates across tools",
+          "Engineers stay in flow without switching to project management tabs",
+          "Sprint retrospectives require no manual data collection"
+        ],
+        "proof_points": [
+          {
+            "text": "Used by 400+ engineering teams",
+            "type": "customer_count",
+            "source": "homepage"
+          },
+          {
+            "text": "Reduces standup prep time by 35 minutes per week",
+            "type": "stat",
+            "source": "case study"
+          }
+        ],
+        "pain_points": [
+          "Manual copy-paste of PR status into project management tickets",
+          "Sprint planning meetings where 80% of time is spent on status updates"
+        ],
+        "messaging_angles": [
+          "The project management tool that updates itself"
+        ],
+        "pricing_tier": "free_trial"
+      },
+      "validation_note": "This case tests the feature/benefit distinction. 'GitHub PR status sync' is a feature (what the product does). 'Eliminates manual status updates' is the benefit (what the user gains). The agent must not put benefits in the features list or vice versa — a common failure mode. proof_points must have a type field from: stat | customer_count | customer_name | g2_badge | integration_count | uptime_claim."
+    },
+    {
+      "case": "C_scrape_fail_user_doc_fallback_synthetic",
+      "source": "synthetic — scrape failure, user document uploaded",
+      "input": {
+        "url": "https://blocked-site.com",
+        "scraped_text_available": false,
+        "user_document_uploaded": true,
+        "user_document_content": "Product brief PDF with features and positioning"
+      },
+      "expected_output": {
+        "product_name": "ExtractedFromDoc",
+        "description": "Extracted from user-provided document",
+        "features": ["Feature extracted from document"],
+        "benefits": ["Benefit extracted from document"],
+        "proof_points": [],
+        "pain_points": ["Pain point extracted from document"],
+        "messaging_angles": [],
+        "pricing_tier": null
+      },
+      "validation_note": "When scrape fails, the agent must continue with user-provided data only — never crash. proof_points may be empty if the document contains no verifiable stats. The pipeline must not fabricate proof points to fill an empty list. An empty proof_points list is valid output."
+    }
+  ]
+}

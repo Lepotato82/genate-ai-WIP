@@ -1,14 +1,14 @@
 {
-  "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+  "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
   "url": "https://searchable.com",
   "brand_profile": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
     "org_id": null,
-    "created_at": "2026-03-24T13:28:48.698719+00:00",
+    "created_at": "2026-03-28T15:29:54.452930+00:00",
     "design_category": "minimal-saas",
     "primary_color": "#1a0f13",
     "secondary_color": "#65454e",
-    "background_color": "rgb(253, 251, 249)",
+    "background_color": "oklch(98.4% .006 85.5)",
     "font_family": "Geist",
     "font_weights": [
       400.0,
@@ -18,7 +18,7 @@
     "border_radius": ".625rem",
     "spacing_unit": "16px",
     "tone": "minimal",
-    "writing_instruction": "To match this brand voice, use the Geist font family and a restrained color palette featuring shades of dark gray and burgundy. Employ a minimalist approach with ample whitespace and thin type. When writing, use clear and concise language, avoiding jargon and overly technical terms, to create a sense of approachability and simplicity reminiscent of minimal-saas design. Incorporate the primary color #1a0f13 for accents and headings, and use the secondary color #65454e for supporting text and backgrounds.",
+    "writing_instruction": "One idea per sentence. Lead with the outcome, not the mechanism. No jargon. No superlatives. The reader skims \u2014 the first line must earn the second. Avoid: game-changer, seamless, powerful, revolutionize.",
     "css_tokens": {
       "--radius": ".625rem",
       "--background": "oklch(98.4% .006 85.5)",
@@ -96,30 +96,30 @@
       "--_btn-color-6": "rgb(255, 255, 255)",
       "--_btn-bg-7": "rgb(193, 95, 60)",
       "--_btn-color-7": "rgb(255, 255, 255)",
-      "--_btn-bg-8": "rgb(59, 45, 34)",
+      "--_btn-bg-8": "rgb(46, 28, 34)",
       "--_btn-color-8": "rgb(255, 255, 255)",
-      "--_btn-bg-9": "rgb(59, 45, 34)",
+      "--_btn-bg-9": "rgb(46, 28, 34)",
       "--_btn-color-9": "rgb(255, 255, 255)"
     },
     "confidence": 0.8
   },
   "product_knowledge": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
     "org_id": null,
-    "created_at": "2026-03-24T13:28:59.496840+00:00",
+    "created_at": "2026-03-28T15:30:09.583878+00:00",
     "product_name": "Searchable",
     "product_url": "https://searchable.com",
-    "tagline": "Take control of AI search",
-    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines.",
+    "tagline": "Visibility & Analytics from AI Search \u2014 and the actions to drive growth",
+    "description": "Searchable is an AI search optimization platform that helps brands track visibility and analytics across AI engines like ChatGPT and Claude, driving growth through actionable insights. It provides comprehensive tracking, optimization tools, and actionable insights to improve AI search rankings. The platform offers features such as AI visibility tracking, content optimization, technical audits, and competitive analysis to help brands capture millions of clicks from customers discovering products through AI-powered search engines. With Searchable, brands can monitor their brand mentions and rankings, optimize their content for AI search, and identify areas for improvement to increase their online visibility and drive more traffic to their website.",
     "product_category": "data-analytics",
     "features": [
       {
         "name": "AI Visibility Tracking",
-        "description": "Monitor your brand mentions and rankings across ChatGPT, Claude, Perplexity, Google AI, Copilot, and more"
+        "description": "Monitor brand mentions and rankings across ChatGPT, Claude, Perplexity, Google AI, Copilot, and more"
       },
       {
         "name": "Content Optimization",
-        "description": "AI-powered content creation and optimization tools to improve your AEO score"
+        "description": "AI-powered content creation and optimization tools to improve AEO score"
       },
       {
         "name": "Technical Audits",
@@ -127,12 +127,21 @@
       },
       {
         "name": "Competitive Analysis",
-        "description": "Track your share of voice compared to competitors across AI engines"
+        "description": "Track share of voice compared to competitors across AI engines"
+      },
+      {
+        "name": "Real-time Alerts",
+        "description": "Get notified when brand is mentioned or rankings change"
+      },
+      {
+        "name": "Analytics Dashboard",
+        "description": "Detailed insights into traffic, citations, and performance metrics"
       }
     ],
     "benefits": [
-      "Improve AI search rankings",
       "Increase product discovery through AI shopping assistants",
+      "Improve visibility when prospects research solutions via AI",
+      "Ensure content is cited and linked by AI engines",
       "Get recommended by AI for local searches",
       "Deliver AI search optimization services to clients"
     ],
@@ -149,12 +158,18 @@
       }
     ],
     "pain_points": [
-      "Difficulty in tracking brand visibility across AI engines",
-      "Limited understanding of how AI engines process websites",
-      "Struggling to optimize content for AI search"
+      "Difficulty tracking brand mentions and rankings across AI engines",
+      "Struggling to optimize content for AI search",
+      "Limited visibility into AI search performance metrics",
+      "Difficulty identifying areas for improvement in AI search",
+      "Struggling to stay ahead of competitors in AI search"
     ],
     "messaging_angles": [
-      "Take control of AI search"
+      "Take control of AI search",
+      "Optimize for the future of search",
+      "Improve AI search rankings",
+      "Increase online visibility",
+      "Drive more traffic to your website"
     ],
     "target_customer": "E-commerce brands, B2B software companies, content publishers, local businesses, and agencies",
     "integrations": [
@@ -165,18 +180,18 @@
     ],
     "pricing_mentioned": false,
     "pricing_description": null,
-    "scrape_word_count": 1484,
+    "scrape_word_count": 1528,
     "user_document_filename": null,
     "data_source": "scraped_only"
   },
   "content_brief": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:02.132605+00:00",
-    "platform": "instagram",
-    "content_type": "carousel",
+    "created_at": "2026-03-28T15:30:11.652853+00:00",
+    "platform": "twitter",
+    "content_type": "thread",
     "narrative_arc": "pain-agitate-solve-cta",
-    "content_pillar": "education_and_insight",
+    "content_pillar": "pain_and_problem",
     "funnel_stage": "tofu",
     "posting_strategy": {
       "recommended_frequency": "3x weekly",
@@ -187,75 +202,68 @@
       "best_time_window": "10:00-12:00 IST"
     },
     "word_count_target": null,
-    "slide_count_target": 8,
-    "thread_length_target": null,
+    "slide_count_target": null,
+    "thread_length_target": 6,
     "platform_rules_summary": [
-      "First 125 chars: complete emotional statement",
-      "20-30 hashtags; placement: after 5 line breaks; inline hashtags: False"
+      "Thread of 4-8 tweets (4-8)",
+      "Each tweet max 280 chars",
+      "Hashtags (1-2): final tweet only"
     ],
     "seo_keyword": null,
     "knowledge_context_used": false,
     "knowledge_context_summary": null,
-    "benchmark_reference": "Similar data-analytics products on Instagram have seen success with carousels showcasing product features and customer success stories.",
-    "reasoning": "With 3 pain points and 2 proof points, we can create a compelling narrative arc for the carousel. The minimal brand tone suggests a focus on clean visuals and concise messaging. Given the presence of a strong stat, we can use data to support our claims. The lack of a customer name means we'll focus on product features and benefits. The 4 features of Searchable can be highlighted across 8 slides, with 2 slides dedicated to proof points and 2 slides dedicated to addressing pain points, all while maintaining a minimal tone and emphasizing the 'Take control of AI search' messaging angle."
+    "benchmark_reference": "According to Twitter's best practices, threads with 4-8 tweets tend to perform better in terms of engagement and conversions. Given the data-analytics category and the need to educate the audience about AI search, a thread of 6 tweets is likely to resonate with the target audience and drive meaningful interactions.",
+    "reasoning": "Given the high number of pain points (5) and features (6), a longer thread is justified to adequately address the complexity of the topic. The presence of proof points (2) and a strong stat also support a more in-depth discussion. With a minimal brand tone, the focus should be on providing valuable information rather than promotional content. A thread of 6 tweets allows for a clear structure: introduction (1 tweet), problem agitation (2 tweets), solution presentation (2 tweets), and call-to-action (1 tweet). This structure aligns with the 'Take control of AI search' and 'Optimize for the future of search' messaging angles."
   },
   "strategy_brief": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:06.412236+00:00",
-    "lead_pain_point": "Difficulty in tracking brand visibility and analytics across multiple AI engines and search platforms",
-    "primary_claim": "Searchable helps brands track visibility and analytics across AI engines",
+    "created_at": "2026-03-28T15:30:15.022643+00:00",
+    "lead_pain_point": "Difficulty tracking brand mentions and rankings across multiple AI engines daily",
+    "primary_claim": "Searchable drives growth through actionable AI search insights",
     "proof_point": "206% share of voice improvements",
     "proof_point_type": "stat",
     "cta_intent": "start_trial",
     "appeal_type": "rational",
     "narrative_arc": "pain-agitate-solve-cta",
     "target_icp_role": "Digital Marketing Manager",
-    "differentiator": "unlike traditional SEO platforms that focus on human search engines",
-    "hook_direction": "Start by highlighting the growing importance of AI search",
+    "differentiator": "unlike traditional SEO tools that focus on traditional search engines",
+    "hook_direction": "Start by highlighting the impact of untracked brand mentions on business",
     "positioning_mode": "category_challenging",
     "messaging_angle_used": "Take control of AI search",
     "knowledge_context_applied": false
   },
   "formatted_content": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:27.523897+00:00",
-    "platform": "instagram",
+    "created_at": "2026-03-28T15:30:39.420745+00:00",
+    "platform": "twitter",
     "linkedin_content": null,
-    "twitter_content": null,
-    "instagram_content": {
-      "preview_text": "Lost in AI noise",
-      "body": "Tracking brand visibility is a nightmare across multiple engines and platforms. Your brand's voice is drowned out. Search is changing, and AI search is on the rise, making it harder to keep up. Searchable helps brands track visibility and analytics across AI engines. With Searchable, brands have seen 206% share of voice improvements. Start your trial today and discover a simpler way to track your brand's analytics.",
+    "twitter_content": {
+      "tweets": [
+        "You're losing sales because your brand isn't visible in AI search results.",
+        "Every day, you're checking multiple AI engines to see if your brand is mentioned, but it's a time-consuming task that takes away from growing your business.",
+        "The impact of untracked brand mentions can be significant, leading to missed opportunities and a loss of potential customers.",
+        "We've seen 206% share of voice improvements can be achieved with the right approach to AI search insights.",
+        "Searchable drives growth through actionable AI search insights, helping you make informed decisions to boost your brand's online presence.",
+        "By leveraging AI search insights, you can optimize your marketing strategy and increase your brand's visibility, ultimately driving more sales and revenue.",
+        "Ready to take control of your brand's AI search presence? Start your trial today and discover how Searchable can help you grow your business. #AISearch #BrandVisibility"
+      ],
+      "tweet_char_counts": [
+        74,
+        156,
+        125,
+        106,
+        138,
+        155,
+        168
+      ],
       "hashtags": [
         "#AISearch",
-        "#BrandVisibility",
-        "#AnalyticsSimplified",
-        "#Searchable",
-        "#AIEngineTracking",
-        "#BrandAnalytics",
-        "#SimplifiedWorkflow",
-        "#RegainControl",
-        "#TrialNow",
-        "#MinimalistDesign",
-        "#SaaSsolution",
-        "#DigitalMarketing",
-        "#BrandManagement",
-        "#AIpowered",
-        "#SearchEngineOptimization",
-        "#SEOalternative",
-        "#AIfuture",
-        "#MarketingSolutions",
-        "#BrandInsights",
-        "#DataDriven",
-        "#MarketingStrategy",
-        "#GrowthHacking",
-        "#dataanalytics",
-        "#bi",
-        "#datascience"
-      ],
-      "full_caption": "Lost in AI noise\nTracking brand visibility is a nightmare across multiple engines and platforms. Your brand's voice is drowned out. Search is changing, and AI search is on the rise, making it harder to keep up. Searchable helps brands track visibility and analytics across AI engines. With Searchable, brands have seen 206% share of voice improvements. Start your trial today and discover a simpler way to track your brand's analytics.\n\n\n\n\n#AISearch #BrandVisibility #AnalyticsSimplified #Searchable #AIEngineTracking #BrandAnalytics #SimplifiedWorkflow #RegainControl #TrialNow #MinimalistDesign #SaaSsolution #DigitalMarketing #BrandManagement #AIpowered #SearchEngineOptimization #SEOalternative #AIfuture #MarketingSolutions #BrandInsights #DataDriven #MarketingStrategy #GrowthHacking #dataanalytics #bi #datascience"
+        "#BrandVisibility"
+      ]
     },
+    "instagram_content": null,
     "blog_content": null,
     "image_prompt": null,
     "suggested_format": null,
@@ -268,21 +276,21 @@
     "user_edited_copy": null
   },
   "evaluation": {
-    "run_id": "2ad691e9-a7cf-4d73-b04e-9a2f05902a9a",
+    "run_id": "704619af-c64b-4de4-9d00-a0b9a17aac1f",
     "org_id": null,
-    "created_at": "2026-03-24T13:29:45.979079+00:00",
-    "platform": "instagram",
+    "created_at": "2026-03-28T15:30:58.027826+00:00",
+    "platform": "twitter",
     "clarity": 4,
-    "engagement": 3,
-    "tone_match": 4,
+    "engagement": 4,
+    "tone_match": 5,
     "accuracy": 5,
-    "overall_score": 4.0,
+    "overall_score": 4.5,
     "passes": true,
     "revision_hint": null,
     "lowest_dimension": null,
-    "scores_rationale": "The copy clearly explains the problem of tracking brand visibility and introduces Searchable as a solution, but the transition to the trial call-to-action feels slightly abrupt. The opening line 'Lost in AI noise' creates some emotional resonance, but it does not specifically name a daily friction or use a surprising number to stop the scroll. The language is generally clear and concise, aligning with the minimalist approach specified in the writing instruction, but the tone could be more approachable and simple in a few places. The copy accurately states the primary claim and includes the proof point of '206% share of voice improvements' without fabricating any statistics.",
+    "scores_rationale": "The copy is easy to understand, with each tweet building on the previous one to create a clear narrative, but the transition between some tweets could be smoother. The hook in tweet 1 is effective in stopping the scroll, and the subsequent tweets create curiosity and a sense of urgency, but the engagement could be stronger with a more specific daily friction or surprising number. The copy executes the writing instruction perfectly, leading with the outcome, avoiding jargon and superlatives, and using one idea per sentence. The copy uses the proof_point verbatim, stating '206% share of voice improvements can be achieved with the right approach to AI search insights', which is directly traceable to the primary_claim.",
     "retry_count": 0
   },
   "passes": true,
-  "overall_score": 4.0
+  "overall_score": 4.5
 }

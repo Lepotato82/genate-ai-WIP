@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from llm.client import chat_completion
 from config import settings
+from schemas.brand_identity import BrandIdentity
 from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.strategy_brief import StrategyBrief
@@ -46,10 +47,46 @@ def _mock(
 # Public entry point
 # ---------------------------------------------------------------------------
 
+def _build_image_prompt(
+    strategy_brief: StrategyBrief,
+    brand_profile: BrandProfile,
+    content_brief: ContentBrief,
+    identity: BrandIdentity | None,
+) -> str:
+    """Build a grounded image prompt using exact brand values when available."""
+    if identity is None:
+        return (
+            f"Professional SaaS marketing image. "
+            f"Brand colors: {brand_profile.primary_color}. "
+            f"Style: {brand_profile.design_category}. "
+            f"Platform: {content_brief.platform}."
+        )
+
+    parts = [
+        f"Professional SaaS marketing visual for {identity.product_name}.",
+        f"Brand primary color: {identity.primary_color}.",
+    ]
+    if identity.secondary_color:
+        parts.append(f"Secondary color: {identity.secondary_color}.")
+    if identity.background_color:
+        parts.append(f"Background: {identity.background_color}.")
+    if identity.primary_font:
+        parts.append(f"Typography: {identity.primary_font}.")
+    parts.append(f"Design style: {identity.design_category}.")
+    parts.append(f"Platform format: {content_brief.platform} {content_brief.content_type}.")
+    if identity.has_og_image:
+        parts.append("Style reference: brand OG image available.")
+    if identity.logo_compositing_enabled:
+        parts.append("Logo: real brand logo available for compositing.")
+    parts.append(f"Narrative: {strategy_brief.lead_pain_point[:80]}.")
+    return " ".join(parts)
+
+
 def run(
     strategy_brief: StrategyBrief,
     brand_profile: BrandProfile,
     content_brief: ContentBrief,
+    brand_identity: BrandIdentity | None = None,
 ) -> dict:
     if settings.MOCK_MODE:
         return _mock(strategy_brief, brand_profile, content_brief)

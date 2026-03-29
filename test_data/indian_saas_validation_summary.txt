@@ -1,0 +1,182 @@
+Running Razorpay (https://razorpay.com)...
+[product_analysis] sending 2345 words to LLM
+[product_analysis] user message preview: "Agentic Stack\n\nAgentic Stack\n\nPayments\n\nBanking+\n\nPayroll\n\nEngage\n\nPartners\n\nResources\n\nPricing\n\nLogin\n\nSign Up\n\nInternational Payments\nfor India's boldest disruptors\n\nAccept cards, bank transfers and Apple Pay from 180+ countries\n\nSign Up Now\n\nKnow More\n\nThe Agentic Era \nBegins Now.\n\nThe infrastruc"
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+    r = run(url, platform='linkedin', run_id=str(uuid.uuid4()))
+  File "E:\genate-ai\.claude\worktrees\cool-taussig\pipeline.py", line 488, in run
+    return dispatch[p](url, run_id=run_id, org_id=org_id)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\genate-ai\.claude\worktrees\cool-taussig\pipeline.py", line 452, in run_linkedin
+    return _run_entry(url, "linkedin", run_id, org_id)
+  File "E:\genate-ai\.claude\worktrees\cool-taussig\pipeline.py", line 406, in _run_entry
+    strategy_brief = strategy.run(brief, product, brand)
+  File "E:\genate-ai\.claude\worktrees\cool-taussig\agents\strategy.py", line 205, in run
+    strategy_brief = StrategyBrief(
+        run_id=content_brief.run_id,
+    ...<3 lines>...
+        **data,
+    )
+  File "C:\Users\shado\AppData\Roaming\Python\Python313\site-packages\pydantic\main.py", line 253, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for StrategyBrief
+proof_point_type
+  Input should be 'stat', 'customer_name', 'g2_badge', 'integration_count', 'uptime_claim', 'award' or 'user_count' [type=literal_error, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/literal_error
+  [18.7s] ERROR: 1 validation error for StrategyBrief
+proof_point_type
+  Input should be 'stat', 'customer_name', 'g2_badge', 'integration_count', 'uptime_claim', 'award' or 'user_count' [type=literal_error, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/literal_error
+
+Running Chargebee (https://www.chargebee.com)...
+[product_analysis] sending 1659 words to LLM
+[product_analysis] user message preview: '___\nPress Alt+1 for screen-reader mode, Alt+0 to cancel\nAccessibility Screen-Reader Guide, Feedback, and Issue Reporting | New window\nChargebee’s flagship billing & monetization conference for leaders at the forefront of monetization in SaaS, AI, and beyond ->\nChargebee\nProducts\nSolutions\nPricing\nPa'
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['125', '25', '5']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'5%', '125%'} � capping accuracy at 1
+  [25.9s] passes=True  overall=4.25
+  design_category:  bold-enterprise
+  tone:             corporate
+  product_name:     Chargebee
+  product_category: fintech-saas
+  proof_points:     ['Trusted by 6500+ businesses globally', '2025 Gartner Magic Quadrant Leader']
+  logo_confidence:  high
+  logo_compositing: True
+  font_family:      Inter
+  primary_color:    rgb(1, 42, 56)
+  scores: clarity=4 engagement=4 tone=4 accuracy=5
+  hook (50 chars): Complex billing scenarios eat into your resources.
+
+Running Freshworks (https://www.freshworks.com)...
+[product_analysis] sending 568 words to LLM
+[product_analysis] user message preview: 'Skip to main content\n\nJoin us at Refresh 2026 for the uncomplicated path to AI service transformation | May 14, New York City \n\nRegister\nEnglish\n Contact Sales\n Login\nSkip to main content\nProducts\nPlatform\nResources\nPricing\nDemo\nTry it free\nJOIN US\nRefresh 2026\nUncomplicate your IT and customer serv'
+  [21.2s] passes=True  overall=4.0
+  design_category:  bold-enterprise
+  tone:             corporate
+  product_name:     Freshworks
+  product_category: customer-success
+  proof_points:     ['74% first contact resolution (FCR)']
+  logo_confidence:  high
+  logo_compositing: True
+  font_family:      Roboto
+  primary_color:    rgb(133, 18, 224)
+  scores: clarity=4 engagement=3 tone=4 accuracy=5
+  hook (58 chars): Complicated tech stacks drain revenue and employee morale.
+
+Running Postman (https://www.postman.com)...
+[product_analysis] sending 307 words to LLM
+[product_analysis] user message preview: "Skip to main content\nHome\nProduct\n\nPOSTMAN PLATFORM\n\nWhat's New\n\nSecurity\n\nIntegrations\n\nEXPLORE\n\nPostman API Network\n\nMCP Catalog\n\nDownload Postman →\n\nDESIGN\n\nSpec Hub\n\nManage specifications\n\nMock Servers\n\nValidate API behavior\n\nBUILD\n\nWorkspaces\n\nCollaborate with teams\n\nFlows\n\nCreate visual workfl"
+Evaluator pre-check: The copy contains numeric claims not present in the proof_point or primary_claim: ['70']. Remove all fabricated statistics. Only use numbers that appear verbatim in the proof_point field.
+Evaluator: fabricated stats detected not in proof_point/primary_claim: {'70%'} � capping accuracy at 1
+  [46.8s] passes=True  overall=4.0
+  design_category:  bold-enterprise
+  tone:             bold
+  product_name:     Postman
+  product_category: developer-tool
+  proof_points:     ["The world's APIs are built and shipped on Postman"]
+  logo_confidence:  high
+  logo_compositing: True
+  font_family:      Inter
+  primary_color:    rgb(224, 83, 32)
+  scores: clarity=4 engagement=3 tone=4 accuracy=5
+  hook (45 chars): Streamline your API development process today
+
+Running Hasura (https://hasura.io)...
+[product_analysis] sending 422 words to LLM
+[product_analysis] user message preview: 'Get started\n\nReady to bring your AI visions to life?\n\nOur AI Catalyst Team is here to help you assess fit and partner with you to deliver real transformation - turning bold AI ambitions into measurable business impact.\n\nIf you’re reaching out for anything other than a demo request, contact us here.\n'
+Formatter: LLM returned non-JSON; falling back to mechanical parse
+  [15.6s] passes=True  overall=3.5
+  design_category:  minimal-saas
+  tone:             minimal
+  product_name:     Hasura
+  product_category: developer-tool
+  proof_points:     ['Powers millions of user experiences']
+  logo_confidence:  high
+  logo_compositing: True
+  font_family:      Inter
+  primary_color:    #000000
+  scores: clarity=4 engagement=3 tone=4 accuracy=3
+  hook (81 chars): Maintaining a complex knowledge graph or tool schema slows down your entire team.
+
+Running BrowserStack (https://www.browserstack.com)...
+[product_analysis] sending 685 words to LLM
+[product_analysis] user message preview: 'Skip to main content\n\n🚀 Breakpoint 2026: Join 20K+ peers learning AI in testing from world’s top tech leaders. Virtual & free. Register Now →\n\nProducts\nDevelopers\nAI Agents\nPricing\nSign in\nFREE TRIAL\nComprehensive Test Stack\n\nOpen and flexible test platform. Superior AI throughout the testing lifecy'
+  [45.2s] passes=True  overall=4.0
+  design_category:  minimal-saas
+  tone:             minimal
+  product_name:     BrowserStack
+  product_category: developer-tool
+  proof_points:     ['Trusted by more than 50,000 customers globally', 'Over 6 million developers and 50,000 teams test on', 'Optimizely lowers developer pain by moving testing', 'GoodRx cuts testing time by 90% to release 15 time']
+  logo_confidence:  None
+  logo_compositing: False
+  font_family:      Inter
+  primary_color:    #000000
+  scores: clarity=4 engagement=3 tone=4 accuracy=5
+  hook (70 chars): Manual testing processes are a major bottleneck in development cycles.
+
+Running Zoho (https://www.zoho.com)...
+[product_analysis] sending 601 words to LLM
+[product_analysis] user message preview: "Skip to main content\nZoho.com\nProductsEnterprise\nCustomers\nPartners\nResources\nEnglish\nSign InSign Up\nYour life's work,\npowered by our life's work\n\nA unique and powerful software suite to transform the way you work. Designed for businesses of all sizes, built by a company that values your privacy.\n\nG"
+  [15.0s] passes=True  overall=3.75
+  design_category:  bold-enterprise
+  tone:             corporate
+  product_name:     Zoho One
+  product_category: project-management
+  proof_points:     ['With our complete business under control, our prod']
+  logo_confidence:  high
+  logo_compositing: True
+  font_family:      Zoho_Puvi_Regular
+  primary_color:    rgb(1, 1, 1)
+  scores: clarity=4 engagement=3 tone=4 accuracy=4
+  hook (57 chars): Departmental silos hinder collaboration and productivity.
+
+Running CleverTap (https://clevertap.com)...
+[product_analysis] sending 719 words to LLM
+[product_analysis] user message preview: 'Analyst Report CleverTap is a Leader in the 2026 Gartner® Magic Quadrant™ for Personalization Engines. Download the Report 🚀\nCleverTap\nProduct\nCleverAI™\nSolutions\nCustomers\nPricing\nResources\nCompany\nLog In\nGet a Demo\nUnlock Limitless\nCustomer Lifetime Value\nCreate personalized experiences to retain '
+  [18.6s] passes=True  overall=4.0
+  design_category:  bold-enterprise
+  tone:             corporate
+  product_name:     CleverTap
+  product_category: customer-success
+  proof_points:     ['5x Boost in Retention with Advanced User Insights', '60% Increase in CTRs using ‘Best time’', '45% Reduction in support tickets', '40% Uplift in CTRs of push notifications', 'CleverTap is a Leader in the 2026 Gartner® Magic Q']
+  logo_confidence:  high
+  logo_compositing: True
+  font_family:      circular_stdbook
+  primary_color:    #107ebf
+  scores: clarity=4 engagement=3 tone=4 accuracy=5
+  hook (55 chars): Boost customer retention with personalized experiences.
+
+Running Darwinbox (https://darwinbox.com)...
+[product_analysis] sending 632 words to LLM
+[product_analysis] user message preview: 'Darwinbox recognized as a Strong Performer in The Forrester Wave HCM Solutions 🚀 Read the Report\n\nx\nProducts\nIndustries & Solutions\nNew\nInteractive Demos\nResources\nCustomers\nCompany\n\nRequest a Quote\n\nSchedule a Demo\n\nEN\nAI-Native HCM\nfor Global Enterprises\n\nExperience a modern HR platform with AI at'
+Strategy: product_knowledge validation warning: proof_point '[g2_badge] Recognized by Global Analysts and Platforms' does not match any entry in ProductKnowledge.proof_points. Valid values: ['Recognized by Global Analysts and Platforms']. Copy the proof point text verbatim.
+  [20.4s] passes=True  overall=3.75
+  design_category:  minimal-saas
+  tone:             minimal
+  product_name:     Darwinbox
+  product_category: hr-people
+  proof_points:     ['Recognized by Global Analysts and Platforms']
+  logo_confidence:  medium
+  logo_compositing: False
+  font_family:      aktiv-grotesk
+  primary_color:    #007aff
+  scores: clarity=4 engagement=3 tone=4 accuracy=4
+  hook (63 chars): Manual HR processes mean hours of tedious paperwork every week.
+
+Running MoEngage (https://www.moengage.com)...
+[product_analysis] sending 2031 words to LLM
+[product_analysis] user message preview: 'MoEngage named a “Customers’ Choice” vendor in the 2026 Gartner® Peer Insights™ "Voice of the Customer": Multichannel Marketing Hubs report.\nLearn More\nProduct\nPRODUCTS\nAnalytics & Insights\nUncover critical insights that are actionable\nCross-Channel Marketing\nSeamlessly connect across all channels\nW'
+  [17.8s] passes=True  overall=4.0
+  design_category:  bold-enterprise
+  tone:             corporate
+  product_name:     MoEngage
+  product_category: marketing-content
+  proof_points:     ['Trusted by 1350+ Consumer Brands Worldwide', 'Named a “Customers’ Choice” vendor in the 2026 Gar', 'Recognized as a "Visionary" in the 2026 Gartner® M']
+  logo_confidence:  None
+  logo_compositing: False
+  font_family:      Circular
+  primary_color:    rgb(0, 20, 71)
+  scores: clarity=4 engagement=3 tone=4 accuracy=5
+  hook (42 chars): Start improving customer engagement today.
+
+Completed: 9/10 passed, 1/10 errors
+Errors: ['Razorpay']
