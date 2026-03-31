@@ -1,7 +1,7 @@
 # Genate — Full Project Context
-**Version:** 2.0 — Clean Start  
-**Last updated:** March 2026  
-**Status:** Starting fresh. Previous codebase scrapped. This document is the single source of truth.
+**Version:** 2.2
+**Last updated:** March 2026
+**Status:** Core 9-agent pipeline complete and validated. Phase 2 (Bannerbear image generation) shipped. Phase 3 (video, Fal.ai, Pillow compositing) is next.
 
 ---
 
@@ -26,6 +26,9 @@ Brand memory gets smarter with every approved run. Strategy summaries, copy exam
 
 ### Moat 3 — SaaS-Specific Pipeline
 Agents understand pain-agitate-solve narrative arcs, proof point grounding, messaging angle selection, and platform-native formats. The pipeline is tuned for how SaaS products are positioned and marketed — not for coffee shops, DTC brands, or generic "teams."
+
+### Moat 4 — Research Augmentation (Step 3.5)
+Every content run is automatically enriched with real third-party industry statistics from Gartner, Forrester, McKinsey, HubSpot, and similar sources via Tavily search. These stats are distinct from the brand's own proof points — they validate the *problem* (AGITATE section) while the brand's own stat validates the *solution* (SOLVE section). The combination is uniquely credible: "Gartner found 67% of teams struggle with X → we reduced it by 206%." Fabrication prevention: any stat extracted by the LLM is validated against the source content before use. Gated by `RESEARCH_AUGMENTATION_ENABLED=false` — zero cost when not needed.
 
 ---
 
@@ -61,7 +64,14 @@ Vision model analyses the best available image plus CSS tokens. Classifies the b
 ### Step 3 — Product Analysis *(parallel with Step 2)*
 Analyses scraped + user-provided text. Extracts features, benefits, proof points (stats, customer names, G2 badges, integration counts, uptime claims), pain points, and messaging angles. Returns a `ProductKnowledge` Pydantic model.
 
-**Model:** Groq llama3.2
+**Model:** Groq `llama-3.3-70b-versatile`
+
+### Step 3.5 — Research Agent *(parallel-capable, after Step 3)*
+Searches for real third-party industry statistics using Tavily web search. Builds 3 targeted queries from `ProductKnowledge` (category stats, pain point validation, buyer behaviour). For each result, uses an LLM to extract a concrete stat from the source content, then validates the stat by checking key words appear in the original content (6-word presence check — fabrication prevention). Classifies source credibility as tier_1 (Gartner/Forrester/McKinsey/academic journals), tier_2 (HubSpot/Salesforce/G2/Statista), or tier_3 (vendor blogs/news). Returns a sorted list of `ResearchProofPoint` objects attached to `ProductKnowledge.research_proof_points`. Strategy agent receives these and uses the best one in the AGITATE section.
+
+**Gating:** `RESEARCH_AUGMENTATION_ENABLED=false` by default. Returns `[]` when disabled or when `TAVILY_API_KEY` is not set.
+
+**Model:** Groq `llama-3.3-70b-versatile` (stat extraction only — 1 LLM call per Tavily result)
 
 ### Step K — Knowledge Layer Query *(optional, when `KNOWLEDGE_LAYER_ENABLED=true`)*
 Before the Planner runs, the pipeline queries Qdrant for semantically relevant context from previous approved runs for this organisation. Returns `KnowledgeContext` containing prior strategy summaries, approved copy examples, and proof points that worked.
@@ -69,30 +79,33 @@ Before the Planner runs, the pipeline queries Qdrant for semantically relevant c
 ### Step 4 — Planner
 Selects content type, narrative arc, content pillar, and platform-specific strategy. Uses SaaS engagement benchmarks (from research datasets) to inform defaults. Returns a `ContentBrief`.
 
-**Narrative arc options:** `pain-agitate-solve-cta` · `before-after-bridge-cta` · `stat-hook-problem-solution-cta`  
+**Narrative arc options:** `pain-agitate-solve-cta` · `before-after-bridge-cta` · `stat-hook-problem-solution-cta`
 **Platform defaults:** LinkedIn → long-form or carousel arc · Twitter → always thread arc · Instagram → carousel-first arc
 
-**Model:** Groq llama3.2
+**Model:** Groq `llama-3.3-70b-versatile`
 
 ### Step 5 — Strategy
 Decides what to say before any copy is written. Selects: the specific pain point to lead with (not generic — exact daily friction), the primary claim, the appeal type (rational/emotional/mixed), which proof point from `ProductKnowledge.proof_points` to use, and CTA direction. Returns a `StrategyBrief`.
 
 The `proof_point` field **must** reference an actual proof point from `ProductKnowledge` — not fabricated. This is enforced in the prompt and validated by the Evaluator.
 
-**Model:** Groq llama3.2
+**Model:** Groq `llama-3.3-70b-versatile`
 
 ### Step 6 — Copywriting Agent *(parallel with Step 7)*
 Writes raw copy executing the `StrategyBrief`. The `BrandProfile.tone.writing_instruction` is injected directly into the system prompt — mechanically tying brand voice to generation. Focus is purely on substance (what to say). Structure is handled separately by the Formatter.
 
-**Model:** Groq llama3.2
+**Model:** Groq `llama-3.3-70b-versatile`
 
 ### Step 7 — Visual Gen Agent *(parallel with Step 6)*
-Generates an image generation prompt using exact brand parameters (hex colors, font names, design category signals, OG image as style reference). Also generates (Phase 2+) a 30-60 second video script following the narrative arc, a video hook (first 3 seconds), and a `suggested_format` output (`static` | `carousel` | `video` | `ugc`).
+Generates an image generation prompt using exact brand parameters (hex colors, font names, design category signals, OG image as style reference). Also generates a `suggested_format` output (`static` | `carousel` | `video` | `ugc`). Video script generation is Phase 3.
 
-**Model:** Groq llama3.2
+**Model:** Groq `llama-3.3-70b-versatile`
+
+### Step 7.5 — Image Gen *(Phase 2, after Formatter)*
+`agents/image_gen.py` — runs after the Formatter and before the evaluator retry loop. Converts LinkedIn carousel copy into Bannerbear API calls. Returns branded slide image URLs. Gated by `IMAGE_GENERATION_ENABLED=true`. See Phase 2 section below.
 
 ### Step 8 — Formatter
-Applies platform-specific structural rules from `platform_rules.json`. Rules are enforced mechanically — not suggested.
+Applies platform-specific structural rules from `config/platform_rules.json`. Rules are enforced mechanically — not suggested.
 
 | Platform | Key rules |
 |---|---|
@@ -103,7 +116,7 @@ Applies platform-specific structural rules from `platform_rules.json`. Rules are
 
 If this is a retry: receives `revision_hint` from Evaluator as a targeted rewrite instruction.
 
-**Model:** Groq llama3.2
+**Model:** Groq `llama-3.3-70b-versatile` (LinkedIn only — other platforms use programmatic formatting)
 
 ### Step 9 — Evaluator (with retry loop)
 Scores the formatted output on four dimensions (1-5 each):
@@ -114,30 +127,52 @@ Scores the formatted output on four dimensions (1-5 each):
 
 `passes = true` if **all four** ≥ 3. If `passes = false` AND retries < 2: generates a targeted `revision_hint` (specific instruction, not "improve the copy") and sends back to the Formatter. `MAX_EVAL_RETRIES = 2`.
 
-**Model:** Groq llama3.2
+Python post-processes LLM scores before accepting them: fabricated stat cap (accuracy → 1), generic opener cap (engagement capped at 3), `passes` and `overall_score` always computed by Pydantic — never trusted from LLM output.
+
+**Model:** Groq `llama-3.3-70b-versatile`
 
 ### Step K (post) — Knowledge Layer Persist
 After a successful run, `persist_run()` stores `BrandProfile`, `ProductKnowledge`, `StrategyBrief`, and the final approved copy into Supabase (Postgres) and indexes semantic embeddings into Qdrant per `org_id`.
 
 ---
 
-## The Image Pipeline (Phase 2)
+## The Image Pipeline
 
-Three-stage pipeline producing brand-consistent images:
+### Phase 2 — Bannerbear Programmatic Templates ✅ SHIPPED
 
-**Stage 1 — FLUX Dev + IP-Adapter (Fal.ai)**  
-The scraped OG image is used as an IP-Adapter style reference. This transfers the brand's visual language to generated images without needing a LoRA. LoRA fine-tuning is available as a premium upgrade when the brand provides 20-50 existing visual assets during onboarding (~15-30 min training, ~$1-3 per brand on Fal.ai).
+`agents/image_gen.py` is live. Bannerbear receives brand colors, copy text, and logo URL and returns image URLs via its template API. This is the "guaranteed accuracy" layer — colors are exact hex from `BrandIdentity`, never approximate.
 
-**Stage 2 — Programmatic Template (Bannerbear/Placid)**  
-Exact brand colors (from CSS tokens) and exact font (from typography extraction) are applied programmatically. This guarantees color accuracy that AI generation cannot. Copy text is overlaid at this stage.
+**What's done:**
+- LinkedIn carousel copy split into slides (hook = slide 1 headline, paragraph pairs for slides 2-N, max 8 slides)
+- Adaptive text color: `_is_dark()` detects background luminance; headline/body flip between `#ffffff`/`#cccccc` and `#111111`/`#444444`
+- Accent bar contrast: `_pick_accent_color()` uses WCAG contrast ratio to pick primary → secondary → accent → fallback, preventing invisible accent bars when primary_color == background_color
+- Logo compositing: injected via `logo_url` when `logo_confidence` is "high" or "medium"
+- All color fields guaranteed `#rrggbb` hex via `BrandIdentity._to_hex()` before reaching Bannerbear
+- `IMAGE_GENERATION_ENABLED=false` default — zero cost when not needed
 
-**Stage 3 — Logo Compositing (Pillow)**  
-The extracted brand logo is composited onto the image using Pillow. Always the real logo — never AI-generated.
+**Bannerbear template layer names** (template must expose these):
 
-**Brand consistency hierarchy (strongest to weakest):**
+| Layer | Type | Content |
+|---|---|---|
+| `background_color` | color | `BrandIdentity.background_color` |
+| `accent_bar` | color | `_pick_accent_color(identity)` result |
+| `slide_label` | text | `"01 / 05"` format |
+| `headline` | text | max 120 chars |
+| `body_text` | text | max 280 chars |
+| `logo` | image | `logo_url` (when confidence high/medium) |
+
+### Phase 3 — AI Generation + Compositing (deferred)
+
+**Stage 1 — FLUX Dev + IP-Adapter (Fal.ai)** *(not yet built)*
+The scraped OG image as IP-Adapter style reference. Transfers brand visual language to generated images. LoRA fine-tuning as premium upgrade (20-50 visual assets, ~$1-3/brand on Fal.ai).
+
+**Stage 2 — Logo Compositing (Pillow)** *(not yet built)*
+Pillow compositing of real extracted logo onto Bannerbear output. Blocked by: apple-touch-icon black background baked in — needs background removal before compositing on light-background brands.
+
+**Brand consistency hierarchy (strongest to weakest) — target state:**
 Programmatic template (guaranteed) → logo compositing (always real) → FLUX + IP-Adapter (stylistically consistent) → FLUX text-only (least consistent)
 
-For text-in-image variants: **Ideogram** (significantly better than FLUX/DALL-E for readable text in generated images).
+For text-in-image variants: **Ideogram** (significantly better than FLUX/DALL-E for readable text).
 
 ---
 
@@ -176,7 +211,7 @@ Every correction teaches the system. The gap between first draft and approved ve
 
 | Layer | Technology | Notes |
 |---|---|---|
-| LLM inference (production) | **Groq** (llama3.2) | ~300-500 tok/sec · ~$0.06/M input tokens · OpenAI-compatible API |
+| LLM inference (production) | **Groq** (`llama-3.3-70b-versatile`) | ~300-500 tok/sec · ~$0.06/M input tokens · OpenAI-compatible API · 100K TPD free tier |
 | Vision inference | **Claude Haiku** (Anthropic API) | UI Analyzer only · better JSON instruction-following than llava |
 | LLM inference (local dev) | **Ollama** (llama3.2 + llava) | Unchanged for development loop |
 | Web scraping | **Playwright** + **Browserless** | Playwright for CSS token extraction · Browserless as hosted browser service (scales independently) |
@@ -292,17 +327,17 @@ def run(content_brief, product_knowledge, knowledge_context=None) -> StrategyBri
 
 ```env
 # Which provider to use for text agents
-LLM_PROVIDER=groq                        # groq | openai | anthropic | ollama
+LLM_PROVIDER=groq                          # groq | openai | anthropic | ollama
 
 # Which provider to use for vision (UI Analyzer only)
-LLM_VISION_PROVIDER=anthropic            # anthropic | ollama | openai
+LLM_VISION_PROVIDER=anthropic              # anthropic | ollama | openai
 
 # Model names per provider (override defaults)
-LLM_TEXT_MODEL=llama-3.2-90b-text-preview   # Groq model string
-LLM_VISION_MODEL=claude-haiku-4-5           # Anthropic model string
-OLLAMA_BASE_URL=http://localhost:11434/v1   # MUST include /v1 — OpenAI SDK appends /chat/completions directly
-OLLAMA_TEXT_MODEL=llama3.2:latest           # Ollama text model (separate from LLM_TEXT_MODEL)
-OLLAMA_VISION_MODEL=llava:latest            # Ollama vision model (separate from LLM_VISION_MODEL)
+LLM_TEXT_MODEL=llama-3.3-70b-versatile     # production default — Groq 70B
+LLM_VISION_MODEL=claude-haiku-4-5          # Anthropic model string (vision only)
+OLLAMA_BASE_URL=http://localhost:11434/v1  # MUST include /v1 — OpenAI SDK appends /chat/completions directly
+OLLAMA_TEXT_MODEL=llama3.2:latest          # Ollama text model (separate from LLM_TEXT_MODEL)
+OLLAMA_VISION_MODEL=llava:latest           # Ollama vision model (separate from LLM_VISION_MODEL)
 
 # API keys (only the active provider's key is required)
 GROQ_API_KEY=...
@@ -311,6 +346,8 @@ OPENAI_API_KEY=...
 ```
 
 Switching from Groq to OpenAI in production: change `LLM_PROVIDER=openai` and set `LLM_TEXT_MODEL=gpt-4o-mini`. Zero agent code changes. This is the requirement.
+
+**Important — Groq TPD rate limit:** The free tier has a 100,000 token/day limit per model. `llama-3.3-70b-versatile` exhausts this in ~3-4 full pipeline runs against data-heavy sites. When exhausted, `llama-4-scout-17b-16e-instruct` has a separate quota but produces worse output (design_category accuracy 4/10 vs 10/10 on Indian SaaS). Plan quota usage accordingly. Dev Tier removes this limit.
 
 ### Vision is Separate
 The vision model (UI Analyzer) is configured independently via `LLM_VISION_PROVIDER`. This is intentional — vision and text requirements are different. Haiku is the current choice for vision. If a faster/cheaper vision model emerges, it can be swapped without touching text agents.
@@ -371,21 +408,63 @@ Training data is built in parallel with agent development. Datasets must exist b
 ## Folder Structure
 
 ```
-/agents/                → all agent Python files
-/llm/                   → LLM abstraction layer (client.py — single provider interface)
+/agents/                → all 9 agent Python files + image_gen.py (Phase 2)
+  _utils.py             → parse_json_object(), utc_now_iso() — used by all agents
+  input_processor.py    → Step 1: Playwright scrape, CSS tokens, logo extraction
+  ui_analyzer.py        → Step 2: vision LLM → BrandProfile
+  product_analysis.py   → Step 3: text LLM → ProductKnowledge
+  planner.py            → Step 4: ContentBrief
+  strategy.py           → Step 5: StrategyBrief
+  copywriting.py        → Step 6: raw copy string
+  visual_gen.py         → Step 7: image_prompt + suggested_format
+  formatter.py          → Step 8: FormattedContent (platform rules applied)
+  evaluator.py          → Step 9: EvaluatorOutput + retry loop
+  image_gen.py          → Phase 2: Bannerbear carousel slide generation
+  research_agent.py     → Step 3.5: Tavily search → stat extraction → ResearchProofPoint list
+
+/llm/                   → LLM abstraction layer
+  client.py             → chat_completion() + vision_completion() — ONLY place that knows provider
+
 /schemas/               → all Pydantic schema files
-/prompts/               → YAML system prompt files
-/datasets/              → JSONL training/few-shot dataset files
-/config/                → platform_rules.json
-/frontend/              → Next.js frontend
-/test_data/             → test product folders + Indian SaaS CSV
-/docs/                  → documentation, schema specs, validation log, research
-/tests/                 → pytest test files
-/knowledge/             → Qdrant + Supabase layer
-/auth/                  → Clerk integration
-api.py                  → FastAPI entry point
-pipeline.py             → chains agents + knowledge layer
+  input_package.py      → InputPackage (scraped text, css_tokens, logo, screenshot)
+  brand_profile.py      → BrandProfile (design_category, colors, writing_instruction)
+  brand_identity.py     → BrandIdentity (assembled from InputPackage+BrandProfile+ProductKnowledge; _to_hex() color normalisation)
+  product_knowledge.py  → ProductKnowledge (features, proof_points, pain_points, research_proof_points)
+  research_proof_point.py → ResearchProofPoint (text, source_name, source_url, credibility_tier, proof_type)
+  content_brief.py      → ContentBrief (platform, content_type, narrative_arc)
+  strategy_brief.py     → StrategyBrief (pain_point, claim, proof_point, hook_direction)
+  formatted_content.py  → FormattedContent (platform-specific content + metadata)
+  evaluator_output.py   → EvaluatorOutput (scores, passes, overall_score, revision_hint)
+  knowledge_context.py  → KnowledgeContext (prior run context from Qdrant)
+
+/prompts/               → YAML system prompt files (owned by Person B)
+  loader.py             → load_prompt() — reads YAML, falls back to inline defaults
+  ui_analyzer_v1.yaml   → v2.2 (6 few-shot examples, Indian SaaS anchors)
+  copywriting_v1.yaml   → v1.3 (FABRICATION PROHIBITION block, hook_direction binding)
+  evaluator_v1.yaml     → v1.2 (score-2 anchors, specificity test)
+  planner_v1.yaml
+  strategy_v1.yaml      → updated: RESEARCH PROOF POINTS section (research stat → AGITATE, brand stat → SOLVE)
+  product_analysis_v1.yaml
+  formatter_v1.yaml
+
+/config/                → runtime configuration
+  settings.py           → Pydantic Settings (all env vars, including BANNERBEAR_*)
+  platform_rules.json   → per-platform formatting constraints (formatter reads at runtime)
+
+/datasets/              → JSONL training/few-shot files (stub — not yet populated)
+/frontend/              → Next.js frontend (stub — not yet built)
+/knowledge/             → Qdrant + Supabase layer (stub — KNOWLEDGE_LAYER_ENABLED=false)
+/auth/                  → Clerk integration (stub — not yet built)
+/scripts/               → utility scripts
+/utils/                 → shared utilities
+/docs/                  → validation log, schema specs, setup notes
+/test_data/             → Indian SaaS run outputs, validation summaries, expected outputs
+/tests/                 → pytest test files (288 tests, all fast/no network)
+
+api.py                  → FastAPI entry point (endpoints: /health, /analyze, /generate, /runs/{id}/approve)
+pipeline.py             → chains agents; run_linkedin(), run_stream(), run(), _run_entry()
 GENATE_CONTEXT.md       → this file
+CLAUDE.md               → Claude Code session guidance (MOCK_MODE, bug log, behaviour notes)
 ```
 
 ---
@@ -415,15 +494,15 @@ SSE events emitted by `/generate`:
 ENVIRONMENT=development
 LLM_PROVIDER=groq                          # groq | openai | anthropic | ollama
 LLM_VISION_PROVIDER=anthropic              # anthropic | ollama | openai
-LLM_TEXT_MODEL=llama-3.2-90b-text-preview  # model string for active text provider
-LLM_VISION_MODEL=claude-haiku-4-5          # model string for active vision provider
-MOCK_MODE=true                             # set false for real LLM calls
+LLM_TEXT_MODEL=llama-3.3-70b-versatile     # production default (Groq 70B)
+LLM_VISION_MODEL=claude-haiku-4-5          # vision model (UI Analyzer only)
+MOCK_MODE=false                            # false = real LLM + real browser scrape
 
 # LLM API keys (only active provider's key required)
 GROQ_API_KEY=...
 ANTHROPIC_API_KEY=...
 OPENAI_API_KEY=...
-OLLAMA_BASE_URL=http://localhost:11434      # only needed when LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434/v1  # /v1 suffix required for OpenAI SDK compat
 
 # Supabase
 DATABASE_URL=postgresql+asyncpg://...
@@ -442,10 +521,19 @@ CLERK_PUBLISHABLE_KEY=...
 # Knowledge Layer
 KNOWLEDGE_LAYER_ENABLED=false              # set true to enable Qdrant + Supabase memory
 
-# Image generation
-FAL_API_KEY=...
-BANNERBEAR_API_KEY=...
-IDEOGRAM_API_KEY=...
+# Research Augmentation (Step 3.5)
+RESEARCH_AUGMENTATION_ENABLED=false        # true enables Tavily third-party stat search
+TAVILY_API_KEY=...                         # from app.tavily.com
+TAVILY_MAX_RESULTS=3                       # results per query
+TAVILY_MAX_PROOF_POINTS=5                  # max ResearchProofPoint objects returned
+
+# Image generation (Phase 2 — Bannerbear is active)
+IMAGE_GENERATION_ENABLED=false             # true enables Bannerbear slide generation
+BANNERBEAR_API_KEY=bb_pr_...
+BANNERBEAR_TEMPLATE_UID=YJBpekZX8X9wZ2XPnO  # template with layers: background_color, accent_bar, logo, slide_label, headline, body_text
+BANNERBEAR_TIMEOUT_SECONDS=30
+FAL_API_KEY=...                            # Phase 3 — not yet active
+IDEOGRAM_API_KEY=...                       # Phase 3 — not yet active
 
 # Video generation
 ELEVENLABS_API_KEY=...
@@ -517,25 +605,32 @@ HeyGen avatar video as premium add-on at $5/video (cost: ~$0.08) is high-margin 
 
 ## Build Order
 
-### Now (active focus)
-1. LLM abstraction layer (`/llm/client.py`) — build this first, before any agent
-2. Input Processor — Playwright + CSS token extraction + `InputPackage`
-3. UI Analyzer — Claude Haiku vision + `BrandProfile`
-4. Product Analysis — Groq llama3.2 + `ProductKnowledge`
-5. Planner — `ContentBrief`
-6. Strategy — `StrategyBrief`
-7. Copywriting — raw copy output
-8. Visual Gen — image prompt + video script
-9. Formatter — platform rules applied
-10. Evaluator — scores + retry loop
-11. `pipeline.py` — full chain + `run_stream()` SSE
-12. `api.py` — all endpoints
-13. Frontend — Next.js · Brand Calibration UI · inline editor · approval flow · SSE progress display
-14. End-to-end validation — real-mode pipeline against Indian SaaS URLs
+### ✅ Done
+1. LLM abstraction layer (`llm/client.py`) — single provider interface, all agents use `chat_completion()`
+2. Input Processor — Playwright scrape, CSS token extraction, logo extraction (priority 1-5 + 3.5 SVG), `InputPackage`
+3. UI Analyzer — Claude Haiku vision + `BrandProfile` (prompts v2.2, 6 few-shot examples)
+4. Product Analysis — Groq 70B + `ProductKnowledge`
+5. Planner — `ContentBrief` with schema-validated platform/content_type combos
+6. Strategy — `StrategyBrief` with proof_point_type normalization (BUG-005)
+7. Copywriting — raw copy, FABRICATION PROHIBITION rule (prompts v1.3)
+8. Visual Gen — image_prompt + suggested_format
+9. Formatter — LinkedIn/Twitter/Instagram/Blog platform rules, hashtag rebuilding, tweet cleaning
+10. Evaluator — 4-dimension scoring, Python-enforced caps, retry loop with revision_hint (prompts v1.2)
+11. `pipeline.py` — full chain: `run_linkedin()`, `run()`, `run_stream()` (SSE), `run_pipeline()`
+12. `api.py` — /health, /analyze, /generate, /runs/{id}/approve
+13. `BrandIdentity` schema — color normalisation `_to_hex()` (BUG-006), WCAG helpers, all-or-nothing logo contract
+14. Phase 2 image gen — `agents/image_gen.py`: Bannerbear slides, adaptive text color, `_pick_accent_color()` (BUG-007)
+15. End-to-end validation — 10 Indian SaaS URLs, 3 platforms (LinkedIn/Twitter/Instagram), Groq 70B
+16. Research Augmentation — Step 3.5: `agents/research_agent.py`, `schemas/research_proof_point.py`, Tavily integration, fabrication prevention, credibility tiers, strategy/copywriting prompt updates
+
+### 🔜 Active next
+- Frontend — Next.js · Brand Calibration UI · inline editor · approval flow · SSE progress display
+- Knowledge Layer — wire Qdrant + Supabase (`KNOWLEDGE_LAYER_ENABLED=true`)
 
 ### Later (phased)
-- Phase 2: Image Pipeline (Fal.ai + Bannerbear + Pillow)
-- Phase 3: Video Pipeline (ElevenLabs + Remotion + HeyGen)
+- Phase 3: Fal.ai FLUX + IP-Adapter image generation (Stage 1 of full image pipeline)
+- Phase 3: Pillow logo compositing onto Bannerbear output (requires apple-touch-icon background removal)
+- Phase 3: Video Pipeline — ElevenLabs voiceover + Remotion programmatic video + HeyGen avatar
 - Phase 3: Competitor Intelligence agent
 - Phase 3: Run history + replay
 - Phase 4: One-click repurpose · Platform preview renderer

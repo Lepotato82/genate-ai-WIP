@@ -4,12 +4,86 @@ Step 6: Copywriter — raw copy from strategy + brief + brand (no structural for
 
 from __future__ import annotations
 
+import logging
+
 from llm.client import chat_completion
 from prompts.loader import load_prompt
 from config import settings
 from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.strategy_brief import StrategyBrief
+
+logger = logging.getLogger(__name__)
+
+
+CTA_SIGNALS: dict[str, list[str]] = {
+    "start_trial": ["trial", "try", "start", "free", "sign up", "get started"],
+    "learn_more": ["learn", "read", "find out", "discover", "see how", "explore", "more"],
+    "book_demo": ["demo", "book", "schedule", "call", "talk", "meet"],
+    "sign_up": ["sign up", "register", "join", "create account", "get access"],
+}
+
+
+def _validate_cta(copy: str, cta_intent: str) -> bool:
+    """Return True if a CTA signal for cta_intent appears in the last 20% of copy."""
+    if not cta_intent:
+        return True
+    signals = CTA_SIGNALS.get(cta_intent, [])
+    if not signals:
+        return True
+    copy_lower = copy.lower()
+    cta_window = copy_lower[int(len(copy_lower) * 0.8):]
+    return any(signal in cta_window for signal in signals)
+
+
+def _validate_research_usage(copy: str, research_points: list) -> bool:
+    """Return True if at least one research stat's first 4 words (≥3) appear in copy."""
+    if not research_points:
+        return True
+    copy_lower = copy.lower()
+    for point in research_points:
+        stat_text = getattr(point, "text", "") or ""
+        stat_words = stat_text.lower().split()[:4]
+        if len(stat_words) < 3:
+            # Short stat — check for literal substring presence
+            if stat_text.lower() in copy_lower:
+                return True
+        elif sum(1 for w in stat_words if w in copy_lower) >= 3:
+            return True
+    return False
+
+
+_LONG_FORM_WORD_TARGETS: dict[str, str] = {
+    "linkedin":  "600-900 words",
+    "twitter":   "6-8 tweets, each tweet fully developed (40-60 words per tweet)",
+    "instagram": "250-400 words in the body section",
+}
+
+_CONCISE_WORD_TARGETS: dict[str, str] = {
+    "linkedin":  "150-300 words",
+    "twitter":   "4-6 tweets, each tweet concise (20-40 words per tweet)",
+    "instagram": "80-150 words in the body section",
+}
+
+
+def _depth_instruction(platform: str, depth: str) -> str:
+    if depth == "long_form":
+        target = _LONG_FORM_WORD_TARGETS.get(platform, "600-900 words")
+        return (
+            f"\n\nCONTENT LENGTH — HARD REQUIREMENT:\n"
+            f"Write {target}.\n"
+            f"This is long_form content — write the full narrative arc "
+            f"with complete sections. Do not summarise. Do not truncate.\n"
+            f"Count your words mentally before returning. "
+            f"If your draft is under the minimum, expand each section "
+            f"with specific detail before returning."
+        )
+    target = _CONCISE_WORD_TARGETS.get(platform, "150-300 words")
+    return (
+        f"\n\nCONTENT LENGTH:\n"
+        f"Write {target}. "
+        f"Concise. One idea per paragraph. No padding."
+    )
 
 
 def _product_name_hint(strategy: StrategyBrief) -> str:
@@ -58,6 +132,7 @@ def run(
     strategy_brief: StrategyBrief,
     content_brief: ContentBrief,
     brand_profile: BrandProfile,
+    research_proof_points: list | None = None,
 ) -> str:
     if settings.MOCK_MODE:
         if content_brief.platform == "twitter":
@@ -70,6 +145,7 @@ def run(
         spec = load_prompt("copywriting_v1")
         base = spec.system_prompt
     except FileNotFoundError:
+        logger.warning("[copywriter] copywriting_v1.yaml not found — using inline fallback")
         base = (
             "You are a SaaS copywriting agent. Write platform-native marketing copy "
             "that executes the given strategy exactly. Return ONLY the raw copy text — "
@@ -110,23 +186,102 @@ def run(
             "verbatim in the body (same wording).\n"
             "Match writing_instruction; no hashtag lines—you will not add #tags yourself."
         )
+    research_line = ""
+    if strategy_brief.research_proof_point_used:
+        research_line = (
+            f"\nresearch_proof_point_used: {strategy_brief.research_proof_point_used}"
+            f"\nresearch_source: {strategy_brief.research_source}"
+        )
+
+    # Build research block for user message — sorted tier_1 first
+    active_research = research_proof_points or []
+    research_block = ""
+    if active_research:
+        tier_order = {"tier_1": 0, "tier_2": 1, "tier_3": 2}
+        sorted_pts = sorted(
+            active_research,
+            key=lambda p: tier_order.get(getattr(p, "credibility_tier", "tier_3"), 2),
+        )
+        lines = []
+        for i, pt in enumerate(sorted_pts[:3], 1):
+            src = getattr(pt, "source_name", "Research")
+            text = getattr(pt, "text", "")
+            tier = getattr(pt, "credibility_tier", "")
+            lines.append(f"  {i}. [{tier}] {src} — \"{text}\"")
+        research_block = (
+            "\n\nresearch_proof_points (use ONE in the AGITATE section — "
+            "mandatory format: \"[Source] found that [stat].\" — do not paraphrase):\n"
+            + "\n".join(lines)
+        )
+
     user_msg = (
         f"platform: {content_brief.platform}\n"
         f"narrative_arc: {strategy_brief.narrative_arc}\n"
+        f"content_depth: {content_brief.content_depth}\n"
         f"lead_pain_point: {strategy_brief.lead_pain_point}\n"
         f"primary_claim: {strategy_brief.primary_claim}\n"
         f"proof_point: {strategy_brief.proof_point}\n"
         f"cta_intent: {strategy_brief.cta_intent}\n"
         f"writing_instruction: {brand_profile.writing_instruction}\n"
         f"hook_direction: {strategy_brief.hook_direction}"
+        + research_line
+        + research_block
         + slide_hint
         + platform_hint
+        + _depth_instruction(content_brief.platform, content_brief.content_depth)
         + "\n\nWrite the copy. Return only the copy text. No JSON.\n"
         "No preamble. No explanation."
     )
-    return chat_completion(
-        [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user_msg},
-        ]
-    ).strip()
+
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user_msg},
+    ]
+    copy = chat_completion(messages).strip()
+
+    # FIX 2 — CTA validation: retry once with explicit injection if CTA signal absent
+    if not _validate_cta(copy, strategy_brief.cta_intent):
+        logger.warning(
+            "[copywriter] CTA signal absent for cta_intent=%s — retrying with explicit injection",
+            strategy_brief.cta_intent,
+        )
+        signals = CTA_SIGNALS.get(strategy_brief.cta_intent, [])
+        cta_retry_msg = (
+            user_msg
+            + f"\n\nCRITICAL: Your copy is missing a CTA. "
+            f"cta_intent is '{strategy_brief.cta_intent}'. "
+            f"The final section MUST include at least one of: {signals}. "
+            f"Place it in the last 20% of the copy."
+        )
+        copy = chat_completion(
+            [{"role": "system", "content": system}, {"role": "user", "content": cta_retry_msg}]
+        ).strip()
+
+    # FIX 3 — Research validation: retry once with explicit stat if research stat absent
+    if active_research and not _validate_research_usage(copy, active_research):
+        tier_order = {"tier_1": 0, "tier_2": 1, "tier_3": 2}
+        best = sorted(
+            active_research,
+            key=lambda p: tier_order.get(getattr(p, "credibility_tier", "tier_3"), 2),
+        )[0]
+        best_src = getattr(best, "source_name", "Research")
+        best_text = getattr(best, "text", "")
+        logger.warning(
+            "[copywriter] Research stat absent — retrying with explicit stat injection: %s",
+            best_text[:80],
+        )
+        research_retry_msg = (
+            user_msg
+            + f"\n\nCRITICAL: You MUST include this research stat in the AGITATE section. "
+            f"Copy this exact phrase verbatim: "
+            f"\"{best_src} found that {best_text}\" "
+            f"Do not paraphrase. Do not omit it."
+        )
+        copy = chat_completion(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": research_retry_msg},
+            ]
+        ).strip()
+
+    return copy

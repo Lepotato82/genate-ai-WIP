@@ -72,12 +72,34 @@ def _planner_signals(
         "proof_point_count": len(product_knowledge.proof_points),
         "feature_count": len(product_knowledge.features),
         "pain_point_count": len(product_knowledge.pain_points),
+        "research_proof_point_count": len(product_knowledge.research_proof_points),
         "brand_tone": brand_profile.tone,
         "has_strong_stat": any(p.proof_type == "stat" for p in product_knowledge.proof_points),
         "has_customer_name": any(
             p.proof_type == "customer_name" for p in product_knowledge.proof_points
         ),
     }
+
+
+def _select_depth(signals: dict, content_pillar: str | None = None) -> str:
+    """
+    Determine content_depth from Planner signals.
+
+    Returns 'long_form' when the brand has enough substance to warrant
+    a deeper treatment:
+      - content_pillar == 'education_and_insight' (pillar implies depth)
+      - OR research_proof_points available (research warrants full PAS treatment)
+      - OR feature_count >= 4 AND proof_point_count >= 2 (substantive product)
+
+    Falls back to 'concise' for single-insight posts.
+    """
+    if content_pillar == "education_and_insight":
+        return "long_form"
+    if signals.get("research_proof_point_count", 0) > 0:
+        return "long_form"
+    if signals["feature_count"] >= 4 and signals["proof_point_count"] >= 2:
+        return "long_form"
+    return "concise"
 
 
 def _signal_block(signals: dict) -> str:
@@ -97,6 +119,10 @@ def _mock(
     signals = _planner_signals(brand_profile, product_knowledge)
     plat = platform if platform in ("linkedin", "twitter", "instagram", "blog") else "linkedin"
 
+    depth = "long_form" if settings.RESEARCH_AUGMENTATION_ENABLED or (
+        signals["feature_count"] >= 4 and signals["proof_point_count"] >= 2
+    ) else "concise"
+
     if plat == "twitter":
         return ContentBrief(
             run_id=product_knowledge.run_id,
@@ -107,6 +133,7 @@ def _mock(
             narrative_arc="pain-agitate-solve-cta",
             content_pillar="education_and_insight",
             funnel_stage="tofu",
+            content_depth=depth,
             slide_count_target=None,
             word_count_target=None,
             thread_length_target=5,
@@ -140,6 +167,7 @@ def _mock(
             narrative_arc="before-after-bridge-cta",
             content_pillar="product_and_solution",
             funnel_stage="tofu",
+            content_depth=depth,
             slide_count_target=8,
             word_count_target=None,
             thread_length_target=None,
@@ -173,6 +201,7 @@ def _mock(
             narrative_arc="stat-hook-problem-solution-cta",
             content_pillar="education_and_insight",
             funnel_stage="mofu",
+            content_depth="long_form",
             slide_count_target=None,
             word_count_target=1800,
             thread_length_target=None,
@@ -223,6 +252,7 @@ def _mock(
         narrative_arc="pain-agitate-solve-cta",
         content_pillar="pain_and_problem",
         funnel_stage="tofu",
+        content_depth=depth,
         slide_count_target=sct,
         word_count_target=None,
         thread_length_target=None,
@@ -376,7 +406,10 @@ def run(
         f"messaging_angles: {product_knowledge.messaging_angles}\n"
         f"platform: {platform}\n\n"
         "signals:\n"
-        f"{signal_text}"
+        f"{signal_text}\n\n"
+        "content_depth: select 'long_form' when the brand has enough substance "
+        "(4+ features, 2+ proof points, or research data available) to warrant a "
+        "deeper treatment. Select 'concise' for single-insight posts."
     )
 
     raw = chat_completion(
@@ -490,6 +523,8 @@ def run(
         matched_stage = next((v for k, v in _STAGE_MAP.items() if k in stage_str), None)
         data["funnel_stage"] = matched_stage or "tofu"
 
+    content_depth = _select_depth(signals, content_pillar=data.get("content_pillar"))
+
     return ContentBrief(
         run_id=product_knowledge.run_id,
         org_id=product_knowledge.org_id,
@@ -505,6 +540,7 @@ def run(
         content_pillar=data["content_pillar"],
         funnel_stage=data["funnel_stage"],
         content_type=data["content_type"],
+        content_depth=content_depth,
         posting_strategy=data["posting_strategy"],
         benchmark_reference=str(
             data.get("benchmark_reference") or "SaaS engagement benchmarks for the selected format."

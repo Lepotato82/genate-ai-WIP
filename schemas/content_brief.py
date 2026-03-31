@@ -119,6 +119,14 @@ class ContentBrief(BaseModel):
     narrative_arc: NarrativeArc
     content_pillar: ContentPillar
     funnel_stage: FunnelStage
+    content_depth: Literal["concise", "long_form"] = Field(
+        "concise",
+        description=(
+            "Copy depth selected by the Planner. "
+            "'concise' = platform-native short form (LinkedIn 150-300w, Twitter 4-6 tweets, Instagram 80-150w body). "
+            "'long_form' = richer depth (LinkedIn 600-900w, Twitter 6-8 tweets, Instagram 250-400w body)."
+        ),
+    )
     posting_strategy: PostingStrategy
 
     # Conditional length/format fields

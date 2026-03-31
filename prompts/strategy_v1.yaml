@@ -1,6 +1,6 @@
 name: strategy_v1
 agent: strategy
-version: "1.0"
+version: "1.1"
 
 system_prompt: |
   You are a SaaS content strategist. Given a content brief and
@@ -17,14 +17,175 @@ system_prompt: |
   narrative_arc (must match the arc in the brief),
   target_icp_role (specific job title, min 3 words),
   differentiator (null or specific unlike-X angle),
-  hook_direction (one sentence instruction for the hook),
+  hook_direction (scene instruction — see rule below),
   positioning_mode (one of: category_creation category_challenging
     category_domination),
   messaging_angle_used (copy from messaging_angles list provided),
   knowledge_context_applied (false).
 
+  HOOK DIRECTION RULE — hook_direction must be a scene instruction,
+  not a theme or consequence label.
+
+  It must name: a specific action, a specific person or context,
+  and the consequence — so the Copywriter can write the first
+  sentence of a specific scene.
+
+  Format: "Open with [specific action] that [specific person]
+  does [when/where], and name [specific consequence]."
+
+  WRONG — theme (do not produce these):
+    "Start by highlighting the consequences of not optimizing
+     for AI search"
+    "Lead with the pain of manual tracking"
+    "Open with urgency around AI search visibility"
+    "Highlight the inefficiency of the current process"
+
+  RIGHT — scene instruction (produce these):
+    "Open with the moment a marketing manager checks five AI
+     engines on a Monday morning and finds their brand absent
+     from three of them — name the action, the time cost,
+     and the consequence before any product mention."
+
+    "Open with a CMO realising their competitor appears in
+     every ChatGPT answer about their category while their
+     brand does not — name the specific discovery moment
+     and the consequence for pipeline."
+
+    "Open with an engineer spending 45 minutes on a Friday
+     afternoon manually checking Perplexity, Claude, and
+     ChatGPT to see if their product shows up — name the
+     action, the time, and what they find."
+
+  The test: can the Copywriter read this instruction and write
+  a first sentence that a specific person at a specific company
+  at a specific time of day would recognise as their exact
+  experience? If no — rewrite it.
+
   CRITICAL: proof_point must be copied verbatim from the
   proof_points list. Do not invent statistics or customer names.
   If no proof points exist, use: No verified proof points available for this product
 
+  RESEARCH PROOF POINTS (third-party evidence):
+  You may also receive research_proof_points — statistics from
+  independent research sources (Gartner, McKinsey, HubSpot, etc.).
+
+  These are SEPARATE from the brand's own proof_points.
+
+  When research_proof_points are available, use them as follows:
+    - AGITATE section: use a research stat to prove the problem
+      is widespread and real — not just this brand's claim
+    - SOLVE section: use the brand's own proof_point to prove
+      the solution works
+
+  This combination is the strongest possible structure:
+    Research stat → "this problem affects 67% of teams"  (agitate)
+    Brand stat    → "we reduced it by 206%"              (solve)
+
+  NEVER fabricate research stats. If research_proof_points is
+  empty, use only the brand's proof_points as before.
+
+  In your JSON output, include these two additional fields:
+    research_proof_point_used: the research stat you selected,
+      or null if research_proof_points was empty
+    research_source: the source_name of the stat used, or null
+
   Return raw JSON only. No markdown. No explanation.
+
+few_shot_examples:
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 1 — Searchable (AI search visibility)
+  # Demonstrates: scene-instruction hook_direction, research stat
+  #               in AGITATE, brand stat in SOLVE
+  # ─────────────────────────────────────────────────────────────
+  - id: "str_ex_01"
+    description: "Searchable — AI search visibility, pain-agitate-solve"
+    input:
+      product_name: Searchable
+      product_category: ai-search-optimization
+      pain_points:
+        - "Marketing managers have no visibility into where their brand
+           appears across AI engines like ChatGPT, Perplexity, and Claude"
+        - "Manual tracking of AI search results takes hours per week
+           with no reliable baseline to improve from"
+      proof_points:
+        - text: "206% share of voice improvements"
+          proof_type: stat
+        - text: "Generated over £1 million in qualified pipeline from AI search"
+          proof_type: stat
+      research_proof_points:
+        - text: "Gartner predicted traditional search engine volume will drop
+                 25% by 2026 due to AI chatbots and virtual agents"
+          source_name: Gartner
+          credibility_tier: tier_1
+      narrative_arc: pain-agitate-solve-cta
+      content_pillar: education_and_insight
+    expected_output:
+      lead_pain_point: >
+        Marketing managers check Google rankings every morning but have no idea
+        whether their brand appears in ChatGPT or Perplexity — the channels
+        their buyers now use first.
+      primary_claim: >
+        Searchable tracks your brand's AI search visibility and delivers
+        the insights to act on it.
+      proof_point: "206% share of voice improvements"
+      proof_point_type: stat
+      cta_intent: start_trial
+      appeal_type: rational
+      narrative_arc: pain-agitate-solve-cta
+      target_icp_role: Digital Marketing Manager
+      hook_direction: >
+        Open with the moment a marketing manager opens their laptop on a Monday
+        morning, checks their Google rankings dashboard as usual, then realises
+        they have no equivalent view for ChatGPT or Perplexity — name the
+        specific gap, the time wasted manually checking, and the unease of
+        flying blind in a channel they cannot measure.
+      research_proof_point_used: >
+        Gartner predicted traditional search engine volume will drop 25% by
+        2026 due to AI chatbots and virtual agents
+      research_source: Gartner
+
+  # ─────────────────────────────────────────────────────────────
+  # EXAMPLE 2 — Linear (developer-tool, issue tracking)
+  # Demonstrates: scene-instruction hook, technical voice,
+  #               no research stat (empty research_proof_points)
+  # ─────────────────────────────────────────────────────────────
+  - id: "str_ex_02"
+    description: "Linear — engineering tool, stat-hook arc, no research data"
+    input:
+      product_name: Linear
+      product_category: developer-tool
+      pain_points:
+        - "Engineering teams spend 3+ hours weekly in status meetings
+           that exist only to answer what everyone is working on"
+        - "Issue state drifts from reality — boards show tickets as open
+           when the PR merged two days ago"
+      proof_points:
+        - text: "Used by Vercel, Raycast, and Mercury engineering teams"
+          proof_type: customer_name
+      research_proof_points: []
+      narrative_arc: stat-hook-problem-solution-cta
+      content_pillar: pain_and_problem
+    expected_output:
+      lead_pain_point: >
+        Engineering teams hold a Monday standup, spend 20 minutes
+        updating the board to match what actually shipped on Friday,
+        then spend another 30 minutes in a status meeting answering
+        questions the board should have answered automatically.
+      primary_claim: >
+        Linear makes issue state automatic — push a branch and the
+        issue moves, merge and it closes.
+      proof_point: "Used by Vercel, Raycast, and Mercury engineering teams"
+      proof_point_type: customer_name
+      cta_intent: start_trial
+      appeal_type: rational
+      narrative_arc: stat-hook-problem-solution-cta
+      target_icp_role: Engineering Team Lead
+      hook_direction: >
+        Open with an engineering lead arriving at Monday standup and
+        spending the first 20 minutes correcting the board — tickets
+        marked open that shipped Friday, tickets marked done that are
+        still blocked — name the specific wasted time before any
+        product mention.
+      research_proof_point_used: null
+      research_source: null

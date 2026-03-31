@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     KNOWLEDGE_LAYER_ENABLED: bool = False
     EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
 
+    # ─── Research Augmentation ───────────────────────────────────────────
+    RESEARCH_AUGMENTATION_ENABLED: bool = False
+    TAVILY_API_KEY: str = ""
+    TAVILY_MAX_RESULTS: int = 3       # results per query
+    TAVILY_MAX_PROOF_POINTS: int = 5  # max stored across all queries
+
     # ─── Image Generation ─────────────────────────────────────────────────
     FAL_API_KEY: str = ""
     BANNERBEAR_API_KEY: str = ""

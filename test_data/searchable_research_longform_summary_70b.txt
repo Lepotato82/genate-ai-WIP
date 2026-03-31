@@ -1,0 +1,56 @@
+[product_analysis] sending 1528 words to LLM
+[product_analysis] user message preview: 'Free webinar · Wed 1 April · Find every competitor gap in AI search\n\nRegister free\nProduct\nResources\nPricing\nCareers\nEnglish\nEspañol\nFrançais\nDeutsch\nPortuguês\n日本語\nLogin\nStart for free\n\nSearchable is an AI search optimization platform that helps brands track visibility and analytics across AI engine'
+[research_agent] extraction failed: 1 validation error for ResearchProofPoint
+text
+  Value error, ResearchProofPoint.text must be at least 10 chars [type=value_error, input_value='23%', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+[research_agent] extraction failed: 1 validation error for ResearchProofPoint
+text
+  Value error, ResearchProofPoint.text must be at least 10 chars [type=value_error, input_value='28.7%', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+[research_agent] stat validation failed � '50% of adults' not found in source
+[research_agent] extraction failed: 1 validation error for ResearchProofPoint
+text
+  Value error, ResearchProofPoint.text must be at least 10 chars [type=value_error, input_value='33.5%', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+=== RESEARCH PROOF POINTS ===
+Count: 3
+  [tier_2] Statista
+  "six billion internet users worldwide"
+  https://www.statista.com/topics/871/online-shopping/?srsltid=AfmBOoq2C7A0vdlqSzglctBJ7Ge2dH0xYgpKdEGS3TINQo5XVgaktXH1
+
+  [tier_2] Statista
+  "six billion internet users worldwide"
+  https://www.statista.com/topics/871/online-shopping/?srsltid=AfmBOooa2Pr6tX08TD0qFkJtDm-_dF22scAyLI5lz0w63JSF7yf5XJHL
+
+  [tier_3] Coherent Solutions
+  "nearly 65% of organizations have adopted or are actively investigating AI technologies for data and analytics"
+  https://www.coherentsolutions.com/insights/the-future-and-current-trends-in-data-analytics-across-industries
+
+=== STRATEGY BRIEF ===
+  proof_point: 206% share of voice improvements
+  research_proof_point_used: None
+  research_source: None
+
+=== CONTENT BRIEF ===
+  content_type:  carousel
+  content_depth: long_form
+  narrative_arc: pain-agitate-solve-cta
+  content_pillar: education_and_insight
+
+=== FORMATTED CONTENT ===
+  hook (91 chars): You're missing out on sales because your brand isn't visible where customers are searching.
+  word_count: 173
+
+--- FULL POST ---
+You're missing out on sales because your brand isn't visible where customers are searching.
+
+This lack of visibility limits your growth potential. In today's digital landscape, AI search is a key channel. Invisible brands are often left behind by their competitors. Customers can't find you if you're not optimized for AI search. This results in a loss of revenue. Most brands struggle to track their AI search visibility. Manually checking AI engines is time-consuming and ineffective. Manual tracking wastes hours each week. These hours could be spent on growth initiatives instead. Your team's time is valuable. Gartner found that most B2B buyers consult AI engines before contacting a vendor. Most brands have no idea how they appear in these results. This lack of insight is costly. Low visibility on AI search means missed opportunities. Your competitors are taking advantage of this gap. Searchable helps brands track AI search visibility and drive growth. With Searchable, you can optimize your AI search rankings. Our users have seen 206% share of voice improvements.
+
+#AISearch #Searchable #GrowthStrategy
+--- END POST ---
+
+=== EVALUATION ===
+  clarity=4 engagement=4 tone=5 accuracy=5
+  overall=4.5  passes=True  retry_count=0
+  rationale: The copy is easy to understand, and the mechanism of how Searchable helps brands is self-explanatory, but some sentences are a bit long and could be broken up for easier reading. The hook is strong and creates a sense of urgency, but it could be more specific about the daily friction or consequence of not being visible in AI search results. The copy executes the writing instruction perfectly, lead

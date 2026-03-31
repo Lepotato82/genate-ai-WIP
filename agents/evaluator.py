@@ -71,41 +71,8 @@ def _mock(
 
 
 # ---------------------------------------------------------------------------
-# System prompt (loaded from YAML if exists, otherwise inline)
+# System prompt (loaded from YAML — required; RuntimeError if missing)
 # ---------------------------------------------------------------------------
-
-_INLINE_SYSTEM = (
-    "You are the Evaluator agent for Genate, a SaaS content pipeline.\n\n"
-    "Score the provided marketing copy on four quality dimensions (1-5, integer only):\n"
-    "  clarity    — is the copy easy to understand on a single read?\n"
-    "  engagement — does the hook stop the scroll or force continued reading?\n"
-    "  tone_match — does the copy execute the writing_instruction exactly?\n"
-    "  accuracy   — are claims grounded in primary_claim AND the proof_point?\n\n"
-    "STRICT CALIBRATION (apply before scoring):\n"
-    "- ENGAGEMENT 5 requires: the hook names a specific daily friction OR uses a surprising "
-    "number OR creates genuine curiosity. Generic openers such as \"Your Daily Friction is...\", "
-    "\"Are you struggling with...\", \"Discover how...\" cap engagement at 3.\n"
-    "- TONE_MATCH 5 requires: zero violations of writing_instruction. Exclamation marks when "
-    "instruction says corporate → tone_match 2. Words like \"revolutionize\", \"game-changing\", "
-    "\"seamless\" → tone_match 1 unless the instruction explicitly allows hype.\n"
-    "- ACCURACY 5 requires: proof_point used verbatim or near-verbatim. Score 3 if paraphrased "
-    "but not fabricated. Score 1 if any statistic appears that is NOT in the provided "
-    "proof_point or primary_claim.\n"
-    "- Platform format violations reduce the relevant dimension: bullet symbols (•) in "
-    "LinkedIn body → clarity minus 1. CTA copy that does not match cta_intent → tone_match minus 1. "
-    "Hashtags inline in body (not at end) → tone_match minus 1.\n\n"
-    "PASS RULE: passes = true ONLY when ALL FOUR scores are >= 3.\n\n"
-    "Return ONLY valid JSON. When ALL scores >= 3:\n"
-    "{\n"
-    '  "clarity": <int 1-5>, "clarity_reason": "<one sentence>",\n'
-    '  "engagement": <int 1-5>, "engagement_reason": "<one sentence>",\n'
-    '  "tone_match": <int 1-5>, "tone_match_reason": "<one sentence>",\n'
-    '  "accuracy": <int 1-5>, "accuracy_reason": "<one sentence>"\n'
-    "}\n\n"
-    "When ANY score < 3, also include:\n"
-    '  "revision_hint": "<one specific, actionable sentence targeting the lowest score>"\n\n'
-    "DO NOT include 'passes' or 'overall_score' — these are computed by the system."
-)
 
 
 _GENERIC_ENGAGEMENT_OPENERS = (
@@ -182,12 +149,14 @@ def run(
     if settings.MOCK_MODE:
         return _mock(formatted_content, retry_count)
 
-    # Load prompt from YAML if it exists
+    # Load prompt from YAML — required; RuntimeError if missing
     try:
         prompt = load_prompt("evaluator_v1")
         system = prompt.system_prompt
-    except FileNotFoundError:
-        system = _INLINE_SYSTEM
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "[evaluator] evaluator_v1.yaml not found — cannot run without prompt file"
+        ) from exc
 
     copy_text = _extract_copy(formatted_content)
 

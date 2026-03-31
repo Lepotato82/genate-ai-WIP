@@ -126,6 +126,19 @@ class StrategyBrief(BaseModel):
         ),
     )
 
+    # Research augmentation fields (Step 3.5)
+    research_proof_point_used: str | None = Field(
+        None,
+        description=(
+            "The research stat selected from research_proof_points, "
+            "or null if none were available or used."
+        ),
+    )
+    research_source: str | None = Field(
+        None,
+        description="source_name of the research stat used, or null.",
+    )
+
     # ------------------------------------------------------------------
     # Field-level validators
     # ------------------------------------------------------------------

@@ -23,7 +23,7 @@ uvicorn api:app --reload
 pytest
 
 # Run a single test file
-pytest tests/test_pipeline_contracts.py
+pytest tests/test_image_gen.py
 
 # Run integration tests (real network, real LLM — mark explicitly)
 pytest -m integration
@@ -39,18 +39,29 @@ pyright
 
 ```bash
 # Mock mode — no LLM calls, no browser
-MOCK_MODE=true LLM_PROVIDER=ollama python -c "
+MOCK_MODE=true python -c "
 from pipeline import run_linkedin
 r = run_linkedin('https://linear.app')
 print(r['passes'], r['overall_score'])
 "
 
-# Real mode — requires Ollama running locally
-MOCK_MODE=false LLM_PROVIDER=ollama python -c "
-from pipeline import run_linkedin
+# Real mode — Groq (production default)
+MOCK_MODE=false python -c "
+from pipeline import run
 import json
-r = run_linkedin('https://linear.app')
+r = run('https://linear.app', platform='linkedin')
 print(json.dumps(r['evaluation'], indent=2))
+"
+
+# Real mode with image generation enabled
+IMAGE_GENERATION_ENABLED=true python -c "
+from pipeline import run
+import json
+r = run('https://chargebee.com', platform='linkedin')
+imgs = r['images']
+print(imgs['slide_count'], 'slides generated')
+for u in imgs['image_urls']:
+    print(u)
 "
 ```
 
@@ -97,7 +108,9 @@ Agents run in order. Steps 2+3 are parallel; steps 6+7 are parallel.
 9. evaluator        → EvaluatorOutput   (scores 1-5 × 4 dims; passes if all ≥ 3; max 2 retries)
 ```
 
-`pipeline.run_linkedin()` is the simple validation entry point (skips visual gen). `pipeline.run_stream()` is the full SSE production chain.
+`pipeline.run_linkedin(url)` — validation entry point (skips visual gen + image gen).
+`pipeline.run(url, platform=)` — full pipeline, returns dict with `evaluation`, `images`, `brand_identity`.
+`pipeline.run_stream(url, platform=)` — full SSE production chain, yields per-agent progress events.
 
 ### LLM Abstraction Rule — Never Break This
 
@@ -182,12 +195,26 @@ Priority: fix after first successful Groq real-mode run.
 
 ## Logo Extraction Status
 
-- InputPackage.logo_bytes/logo_url/logo_confidence: ✅ implemented
-- Extraction priority: apple-touch-icon → large icon (≥192px) → header img with "logo" attr → inline SVG → og:image → favicon
-- MOCK_MODE: returns deterministic PNG mock bytes (1208 bytes, "high" confidence)
-- Phase 2 usage: Pillow compositing (not yet wired — Phase 2)
+- `InputPackage.logo_bytes/logo_url/logo_confidence`: ✅ implemented
 - All-or-nothing contract enforced by Pydantic `model_validator`
-- Validation results (5/5 sites extracted):
+- MOCK_MODE: returns deterministic PNG mock bytes (1208 bytes, "high" confidence)
+- Phase 2 usage: `logo_url` injected into Bannerbear `logo` layer when confidence is "high" or "medium" ✅
+- Pillow compositing (onto generated image): deferred to Phase 3
+
+**Extraction priority order** (`agents/input_processor._extract_logo()`):
+
+| Priority | Source | Confidence | Notes |
+|---|---|---|---|
+| 1 | `apple-touch-icon` link tag | high | Most reliable — brand-controlled |
+| 2 | `<link rel="icon">` size ≥192px | high | |
+| 3 | `<img>` in `<header>` with "logo" in class/id/alt/src | high | |
+| 3.5 | SVG in header/nav matching brand color or aria-label | high | Added for Framer/Webflow sites |
+| 4 | `og:image` meta tag | medium | May be a marketing banner, not a logo |
+| 5 | Favicon | low | |
+
+**Priority 3.5 detail:** Queries `header svg, nav svg, [role="banner"] svg, .navbar svg, .nav svg, .header svg`. Matches on: brand color from `css_tokens` appearing in SVG fill; label match (`logo`, `brand`, `mark`, `icon`, `aria-label`, `title`); bounding box ≥24×24px; path-count heuristic fallback (≥2 `<path>` elements).
+
+**Validation results:**
 
 | Site | Confidence | Source | Size |
 |---|---|---|---|
@@ -196,6 +223,62 @@ Priority: fix after first successful Groq real-mode run.
 | razorpay.com | medium | og:image | 2.3 MB |
 | chargebee.com | high | apple-touch-icon | 4 KB |
 | freshworks.com | high | apple-touch-icon | 23 KB |
+| lemonhealth.ai | medium | og:image (snippet3.png) | — SVG priority 3.5 may improve this |
+| browserstack.com | None | — | No qualifying source found |
+| moengage.com | None | — | No qualifying source found |
+
+## Content Depth Mode
+
+`ContentBrief.content_depth`: `"concise"` | `"long_form"` — default `"concise"`
+
+Planner selects `long_form` when:
+- `content_pillar == "education_and_insight"`
+- `feature_count >= 4` AND `proof_point_count >= 2`
+- `research_proof_points` is non-empty (research warrants full arc treatment)
+
+Word count targets (enforced by Copywriter prompt, reference values in `platform_rules.json`):
+
+| Platform  | concise             | long_form              |
+|-----------|---------------------|------------------------|
+| LinkedIn  | 150-300 words       | 600-900 words          |
+| Twitter   | 4-6 tweets          | 6-8 tweets             |
+| Instagram | 80-150 word body    | 250-400 word body      |
+
+`long_form` LinkedIn arc: Hook → PAIN (2-3 para) → AGITATE (1-2 para, research stat) → SOLVE (2-3 para, brand proof point) → CTA.
+
+Copywriter prompt enforces depth via `CONTENT DEPTH RULE` section in `copywriting_v1.yaml` (v1.4). Never pads — `long_form` means more depth, not more repetition.
+
+In MOCK_MODE: `long_form` when `RESEARCH_AUGMENTATION_ENABLED=true` or `feature_count >= 4 AND proof_point_count >= 2`.
+
+## Research Augmentation (Step 3.5)
+
+`agents/research_agent.py` runs after Product Analysis and before the Planner. It uses Tavily web search to find real third-party industry stats that support the product's pain points.
+
+**Gating:** `RESEARCH_AUGMENTATION_ENABLED=false` by default. Also returns `[]` if `TAVILY_API_KEY` is not set, or in MOCK_MODE returns one deterministic mock Gartner stat.
+
+**Source credibility tiers:**
+- `tier_1` — Gartner, Forrester, McKinsey, Deloitte, BCG, IDC, academic journals (`.edu`, `.ac.uk`)
+- `tier_2` — HubSpot, Salesforce, G2, Statista, LinkedIn research, Mailchimp, Drift, Intercom
+- `tier_3` — vendor blogs, news articles, unknown sources
+
+**Fabrication prevention:** After the LLM extracts a stat from source content, Python checks that at least 3 of the stat's first 6 words appear in the original content. Stat rejected if not found. This is in addition to the LLM's own `null` stat signal.
+
+**Copy impact:**
+- `research_proof_points` attached to `ProductKnowledge` and passed to the Strategy prompt
+- Strategy selects one stat → `research_proof_point_used` + `research_source` in `StrategyBrief`
+- `prompts/strategy_v1.yaml`: research stat used in AGITATE (proves problem is widespread), brand proof_point used in SOLVE (proves solution works)
+- `prompts/copywriting_v1.yaml`: when `research_proof_point_used` is present, AGITATE section must cite it as `"[Source] found that [stat]."` — never mix with brand claims
+
+**Output fields in `_run_entry()` return dict:**
+```python
+"research_proof_points": [
+    {"text", "source_name", "source_url", "publication_year",
+     "credibility_tier", "proof_type", "relevance_reason"}
+]
+```
+`source_content_snippet` is intentionally excluded — it is internal validation data only.
+
+**SSE events:** `research_agent` start/complete events are only emitted when `RESEARCH_AUGMENTATION_ENABLED=true` to avoid cluttering the stream when the feature is disabled.
 
 ## Formatter Behaviour Notes
 
@@ -478,3 +561,7 @@ The template UID (`BANNERBEAR_TEMPLATE_UID`) must expose these named layers:
 **`agents/_utils.py`** provides `parse_json_object()` (strips markdown fences, extracts `{...}`) and `utc_now_iso()`. Use these everywhere — do not inline JSON parsing in agents.
 
 **Windows UTF-8:** The Windows terminal defaults to cp1252. `tests/conftest.py` reconfigures stdout/stderr to UTF-8. Any `print()` of scraped text in agents must use `sys.stdout.buffer.write(...encode('utf-8', errors='replace'))` or be removed.
+
+**Test suite:** 308 tests, all fast (no network calls — MOCK_MODE). Run with `pytest`. Key files: `test_image_gen.py` (27), `test_logo_extraction.py` (23), `test_color_normalisation.py` (29), `test_research_agent.py` (21), `test_content_depth.py` (17), `test_brand_identity.py`, `test_bug_fixes.py`, `test_platform_expansion.py`, `test_agents_llm_import_policy.py` (enforces LLM abstraction rule).
+
+**`BrandIdentity` is the interface between pipeline and image generation.** Always construct via `pipeline.build_brand_identity()` — never construct directly. This ensures `_to_hex()` normalisation runs on all color fields before they reach `image_gen.py` or Bannerbear.

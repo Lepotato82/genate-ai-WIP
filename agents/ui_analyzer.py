@@ -156,9 +156,40 @@ def _pick_brand_signals(data: dict, tokens: dict[str, str]) -> list[str]:
     return signals
 
 
+_DESIGN_SIGNALS = frozenset(
+    ["font", "color", "colour", "spacing", "border", "palette", "typography", "#", "px", "rem"]
+)
+_COPY_SIGNALS = frozenset(
+    [
+        "sentence", "voice", "tone", "lead", "avoid", "write", "reader",
+        "word", "jargon", "direct", "concise", "technical", "warm", "formal",
+        "casual", "first", "register", "style",
+    ]
+)
+
+
+def _is_valid_writing_instruction(instruction: str) -> bool:
+    """Return True only when the instruction gives copywriting guidance (not a design spec).
+
+    Rejects empty strings and strings containing design-token references
+    (font names, hex colours, px/rem values, border, etc.).
+    Accepts strings containing at least one copy-signal word.
+    """
+    if not instruction or len(instruction.strip()) < 5:
+        return False
+    lower = instruction.lower()
+    if any(s in lower for s in _DESIGN_SIGNALS):
+        logger.warning(
+            "[ui_analyzer] writing_instruction contains design references — "
+            "falling back to generated instruction"
+        )
+        return False
+    return any(s in lower for s in _COPY_SIGNALS)
+
+
 def _normalize_instruction(value: object, data: dict, pkg: InputPackage) -> str:
     text = str(value or "").strip()
-    if len(text.split()) >= 15:
+    if _is_valid_writing_instruction(text):
         return text
     signals = _pick_brand_signals(data, pkg.css_tokens)
     signals_str = ", ".join(signals[:4]) if signals else _first_color(pkg.css_tokens, "#5e6ad2")
@@ -344,7 +375,7 @@ def _normalize_brand_dict(data: dict, pkg: InputPackage) -> dict:
     normalized["tone"] = _normalize_tone(normalized.get("tone"))
 
     wi = str(normalized.get("writing_instruction") or "").strip()
-    if len(wi.split()) < 15:
+    if not _is_valid_writing_instruction(wi):
         wi = _build_writing_instruction(pkg, str(normalized["design_category"]))
     normalized["writing_instruction"] = wi
 

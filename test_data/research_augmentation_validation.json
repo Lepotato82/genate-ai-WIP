@@ -1,0 +1,44 @@
+{
+  "https://chargebee.com": {
+    "checks": {
+      "proof_points_count": 1,
+      "all_urls_have_scheme": true,
+      "no_source_content_snippet": true,
+      "passes": true,
+      "overall_score": 3.0,
+      "retry_count": 1
+    },
+    "research_proof_points": [
+      {
+        "text": "61% of organizations were forced to cut projects or initiatives due to unplanned SaaS cost increases.",
+        "source_name": "Zylo",
+        "source_url": "https://zylo.com/blog/saas-statistics/",
+        "publication_year": 2026,
+        "credibility_tier": "tier_3",
+        "proof_type": "survey_finding",
+        "relevance_reason": "This matters for fintech-saas products that offer usage-based pricing, as unplanned cost increases can negatively impact customer projects and initiatives."
+      }
+    ],
+    "evaluation": {
+      "run_id": "851807bd-33c9-4b90-8c8e-a6178dd95972",
+      "org_id": null,
+      "created_at": "2026-03-30T11:45:26.074221+00:00",
+      "platform": "linkedin",
+      "clarity": 3,
+      "engagement": 3,
+      "tone_match": 3,
+      "accuracy": 3,
+      "overall_score": 3.0,
+      "passes": true,
+      "revision_hint": null,
+      "lowest_dimension": null,
+      "scores_rationale": "The copy is clear overall, but the structure requires some effort. The hook names a specific daily friction and creates a sense of urgency. The copy leads with the daily friction and uses short declarative sentences, but uses marketing language. The copy supports the primary claim, but also mentions claims not directly supported by the primary claim.",
+      "retry_count": 1
+    }
+  },
+  "_meta": {
+    "run_at": "2026-03-30T11:45:26.074805+00:00",
+    "model": "llama-3.1-8b-instant",
+    "RESEARCH_AUGMENTATION_ENABLED": true
+  }
+}

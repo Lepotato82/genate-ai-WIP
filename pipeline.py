@@ -14,6 +14,7 @@ from agents import (
     input_processor,
     planner,
     product_analysis,
+    research_agent,
     strategy,
     ui_analyzer,
 )
@@ -138,6 +139,10 @@ def _run_stages_after_input(
         brand = f_ui.result()
         product = f_pa.result()
 
+    # Step 3.5 — Research augmentation (gated by RESEARCH_AUGMENTATION_ENABLED)
+    research_points = research_agent.run(product)
+    product.research_proof_points = research_points
+
     brand_identity = build_brand_identity(pkg, brand, product)
 
     knowledge_context: KnowledgeContext | None = None
@@ -148,7 +153,10 @@ def _run_stages_after_input(
 
     content_brief = planner.run(brand, product, plat)
     strategy_brief = strategy.run(content_brief, product, brand)
-    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
+    raw_copy = copywriter.run(
+        strategy_brief, content_brief, brand,
+        research_proof_points=product.research_proof_points or [],
+    )
 
     formatted = formatter.run(
         raw_copy,
@@ -300,6 +308,15 @@ def run_stream(
     yield _event(2, "ui_analyzer", "complete", started, "Brand profile extracted")
     yield _event(3, "product_analysis", "complete", started, "Product knowledge extracted")
 
+    # Step 3.5 — Research augmentation (gated by RESEARCH_AUGMENTATION_ENABLED)
+    if settings.RESEARCH_AUGMENTATION_ENABLED:
+        yield _event(0, "research_agent", "start", started, "Searching for research stats")
+    research_points = research_agent.run(product)
+    product.research_proof_points = research_points
+    if settings.RESEARCH_AUGMENTATION_ENABLED:
+        yield _event(0, "research_agent", "complete", started,
+                     f"Found {len(research_points)} research proof points")
+
     brand_identity = build_brand_identity(input_pkg, brand, product)
 
     # Step K — Knowledge Layer query (optional)
@@ -323,7 +340,10 @@ def run_stream(
 
     # Steps 6+7 — Copywriter + Visual Gen (parallel)
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
-    raw_copy = copywriter.run(strategy_brief, content_brief, brand)
+    raw_copy = copywriter.run(
+        strategy_brief, content_brief, brand,
+        research_proof_points=product.research_proof_points or [],
+    )
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
 
     yield _event(8, "formatter", "start", started, "Applying platform formatting")
@@ -413,10 +433,18 @@ def _run_entry(
     pkg = input_processor.run(url=url, run_id=rid, org_id=org_id)
     brand = ui_analyzer.run(pkg)
     product = product_analysis.run(pkg)
+
+    # Step 3.5 — Research augmentation (gated by RESEARCH_AUGMENTATION_ENABLED)
+    research_points = research_agent.run(product)
+    product.research_proof_points = research_points
+
     brand_identity = build_brand_identity(pkg, brand, product)
     brief = planner.run(brand, product, platform=plat)
     strategy_brief = strategy.run(brief, product, brand)
-    raw_copy = copywriter.run(strategy_brief, brief, brand)
+    raw_copy = copywriter.run(
+        strategy_brief, brief, brand,
+        research_proof_points=product.research_proof_points or [],
+    )
     formatted = formatter.run(
         raw_copy,
         brief,
@@ -457,6 +485,18 @@ def _run_entry(
         "passes": evaluation.passes,
         "overall_score": evaluation.overall_score,
         "images": images,
+        "research_proof_points": [
+            {
+                "text": p.text,
+                "source_name": p.source_name,
+                "source_url": p.source_url,
+                "publication_year": p.publication_year,
+                "credibility_tier": p.credibility_tier,
+                "proof_type": p.proof_type,
+                "relevance_reason": p.relevance_reason,
+            }
+            for p in research_points
+        ],
     }
 
 

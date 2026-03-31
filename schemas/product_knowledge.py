@@ -6,9 +6,12 @@ Produced by: Product Analysis agent (Step 3)
 Consumed by: Planner (Step 4), Strategy (Step 5), Copywriting (Step 6)
 """
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
+
+if TYPE_CHECKING:
+    from schemas.research_proof_point import ResearchProofPoint
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +132,16 @@ class ProductKnowledge(BaseModel):
         default_factory=list,
         max_length=5,
         description="Positioning angles; may be empty for downstream to infer.",
+    )
+
+    # ── Research augmentation (Step 3.5) ─────────────────────────────
+    research_proof_points: list = Field(
+        default_factory=list,
+        description=(
+            "ResearchProofPoint objects from the Research agent. "
+            "Empty when RESEARCH_AUGMENTATION_ENABLED=false. "
+            "Available to Strategy agent alongside brand proof_points."
+        ),
     )
 
     # ── Optional enrichment ───────────────────────────────────────────

@@ -20,7 +20,21 @@
       "Bash(tee test_data/image_gen_validation.txt)",
       "Bash(python -m pytest tests/test_image_gen.py tests/test_logo_extraction.py -v)",
       "Bash(tee test_data/accent_svg_fix_validation.txt)",
-      "Bash(\"E:\\\\genate-ai\\\\.claude\\\\worktrees\\\\cool-taussig\\\\test_data\\\\accent_svg_fix_validation.txt\":*)"
+      "Bash(\"E:\\\\genate-ai\\\\.claude\\\\worktrees\\\\cool-taussig\\\\test_data\\\\accent_svg_fix_validation.txt\":*)",
+      "Bash(python -c \"import tavily; print\\(''ok''\\)\")",
+      "Bash(uv pip:*)",
+      "Bash(python -c \"from tavily import TavilyClient; print\\(''ok''\\)\")",
+      "Bash(uv run:*)",
+      "Bash(python -m pytest tests/test_research_agent.py -v --tb=short)",
+      "Bash(LLM_TEXT_MODEL=llama-3.1-8b-instant uv run python -c \":*)",
+      "Bash(python -m pytest --tb=short -q)",
+      "Bash(python -m pytest tests/test_content_depth.py -v --tb=short)",
+      "Bash(python -m pytest --tb=no -q)",
+      "Bash(tee test_data/searchable_research_longform_summary.txt)",
+      "Bash(tee test_data/searchable_research_longform_summary_70b.txt)",
+      "Bash(python -m pytest tests/test_content_depth.py tests/test_research_agent.py -v --tb=short)",
+      "Bash(uv run python -c \":*)",
+      "Bash(tee test_data/searchable_fixed_summary.txt)"
     ]
   }
 }

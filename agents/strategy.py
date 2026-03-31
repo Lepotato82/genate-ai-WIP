@@ -92,28 +92,17 @@ def _mock(
 
 
 # ---------------------------------------------------------------------------
-# System prompt (inline — Person B will replace with YAML later)
+# System prompt (loaded from YAML — required; RuntimeError if missing)
 # ---------------------------------------------------------------------------
 
-_SYSTEM_PROMPT = (
-    "You are a SaaS content strategist deciding what to say.\n"
-    "Return ONLY valid JSON with these exact fields:\n"
-    "  lead_pain_point: specific daily friction (min 10 words, concrete)\n"
-    "  primary_claim: single sentence product promise (max 25 words)\n"
-    "  proof_point: COPY VERBATIM from the proof_points list provided. "
-    "Do not paraphrase. Do not invent. If none available, use: "
-    "'No verified proof points available for this product'\n"
-    "  proof_point_type: one of stat, customer_name, g2_badge, integration_count, "
-    "uptime_claim, award, user_count\n"
-    "  cta_intent: one of start_trial, learn_more, book_demo, sign_up\n"
-    "  appeal_type: one of rational, emotional, mixed\n"
-    "  target_icp_role: specific job title (min 3 words)\n"
-    "  differentiator: the unlike-X angle (min 10 words) or null\n"
-    "  hook_direction: one sentence instruction for the hook\n"
-    "  positioning_mode: one of category_creation, category_challenging, "
-    "category_domination\n"
-    "  messaging_angle_used: COPY VERBATIM from messaging_angles list"
-)
+def _get_system_prompt() -> str:
+    try:
+        spec = load_prompt("strategy_v1")
+        return spec.system_prompt
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "[strategy] strategy_v1.yaml not found — cannot run without prompt file"
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +146,7 @@ def run(
 
     raw = chat_completion(
         [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": _get_system_prompt()},
             {"role": "user", "content": user_msg},
         ],
         temperature=0,

@@ -3,7 +3,9 @@
     "hook_max_chars": 180,
     "hashtags_min": 3,
     "hashtags_max": 5,
-    "hashtags_position": "end_only"
+    "hashtags_position": "end_only",
+    "concise":   { "word_count_min": 150, "word_count_max": 300 },
+    "long_form": { "word_count_min": 600, "word_count_max": 900 }
   },
   "twitter": {
     "tweet_count": "4-8",
@@ -16,7 +18,9 @@
     "hashtag_count": "1-2",
     "hashtag_placement": "final tweet only",
     "hashtags_position": "final_tweet_only",
-    "first_tweet_standalone": true
+    "first_tweet_standalone": true,
+    "concise":   { "tweet_count_min": 4, "tweet_count_max": 6 },
+    "long_form": { "tweet_count_min": 6, "tweet_count_max": 8 }
   },
   "instagram": {
     "first_chars": 125,
@@ -27,7 +31,9 @@
     "hashtag_count": "20-30",
     "hashtag_placement": "after 5 line breaks",
     "hashtags_inline": false,
-    "line_breaks_before_hashtags": 5
+    "line_breaks_before_hashtags": 5,
+    "concise":   { "body_word_count_min": 80,  "body_word_count_max": 150 },
+    "long_form": { "body_word_count_min": 250, "body_word_count_max": 400 }
   },
   "blog": {
     "word_count_min": 1200,

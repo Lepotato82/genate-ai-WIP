@@ -39,6 +39,7 @@ dependencies = [
     "httpx",
     "aiohttp",
     "Pillow",
+    "tavily-python>=0.7.23",
 ]
 
 [project.optional-dependencies]
