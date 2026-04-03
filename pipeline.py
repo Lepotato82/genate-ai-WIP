@@ -17,6 +17,7 @@ from agents import (
     research_agent,
     strategy,
     ui_analyzer,
+    visual_gen,
 )
 from config import settings
 from knowledge import persist_run, query_context
@@ -56,6 +57,7 @@ class RunArtifacts:
     formatted_content: FormattedContent
     evaluator_output: EvaluatorOutput
     images: dict | None = None
+    visual: dict | None = None
 
 
 RUN_REGISTRY: dict[str, RunArtifacts] = {}
@@ -130,6 +132,7 @@ def _run_stages_after_input(
     str,
     FormattedContent,
     EvaluatorOutput,
+    dict,
 ]:
     plat = _norm_platform(platform)
 
@@ -153,10 +156,23 @@ def _run_stages_after_input(
 
     content_brief = planner.run(brand, product, plat)
     strategy_brief = strategy.run(content_brief, product, brand)
-    raw_copy = copywriter.run(
-        strategy_brief, content_brief, brand,
-        research_proof_points=product.research_proof_points or [],
-    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_copy = pool.submit(
+            copywriter.run,
+            strategy_brief,
+            content_brief,
+            brand,
+            research_proof_points=product.research_proof_points or [],
+        )
+        f_visual = pool.submit(
+            visual_gen.run,
+            strategy_brief,
+            brand,
+            content_brief,
+            brand_identity,
+        )
+        raw_copy = f_copy.result()
+        visual_out = f_visual.result()
 
     formatted = formatter.run(
         raw_copy,
@@ -182,7 +198,17 @@ def _run_stages_after_input(
         )
         evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
 
-    return brand, product, brand_identity, content_brief, strategy_brief, raw_copy, formatted, evaluated
+    return (
+        brand,
+        product,
+        brand_identity,
+        content_brief,
+        strategy_brief,
+        raw_copy,
+        formatted,
+        evaluated,
+        visual_out,
+    )
 
 
 def run_pipeline(
@@ -204,14 +230,24 @@ def run_pipeline(
         user_image=user_image,
         user_document=user_document,
     )
-    brand, product, brand_identity, content_brief, strategy_brief, raw_copy, formatted, evaluated = _run_stages_after_input(
+    (
+        brand,
+        product,
+        brand_identity,
+        content_brief,
+        strategy_brief,
+        raw_copy,
+        formatted,
+        evaluated,
+        visual_out,
+    ) = _run_stages_after_input(
         run_id=run_id,
         org_id=None,
         pkg=pkg,
         platform=platform,
         started=started,
     )
-    images = image_gen.run(formatted, brand_identity)
+    images = image_gen.run(formatted, brand_identity, visual=visual_out)
     artifacts = RunArtifacts(
         run_id=run_id,
         org_id=None,
@@ -223,6 +259,7 @@ def run_pipeline(
         formatted_content=formatted,
         evaluator_output=evaluated,
         images=images,
+        visual=visual_out,
     )
     RUN_REGISTRY[run_id] = artifacts
     return {
@@ -239,6 +276,7 @@ def run_pipeline(
         "evaluator_output": evaluated.model_dump(),
         "passes": evaluated.passes,
         "overall_score": evaluated.overall_score,
+        "visual": visual_out,
         "images": images,
     }
 
@@ -340,11 +378,26 @@ def run_stream(
 
     # Steps 6+7 — Copywriter + Visual Gen (parallel)
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
-    raw_copy = copywriter.run(
-        strategy_brief, content_brief, brand,
-        research_proof_points=product.research_proof_points or [],
-    )
+    yield _event(7, "visual_gen", "start", started, "Building image prompt")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_copy = pool.submit(
+            copywriter.run,
+            strategy_brief,
+            content_brief,
+            brand,
+            research_proof_points=product.research_proof_points or [],
+        )
+        f_visual = pool.submit(
+            visual_gen.run,
+            strategy_brief,
+            brand,
+            content_brief,
+            brand_identity,
+        )
+        raw_copy = f_copy.result()
+        visual_out = f_visual.result()
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
+    yield _event(7, "visual_gen", "complete", started, "Image prompt ready")
 
     yield _event(8, "formatter", "start", started, "Applying platform formatting")
     formatted = formatter.run(
@@ -358,11 +411,15 @@ def run_stream(
     )
     yield _event(8, "formatter", "complete", started, "Formatting complete")
 
-    # Phase 2 — Image generation
-    images = image_gen.run(formatted, brand_identity)
-    if images.get("generation_enabled"):
-        yield _event(7, "image_gen", "complete", started,
-                     f"Generated {len(images['image_urls'])} slides")
+    # Phase 2 — Image generation (Bannerbear slides + optional hero T2I)
+    images = image_gen.run(formatted, brand_identity, visual=visual_out)
+    if images.get("generation_enabled") or images.get("hero_generation_enabled"):
+        parts: list[str] = []
+        if images.get("generation_enabled"):
+            parts.append(f"{len(images['image_urls'])} slides")
+        if images.get("hero_generation_enabled"):
+            parts.append("hero background")
+        yield _event(11, "image_gen", "complete", started, "Generated " + ", ".join(parts))
 
     # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
@@ -398,6 +455,7 @@ def run_stream(
         formatted_content=formatted,
         evaluator_output=evaluated,
         images=images,
+        visual=visual_out,
     )
     RUN_REGISTRY[run_id] = artifacts
 
@@ -425,7 +483,7 @@ def _run_entry(
     run_id: str | None,
     org_id: str | None,
 ) -> dict:
-    """Sequential pipeline for CLI / validation (no visual gen, no SSE)."""
+    """Sequential pipeline for CLI / validation (no SSE)."""
     max_retries = 2
     rid = run_id or str(uuid.uuid4())
     plat = _norm_platform(platform)
@@ -441,10 +499,23 @@ def _run_entry(
     brand_identity = build_brand_identity(pkg, brand, product)
     brief = planner.run(brand, product, platform=plat)
     strategy_brief = strategy.run(brief, product, brand)
-    raw_copy = copywriter.run(
-        strategy_brief, brief, brand,
-        research_proof_points=product.research_proof_points or [],
-    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_copy = pool.submit(
+            copywriter.run,
+            strategy_brief,
+            brief,
+            brand,
+            research_proof_points=product.research_proof_points or [],
+        )
+        f_visual = pool.submit(
+            visual_gen.run,
+            strategy_brief,
+            brand,
+            brief,
+            brand_identity,
+        )
+        raw_copy = f_copy.result()
+        visual_out = f_visual.result()
     formatted = formatter.run(
         raw_copy,
         brief,
@@ -456,7 +527,7 @@ def _run_entry(
     )
 
     # Phase 2 — Image generation (runs on first formatted output, before retry loop)
-    images = image_gen.run(formatted, brand_identity)
+    images = image_gen.run(formatted, brand_identity, visual=visual_out)
 
     for attempt in range(max_retries + 1):
         evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
@@ -484,6 +555,7 @@ def _run_entry(
         "evaluation": evaluation.model_dump(),
         "passes": evaluation.passes,
         "overall_score": evaluation.overall_score,
+        "visual": visual_out,
         "images": images,
         "research_proof_points": [
             {

@@ -217,6 +217,198 @@ def _is_valid_image(data: bytes) -> bool:
     return any(data.startswith(magic) for magic in _VALID_IMAGE_MAGIC)
 
 
+_LOGO_CANDIDATE_SELECTOR = (
+    'header img, [role="banner"] img, nav img, '
+    'header svg, nav svg, [role="banner"] svg, '
+    "header .logo img, header .logo svg, nav .logo img, nav .logo svg, "
+    '[role="banner"] .logo img, [role="banner"] .logo svg, '
+    ".navbar img, .nav img, .header img, .navbar svg, .nav svg, .header svg"
+)
+
+# Open shadow roots only (Framer/Webflow often host header/nav inside components).
+_LOGO_DEEP_QUERY_JS = """
+(selector) => {
+    const seen = new WeakSet();
+    const out = [];
+    function collect(root) {
+        if (!root || !root.querySelectorAll) return;
+        try {
+            root.querySelectorAll(selector).forEach((el) => {
+                if (el && !seen.has(el)) {
+                    seen.add(el);
+                    out.push(el);
+                }
+            });
+        } catch (e) {
+        }
+        const nodes = root.querySelectorAll("*");
+        for (let j = 0; j < nodes.length; j++) {
+            const node = nodes[j];
+            if (node.shadowRoot) {
+                collect(node.shadowRoot);
+            }
+        }
+    }
+    collect(document);
+    return out;
+}
+"""
+
+_INFER_PRODUCT_NAME_JS = """
+() => {
+    const meta = document.querySelector('meta[property="og:site_name"]');
+    if (meta && meta.content && meta.content.trim())
+        return meta.content.trim().slice(0, 120);
+    const t = (document.title || "").trim();
+    if (t) return t.split(/[|\\-–—]/)[0].trim().slice(0, 120);
+    const h1 = document.querySelector("h1");
+    if (h1 && h1.innerText && h1.innerText.trim())
+        return h1.innerText.trim().slice(0, 120);
+    return "";
+}
+"""
+
+
+def _infer_product_name(page) -> str:
+    try:
+        raw = page.evaluate(_INFER_PRODUCT_NAME_JS)
+        return str(raw or "").strip()
+    except Exception as exc:
+        logger.debug("logo: product name inference failed: %s", exc)
+        return ""
+
+
+def _logo_screenshot_box_ok(width: float, height: float) -> bool:
+    """True if element size is in the logo-likely band (reduces UI icon noise for CLIP)."""
+    w, h = width, height
+    mn = float(settings.LOGO_CLIP_MIN_BOX_PX)
+    mx_w = float(settings.LOGO_CLIP_MAX_BOX_W)
+    mx_h = float(settings.LOGO_CLIP_MAX_BOX_H)
+    max_ar = float(settings.LOGO_CLIP_MAX_ASPECT_RATIO)
+    if w < mn or h < mn:
+        return False
+    if w > mx_w or h > mx_h:
+        return False
+    if w <= 0 or h <= 0:
+        return False
+    ar = max(w / h, h / w)
+    if ar > max_ar:
+        return False
+    return True
+
+
+def _finalize_raster_logo_bytes(data: bytes) -> bytes:
+    """Optional PNG dark-plate removal for compositing (Bannerbear). Skips SVG/JPEG."""
+    if not settings.LOGO_BG_REMOVAL_ENABLED or not data.startswith(b"\x89PNG"):
+        return data
+    try:
+        from agents.logo_postprocess import maybe_remove_dark_background
+
+        return maybe_remove_dark_background(data)
+    except Exception as exc:
+        logger.debug("logo: background removal skipped: %s", exc)
+        return data
+
+
+def _og_image_passes_size_guard(data: bytes) -> bool:
+    """
+    When LOGO_OG_IMAGE_MAX_BYTES or LOGO_OG_IMAGE_MAX_EDGE_PX are > 0, reject og:image
+    assets that look like full-width heroes (e.g. snippet3.png). Zero = disabled.
+    """
+    max_bytes = int(settings.LOGO_OG_IMAGE_MAX_BYTES or 0)
+    if max_bytes > 0 and len(data) > max_bytes:
+        return False
+    max_edge = int(settings.LOGO_OG_IMAGE_MAX_EDGE_PX or 0)
+    if max_edge <= 0:
+        return True
+    try:
+        import io
+
+        from PIL import Image
+
+        with Image.open(io.BytesIO(data)) as img:
+            w, h = img.size
+        if max(w, h) > max_edge:
+            return False
+    except Exception as exc:
+        logger.debug("logo: og:image dimension guard decode failed: %s", exc)
+    return True
+
+
+def _collect_logo_candidate_handles(page, max_handles: int = 32) -> list:
+    """
+    ElementHandles for img/svg matching _LOGO_CANDIDATE_SELECTOR in document and
+    open shadow roots (Framer-style stacks). Caller must dispose each handle.
+    """
+    collected: list = []
+    array_handle = None
+    try:
+        array_handle = page.evaluate_handle(_LOGO_DEEP_QUERY_JS, _LOGO_CANDIDATE_SELECTOR)
+        n = int(array_handle.evaluate("els => els.length"))
+        cap = min(max(0, n), max_handles)
+        logger.debug("logo: deep DOM query returned %s candidate handle(s) (cap %s)", n, cap)
+        for i in range(cap):
+            prop = array_handle.get_property(str(i))
+            try:
+                el = prop.as_element()
+                if el:
+                    collected.append(el)
+            finally:
+                prop.dispose()
+    except Exception as exc:
+        logger.debug("logo: deep candidate query failed: %s", exc)
+    finally:
+        if array_handle is not None:
+            array_handle.dispose()
+    if collected:
+        return collected
+    # Fallback: light DOM only (older paths / evaluate_handle edge cases)
+    try:
+        flat = list(page.query_selector_all(_LOGO_CANDIDATE_SELECTOR))[:max_handles]
+        logger.debug(
+            "logo: flat candidate query returned %s handle(s) (deep had 0 matches)",
+            len(flat),
+        )
+        return flat
+    except Exception as exc:
+        logger.debug("logo: flat candidate query failed: %s", exc)
+        return []
+
+
+def _collect_header_nav_screenshots(page) -> list[bytes]:
+    """
+    PNG screenshots of candidate logo elements in header/nav (transparent where supported).
+    Queries open shadow roots (Framer/Webflow) via _collect_logo_candidate_handles, then
+    falls back to light-DOM query_selector_all when the deep query returns nothing.
+    """
+    out: list[bytes] = []
+    handles = _collect_logo_candidate_handles(page, max_handles=32)
+    for h in handles[16:]:
+        try:
+            h.dispose()
+        except Exception:
+            pass
+    for h in handles[:16]:
+        try:
+            box = h.bounding_box()
+            if not box or not _logo_screenshot_box_ok(box["width"], box["height"]):
+                continue
+            try:
+                png = h.screenshot(type="png", omit_background=True)
+            except Exception:
+                png = h.screenshot(type="png")
+            if png and len(png) >= 200 and png.startswith(b"\x89PNG"):
+                out.append(png)
+        except Exception as exc:
+            logger.debug("logo: element screenshot skipped: %s", exc)
+        finally:
+            try:
+                h.dispose()
+            except Exception:
+                pass
+    return out
+
+
 def _download_logo(url: str) -> bytes | None:
     """Download a URL with httpx (sync) and return bytes, or None on failure."""
     try:
@@ -236,7 +428,6 @@ def _download_logo(url: str) -> bytes | None:
 def _extract_logo(
     page,
     base_url: str,
-    css_tokens: dict | None = None,
 ) -> tuple[bytes | None, str | None, str | None]:
     """
     Extract the brand logo from a fully-rendered Playwright page (sync API).
@@ -246,10 +437,10 @@ def _extract_logo(
     Priority order:
       1. apple-touch-icon link tag                        -> high
       2. <link rel="icon"> size >= 192px                  -> high
-      3. <img> in <header> with logo in attr              -> high
-      3.5. SVG in header/nav matching brand color/label   -> high
-      4. og:image meta tag                                -> medium
-      5. Any declared favicon                             -> low
+      3. Local CLIP (ViT) on header/nav element screenshots -> high
+      4. <img> in <header> with logo in attr              -> high
+      5. og:image meta tag                                -> medium (optional size guard)
+      6. Any declared favicon                             -> low
     """
 
     # ── Priority 1: apple-touch-icon ──────────────────────────────
@@ -264,7 +455,7 @@ def _extract_logo(
                 resolved = urljoin(base_url, href)
                 data = _download_logo(resolved)
                 if data and _is_valid_image(data):
-                    return data, resolved, "high"
+                    return _finalize_raster_logo_bytes(data), resolved, "high"
     except Exception as exc:
         logger.debug("logo: apple-touch-icon failed: %s", exc)
 
@@ -280,11 +471,43 @@ def _extract_logo(
                     resolved = urljoin(base_url, href)
                     data = _download_logo(resolved)
                     if data and _is_valid_image(data):
-                        return data, resolved, "high"
+                        return _finalize_raster_logo_bytes(data), resolved, "high"
     except Exception as exc:
         logger.debug("logo: large icon failed: %s", exc)
 
-    # ── Priority 3: <img> in <header> with logo in class/id/alt ──
+    # ── Priority 3: local CLIP scores header/nav element screenshots ──
+    if settings.LOGO_CLIP_ENABLED:
+        try:
+            from agents.logo_clip import clip_dependencies_available, pick_best_logo_candidate
+
+            if clip_dependencies_available():
+                shots = _collect_header_nav_screenshots(page)
+                logger.debug(
+                    "logo: CLIP candidate screenshots collected: %s for %s",
+                    len(shots),
+                    base_url,
+                )
+                if shots:
+                    product_name = _infer_product_name(page)
+                    picked = pick_best_logo_candidate(shots, product_name)
+                    if picked is not None:
+                        png_bytes, _prob = picked
+                        if len(png_bytes) >= 200 and png_bytes.startswith(b"\x89PNG"):
+                            clip_url = f"{base_url}#clip-header-nav-logo"
+                            logger.info(
+                                "logo: CLIP-selected header/nav screenshot for %s (%s)",
+                                base_url,
+                                product_name or "unknown name",
+                            )
+                            return _finalize_raster_logo_bytes(png_bytes), clip_url, "high"
+                        logger.debug(
+                            "logo: CLIP pick invalid PNG or too small (%s bytes), skipping",
+                            len(png_bytes),
+                        )
+        except Exception as exc:
+            logger.debug("logo: CLIP extraction failed: %s", exc)
+
+    # ── Priority 4: <img> in <header> with logo in class/id/alt ──
     try:
         imgs = page.query_selector_all('header img, [role="banner"] img')
         for img in imgs:
@@ -296,76 +519,11 @@ def _extract_logo(
                 resolved = urljoin(base_url, src)
                 data = _download_logo(resolved)
                 if data and _is_valid_image(data):
-                    return data, resolved, "high"
+                    return _finalize_raster_logo_bytes(data), resolved, "high"
     except Exception as exc:
         logger.debug("logo: header img failed: %s", exc)
 
-    # ── Priority 3.5: SVG in header/nav matching brand color or label ──
-    try:
-        # Extract brand color from css_tokens to match against SVG fill values
-        brand_color: str | None = None
-        if css_tokens:
-            color_keys = [
-                "--color-brand", "--color-primary", "--brand-color",
-                "--primary", "--color-accent", "--accent",
-                "--color-brand-primary", "--color-brand-bg",
-            ]
-            for key in color_keys:
-                val = css_tokens.get(key)
-                if val and isinstance(val, str) and val.startswith("#"):
-                    brand_color = val.lower()
-                    break
-
-        svg_els = page.query_selector_all(
-            "header svg, nav svg, [role=\"banner\"] svg, "
-            ".navbar svg, .nav svg, .header svg"
-        )
-
-        svg_fallback: tuple[bytes, str] | None = None
-
-        for svg_el in svg_els:
-            svg_html = svg_el.evaluate("el => el.outerHTML")
-            if not svg_html:
-                continue
-
-            svg_lower = svg_html.lower()
-
-            color_match = bool(
-                brand_color and brand_color.lstrip("#") in svg_lower
-            )
-            label_match = any(
-                term in svg_lower
-                for term in ["logo", "brand", "mark", "icon", "aria-label", "title"]
-            )
-
-            box = svg_el.bounding_box()
-            size_ok = box and box["width"] >= 24 and box["height"] >= 24
-
-            if (color_match or label_match) and size_ok:
-                svg_bytes = svg_html.encode("utf-8")
-                if len(svg_bytes) >= MIN_LOGO_BYTES:
-                    url = f"{base_url}#svg-header-logo"
-                    logger.info(
-                        "logo: found header SVG (%s) for %s",
-                        "color match" if color_match else "label match",
-                        base_url,
-                    )
-                    return svg_bytes, url, "high"
-
-            # Collect the first size-ok multi-path SVG as a fallback
-            if svg_fallback is None and size_ok and svg_html.count("<path") >= 2:
-                svg_bytes = svg_html.encode("utf-8")
-                if len(svg_bytes) >= MIN_LOGO_BYTES:
-                    svg_fallback = (svg_bytes, f"{base_url}#svg-header-logo-fallback")
-
-        if svg_fallback:
-            logger.info("logo: using header SVG (path-count heuristic) for %s", base_url)
-            return svg_fallback[0], svg_fallback[1], "high"
-
-    except Exception as exc:
-        logger.debug("logo: SVG header extraction failed: %s", exc)
-
-    # ── Priority 4: og:image ─────────────────────────────────────
+    # ── Priority 5: og:image ─────────────────────────────────────
     try:
         el = page.query_selector('meta[property="og:image"]')
         if el:
@@ -373,8 +531,14 @@ def _extract_logo(
             if content:
                 resolved = urljoin(base_url, content)
                 data = _download_logo(resolved)
+                if data and _is_valid_image(data) and _og_image_passes_size_guard(data):
+                    return _finalize_raster_logo_bytes(data), resolved, "medium"
                 if data and _is_valid_image(data):
-                    return data, resolved, "medium"
+                    logger.debug(
+                        "logo: og:image skipped by size guard (%s bytes) for %s",
+                        len(data),
+                        resolved,
+                    )
     except Exception as exc:
         logger.debug("logo: og:image failed: %s", exc)
 
@@ -383,7 +547,7 @@ def _extract_logo(
         favicon_url = urljoin(base_url, "/favicon.ico")
         data = _download_logo(favicon_url)
         if data and _is_valid_image(data):
-            return data, favicon_url, "low"
+            return _finalize_raster_logo_bytes(data), favicon_url, "low"
 
         el = page.query_selector('link[rel~="icon"]')
         if el:
@@ -392,7 +556,7 @@ def _extract_logo(
                 resolved = urljoin(base_url, href)
                 data = _download_logo(resolved)
                 if data and _is_valid_image(data):
-                    return data, resolved, "low"
+                    return _finalize_raster_logo_bytes(data), resolved, "low"
     except Exception as exc:
         logger.debug("logo: favicon failed: %s", exc)
 
@@ -478,9 +642,7 @@ def _scrape_page_sync(url: str, timeout_seconds: int) -> dict:
                 logger.warning("Screenshot failed: %s", exc)
 
             try:
-                logo_bytes, logo_url, logo_confidence = _extract_logo(
-                    page, url, css_tokens=css_tokens
-                )
+                logo_bytes, logo_url, logo_confidence = _extract_logo(page, url)
             except Exception as exc:
                 logger.warning("Logo extraction failed: %s", exc)
 

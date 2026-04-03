@@ -54,10 +54,21 @@ class Settings(BaseSettings):
 
     # ─── Image Generation ─────────────────────────────────────────────────
     FAL_API_KEY: str = ""
+    # Sync text-to-image (hero background). Uses FAL_API_KEY when HERO_IMAGE_PROVIDER=fal.
+    FAL_HERO_MODEL_PATH: str = "fal-ai/flux/schnell"
     BANNERBEAR_API_KEY: str = ""
     BANNERBEAR_TEMPLATE_UID: str = ""
     BANNERBEAR_TIMEOUT_SECONDS: int = 30
+    # Bannerbear carousel slides (flattened templates).
     IMAGE_GENERATION_ENABLED: bool = False
+    # Text-to-image hero layer (Pollinations, Fal, etc.) — independent of Bannerbear.
+    HERO_IMAGE_ENABLED: bool = False
+    # pollinations | fal | none
+    HERO_IMAGE_PROVIDER: str = "pollinations"
+    POLLINATIONS_TIMEOUT_SECONDS: int = 240  # Pollinations often needs 60–180s+ to return image bytes
+    POLLINATIONS_WIDTH: int = 0   # 0 = omit (API default)
+    POLLINATIONS_HEIGHT: int = 0
+    POLLINATIONS_MODEL: str = ""  # optional model query param for Pollinations
     IDEOGRAM_API_KEY: str = ""
 
     # ─── Video Generation ─────────────────────────────────────────────────
@@ -69,6 +80,19 @@ class Settings(BaseSettings):
     BRIGHTDATA_PROXY_URL: str = ""
     SCRAPE_TIMEOUT_SECONDS: int = 15
     SCRAPE_MAX_RETRIES: int = 2
+
+    # ─── Logo extraction (local CLIP ViT — input_processor) ───────────────
+    LOGO_CLIP_ENABLED: bool = True
+    LOGO_CLIP_MIN_BOX_PX: int = 24
+    LOGO_CLIP_MAX_BOX_W: int = 400
+    LOGO_CLIP_MAX_BOX_H: int = 300
+    LOGO_CLIP_MAX_ASPECT_RATIO: float = 6.0
+    LOGO_BG_REMOVAL_ENABLED: bool = False
+    LOGO_OCR_ENABLED: bool = False
+    LOGO_OCR_LOGIT_BONUS: float = 0.15
+    # og:image only — 0 disables. Use to skip hero-sized marketing images as "logos".
+    LOGO_OG_IMAGE_MAX_BYTES: int = 500_000
+    LOGO_OG_IMAGE_MAX_EDGE_PX: int = 0
 
     # ─── Observability ────────────────────────────────────────────────────
     LANGFUSE_PUBLIC_KEY: str = ""

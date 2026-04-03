@@ -111,10 +111,10 @@ def test_build_queries_returns_queries_when_pain_points_empty():
 
 
 def test_build_queries_deduplicates():
-    # Force identical pain_points and target_customer to collide
+    # Distinct pains + category so Q1/Q2/Q3 stay unique; still validates deduper
     product = _make_product(
-        pain_points=["marketing-content"],
-        target_customer="marketing-content",
+        pain_points=["alpha friction one", "beta friction two"],
+        target_customer="Enterprise buyers",
         product_category="marketing-content",
     )
     queries = _build_queries(product)
@@ -330,6 +330,14 @@ def test_normalize_url_deduplicates_statista_tracking_variants():
     assert _normalize_url(url_a) == _normalize_url(url_b)
 
 
+def test_normalize_url_lowercases_scheme_and_host():
+    """Same path with different host casing or tracking params → one key."""
+    a = "HTTPS://WWW.Example.COM/report?utm_source=x"
+    b = "https://www.example.com/report?srsltid=y"
+    assert _normalize_url(a) == _normalize_url(b)
+    assert _normalize_url(a) == "https://www.example.com/report"
+
+
 # ---------------------------------------------------------------------------
 # _build_queries — category overrides
 # ---------------------------------------------------------------------------
@@ -372,12 +380,15 @@ def test_build_queries_uses_category_override_for_marketing_content():
     product = _make_product_for_category("marketing-content")
     queries = _build_queries(product)
     assert any("generative engine optimization" in q for q in queries)
+    assert any("manual" in q.lower() for q in queries)
+    assert any("visibility" in q.lower() or "metrics" in q.lower() for q in queries)
 
 
 def test_build_queries_uses_category_override_for_developer_tool():
     product = _make_product_for_category("developer-tool")
     queries = _build_queries(product)
     assert any("developer productivity" in q for q in queries)
+    assert any("manual" in q.lower() for q in queries)
 
 
 def test_build_queries_marketing_content_returns_ai_search_specific_queries():
@@ -392,6 +403,69 @@ def test_build_queries_falls_back_to_generic_for_unmapped_category():
     """other category (not in overrides) → generic fallback query construction."""
     product = _make_product_for_category("other")
     queries = _build_queries(product)
-    # Generic fallback: pain point or category term appears in query
+    # Pain-led queries + category anchor
     combined = " ".join(queries).lower()
-    assert "other" in combined or "manual" in combined or "b2b" in combined
+    assert "manual" in combined or "visibility" in combined
+    assert "other" in combined or "b2b" in combined
+
+
+def test_build_queries_generic_includes_2026_and_b2b_signals():
+    product = _make_product_for_category("other")
+    queries = _build_queries(product)
+    blob = " ".join(queries).lower()
+    assert "2026" in blob or "2025" in blob
+    assert "b2b" in blob
+    assert "statistics" in blob or "survey" in blob or "research" in blob
+
+
+def test_build_queries_pain_first_not_all_vertical_saas_b2b_for_b2c_signals():
+    """Miscategorized vertical-saas + B2C copy → not every query is generic B2B SaaS."""
+    from schemas.product_knowledge import ProductKnowledge, Feature, ProofPoint
+
+    product = ProductKnowledge(
+        run_id="r",
+        org_id=None,
+        created_at="2026-01-01T00:00:00Z",
+        product_name="Lemon",
+        product_url="https://lemonhealth.ai",
+        tagline="Your health companion app",
+        description=(
+            "A consumer wellness mobile app that helps patients track sleep and meals. "
+            "Download on the App Store. Personal health insights for everyday users "
+            "who want clarity without clinical jargon and simpler daily wellness goals."
+        ),
+        product_category="vertical-saas",
+        features=[
+            Feature(name="Tracking", description="Daily health habits."),
+            Feature(name="Insights", description="Personalized tips."),
+        ],
+        benefits=["Better sleep awareness", "Simpler routines"],
+        proof_points=[
+            ProofPoint(
+                text="Users report improved consistency after two weeks of use.",
+                proof_type="stat",
+                source="scraped_page",
+            )
+        ],
+        pain_points=[
+            "Too much conflicting health data from different apps",
+            "Hard to know which habit changes actually matter",
+        ],
+        messaging_angles=["Clarity", "Calm"],
+        target_customer="Consumers using wellness mobile apps",
+    )
+    queries = _build_queries(product)
+    assert len(queries) == 3
+    pain_hits = sum(
+        1
+        for q in queries[:2]
+        if ("conflicting" in q.lower() or "health data" in q.lower())
+        or ("habit" in q.lower() and "matter" in q.lower())
+    )
+    assert pain_hits >= 1
+    assert not all(
+        "vertical-saas" in q.lower() and "b2b market statistics" in q.lower()
+        for q in queries
+    )
+    q3 = queries[2].lower()
+    assert "consumer" in q3 or "vertical-saas" in q3

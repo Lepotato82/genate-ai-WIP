@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ResearchProofPoint(BaseModel):
@@ -23,10 +23,13 @@ class ResearchProofPoint(BaseModel):
     available to the Strategy agent alongside brand proof points.
     """
 
-    text: str
-    # The exact stat as it appears in the source.
-    # e.g. "75% of B2B buyers consult AI before contacting a vendor"
-    # Must be extractable verbatim from source_content_snippet.
+    text: str = Field(
+        ...,
+        description=(
+            "The full sentence or complete phrase containing the stat. "
+            "Do NOT extract just the number. Min 10 chars."
+        ),
+    )
 
     source_name: str
     # Publication or organisation name.

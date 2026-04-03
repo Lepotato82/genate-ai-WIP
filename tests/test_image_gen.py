@@ -73,6 +73,9 @@ def test_mock_mode_returns_3_urls(monkeypatch):
     assert result["template_uid"] == "mock"
     assert result["generation_enabled"] is False
     assert result["error"] is None
+    assert result["background_hero_url"] == "https://mock.example.com/hero_bg.png"
+    assert result["hero_generation_enabled"] is True
+    assert result["hero_error"] is None
 
 
 def test_disabled_returns_empty(monkeypatch):
@@ -85,6 +88,8 @@ def test_disabled_returns_empty(monkeypatch):
 
     assert result["image_urls"] == []
     assert result["generation_enabled"] is False
+    assert result.get("background_hero_url") is None
+    assert result.get("hero_generation_enabled") is False
 
 
 def test_disabled_generation_enabled_false(monkeypatch):
@@ -393,9 +398,55 @@ def test_images_key_in_pipeline_output(monkeypatch):
     from pipeline import run
     result = run("https://linear.app", platform="linkedin")
 
+    assert "visual" in result
+    assert "image_prompt" in result["visual"]
     assert "images" in result
     imgs = result["images"]
     assert "image_urls" in imgs
     assert "slide_count" in imgs
     assert "generation_enabled" in imgs
     assert "error" in imgs
+    assert "background_hero_url" in imgs
+    assert "hero_generation_enabled" in imgs
+    assert "hero_error" in imgs
+
+
+def test_hero_image_invokes_provider(monkeypatch):
+    from config import settings
+    monkeypatch.setattr(settings, "MOCK_MODE", False)
+    monkeypatch.setattr(settings, "IMAGE_GENERATION_ENABLED", False)
+    monkeypatch.setattr(settings, "HERO_IMAGE_ENABLED", True)
+    monkeypatch.setattr(settings, "HERO_IMAGE_PROVIDER", "pollinations")
+
+    def fake_fetch(prompt: str):
+        assert "abstract" in prompt
+        return ("https://hero.test/out.png", None)
+
+    monkeypatch.setattr("agents.image_gen.fetch_hero_image", fake_fetch)
+    from agents import image_gen
+    result = image_gen.run(
+        _make_linkedin_formatted(),
+        _make_identity(),
+        visual={"image_prompt": "abstract gradient sky, no text"},
+    )
+    assert result["background_hero_url"] == "https://hero.test/out.png"
+    assert result["hero_generation_enabled"] is True
+    assert result["hero_error"] is None
+
+
+def test_hero_missing_prompt_no_fetch(monkeypatch):
+    from config import settings
+    monkeypatch.setattr(settings, "MOCK_MODE", False)
+    monkeypatch.setattr(settings, "IMAGE_GENERATION_ENABLED", False)
+    monkeypatch.setattr(settings, "HERO_IMAGE_ENABLED", True)
+    monkeypatch.setattr(settings, "HERO_IMAGE_PROVIDER", "pollinations")
+
+    def boom(_):
+        raise AssertionError("fetch_hero_image should not run without prompt")
+
+    monkeypatch.setattr("agents.image_gen.fetch_hero_image", boom)
+    from agents import image_gen
+    result = image_gen.run(_make_linkedin_formatted(), _make_identity(), visual={})
+    assert result["background_hero_url"] is None
+    assert result["hero_generation_enabled"] is False
+    assert result["hero_error"] and "image_prompt" in result["hero_error"]

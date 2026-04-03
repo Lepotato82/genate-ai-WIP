@@ -232,8 +232,62 @@ def test_min_logo_bytes_is_1000() -> None:
     assert input_processor.MIN_LOGO_BYTES == 1000
 
 
+def test_logo_deep_query_js_traverses_open_shadow_roots() -> None:
+    assert "shadowRoot" in input_processor._LOGO_DEEP_QUERY_JS
+    assert "querySelectorAll" in input_processor._LOGO_DEEP_QUERY_JS
+
+
 # ---------------------------------------------------------------------------
-# _extract_logo — css_tokens parameter
+# _logo_screenshot_box_ok (CLIP candidate geometry)
+# ---------------------------------------------------------------------------
+
+
+def test_logo_screenshot_box_ok_typical_logo_size() -> None:
+    assert input_processor._logo_screenshot_box_ok(120.0, 40.0) is True
+
+
+def test_logo_screenshot_box_ok_rejects_tiny() -> None:
+    assert input_processor._logo_screenshot_box_ok(20.0, 40.0) is False
+
+
+def test_logo_screenshot_box_ok_accepts_24px_nav_mark() -> None:
+    assert input_processor._logo_screenshot_box_ok(24.0, 24.0) is True
+
+
+def test_logo_screenshot_box_ok_rejects_below_min_edge() -> None:
+    assert input_processor._logo_screenshot_box_ok(20.0, 24.0) is False
+
+
+def test_logo_screenshot_box_ok_rejects_wide_strip() -> None:
+    assert input_processor._logo_screenshot_box_ok(500.0, 40.0) is False
+
+
+def test_logo_screenshot_box_ok_rejects_extreme_aspect() -> None:
+    assert input_processor._logo_screenshot_box_ok(300.0, 30.0) is False
+
+
+def test_finalize_raster_logo_bytes_noop_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(input_processor.settings, "LOGO_BG_REMOVAL_ENABLED", False)
+    data = b"\x89PNG\r\n\x1a\n" + b"\x00" * 500
+    assert input_processor._finalize_raster_logo_bytes(data) == data
+
+
+def test_finalize_raster_logo_bytes_calls_postprocess_when_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(input_processor.settings, "LOGO_BG_REMOVAL_ENABLED", True)
+    data = b"\x89PNG\r\n\x1a\n" + b"\x00" * 500
+
+    def _fake(b: bytes) -> bytes:
+        return b"processed"
+
+    monkeypatch.setattr(
+        "agents.logo_postprocess.maybe_remove_dark_background",
+        _fake,
+    )
+    assert input_processor._finalize_raster_logo_bytes(data) == b"processed"
+
+
+# ---------------------------------------------------------------------------
+# _extract_logo — null page / CLIP path
 # ---------------------------------------------------------------------------
 
 
@@ -247,52 +301,84 @@ class _NullPage:
         return []
 
 
-def test_extract_logo_css_tokens_none_does_not_crash() -> None:
-    result = input_processor._extract_logo(_NullPage(), "https://example.com", css_tokens=None)
+def test_extract_logo_null_page_returns_none() -> None:
+    result = input_processor._extract_logo(_NullPage(), "https://example.com")
     assert result == (None, None, None)
 
 
-def test_extract_logo_css_tokens_empty_does_not_crash() -> None:
-    result = input_processor._extract_logo(_NullPage(), "https://example.com", css_tokens={})
-    assert result == (None, None, None)
+def test_extract_logo_clip_before_og_image(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Priority 3 CLIP wins before header img and og:image when enabled and mocked."""
 
+    monkeypatch.setattr(input_processor.settings, "LOGO_CLIP_ENABLED", True)
+    png_winner = b"\x89PNG\r\n\x1a\n" + b"\x00" * 1200
+    png_other = b"\x89PNG\r\n\x1a\n" + b"\x01" * 1200
 
-def test_extract_logo_svg_priority_before_og_image() -> None:
-    """Priority 3.5 SVG extraction returns high-confidence before reaching og:image."""
-
-    # Build a large enough SVG with multiple paths and a logo label
-    svg_content = (
-        '<svg xmlns="http://www.w3.org/2000/svg" aria-label="logo" '
-        'width="120" height="40">'
-        + "<path d='M0 0'/>" * 10
-        + "</svg>"
+    monkeypatch.setattr(
+        input_processor,
+        "_collect_header_nav_screenshots",
+        lambda _page: [png_winner, png_other],
     )
-    svg_content = svg_content + " " * max(0, input_processor.MIN_LOGO_BYTES - len(svg_content))
-    svg_bytes = svg_content.encode("utf-8")
+    monkeypatch.setattr(
+        "agents.logo_clip.clip_dependencies_available",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "agents.logo_clip.pick_best_logo_candidate",
+        lambda _shots, _name: (png_winner, 0.99),
+    )
 
-    class _BoundingBox:
-        def bounding_box(self):
-            return {"width": 120, "height": 40}
-
-        def evaluate(self, _expr):
-            return svg_content
-
-    class _SvgPage:
+    class _Page:
         def query_selector(self, selector):
-            # og:image exists — but should NOT be reached before SVG succeeds
             if "og:image" in selector:
-                raise AssertionError("og:image was reached — SVG priority failed")
+                raise AssertionError("og:image should not run when CLIP succeeds")
             return None
 
-        def query_selector_all(self, selector):
-            if "svg" in selector:
-                return [_BoundingBox()]
+        def query_selector_all(self, *_a, **_kw):
             return []
 
     logo_bytes, logo_url, confidence = input_processor._extract_logo(
-        _SvgPage(), "https://example.com", css_tokens={}
+        _Page(), "https://example.com"
     )
-
     assert confidence == "high"
-    assert logo_url is not None and "svg" in logo_url
-    assert logo_bytes is not None and len(logo_bytes) >= input_processor.MIN_LOGO_BYTES
+    assert logo_url is not None and "clip" in logo_url
+    assert logo_bytes == png_winner
+
+
+# ---------------------------------------------------------------------------
+# og:image size guard
+# ---------------------------------------------------------------------------
+
+
+def test_og_image_passes_size_guard_all_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(input_processor.settings, "LOGO_OG_IMAGE_MAX_BYTES", 0)
+    monkeypatch.setattr(input_processor.settings, "LOGO_OG_IMAGE_MAX_EDGE_PX", 0)
+    assert input_processor._og_image_passes_size_guard(b"\x00" * 50_000) is True
+
+
+def test_og_image_passes_size_guard_default_max_bytes_rejects_large() -> None:
+    """Default LOGO_OG_IMAGE_MAX_BYTES skips hero-sized og assets."""
+    assert input_processor._og_image_passes_size_guard(b"x" * 600_000) is False
+    assert input_processor._og_image_passes_size_guard(b"x" * 400_000) is True
+
+
+def test_og_image_passes_size_guard_max_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(input_processor.settings, "LOGO_OG_IMAGE_MAX_BYTES", 800)
+    assert input_processor._og_image_passes_size_guard(b"x" * 900) is False
+    assert input_processor._og_image_passes_size_guard(b"x" * 700) is True
+
+
+def test_og_image_passes_size_guard_max_edge(monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+
+    from PIL import Image
+
+    monkeypatch.setattr(input_processor.settings, "LOGO_OG_IMAGE_MAX_EDGE_PX", 100)
+    big = Image.new("RGB", (200, 40), color=(1, 2, 3))
+    buf = io.BytesIO()
+    big.save(buf, format="PNG")
+    assert input_processor._og_image_passes_size_guard(buf.getvalue()) is False
+
+    small = Image.new("RGB", (90, 32), color=(1, 2, 3))
+    buf2 = io.BytesIO()
+    small.save(buf2, format="PNG")
+    assert input_processor._og_image_passes_size_guard(buf2.getvalue()) is True

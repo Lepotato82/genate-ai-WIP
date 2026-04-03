@@ -18,7 +18,7 @@ Gated by RESEARCH_AUGMENTATION_ENABLED=false.
 from __future__ import annotations
 
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from agents._utils import parse_json_object
 from config import settings
@@ -61,15 +61,18 @@ def _classify_credibility(source_url: str, source_name: str) -> str:
 
 def _normalize_url(url: str) -> str:
     """
-    Strip query params and fragments before deduplication.
+    Strip query params and fragments; lowercase scheme and host for dedup.
     Prevents Tavily tracking params (srsltid=, utm_source=, etc.)
     from causing the same page to be processed twice.
 
     https://statista.com/topics/871/?srsltid=abc → https://statista.com/topics/871
     """
     try:
-        parsed = urlparse(url)
-        return f"{parsed.scheme}://{parsed.netloc}{parsed.path}".rstrip("/")
+        p = urlparse(url.strip())
+        scheme = (p.scheme or "http").lower()
+        netloc = p.netloc.lower()
+        path = (p.path or "").rstrip("/")
+        return urlunparse((scheme, netloc, path, "", "", "")).rstrip("/")
     except Exception:
         return url
 
@@ -82,65 +85,168 @@ def _normalize_url(url: str) -> str:
 # Keys must match values returned by product_analysis.product_category.
 _CATEGORY_QUERY_OVERRIDES: dict[str, list[str]] = {
     "marketing-content": [
-        "generative engine optimization brand visibility statistics 2025",
-        "AI chatbot brand citations research Gartner Forrester 2025",
-        "AI search engine brand discovery marketing research report",
+        "generative engine optimization brand visibility B2B statistics 2026",
+        "AI chatbot brand citations research Gartner Forrester 2026",
+        "AI search engine brand discovery B2B market research report 2026",
     ],
     "data-analytics": [
-        "business intelligence data analytics adoption statistics 2025",
-        "data driven decision making enterprise research Gartner 2025",
-        "analytics platform ROI statistics survey report",
+        "business intelligence data analytics B2B adoption statistics 2026",
+        "data driven decision making enterprise research Gartner 2026",
+        "analytics platform ROI B2B statistics market research survey 2026",
     ],
     "developer-tool": [
-        "developer productivity tools adoption statistics 2025",
-        "software development workflow research report",
-        "engineering team tooling survey GitHub Stack Overflow 2025",
+        "developer productivity tools B2B adoption statistics 2026",
+        "software development workflow market research report 2026",
+        "engineering team tooling survey GitHub Stack Overflow B2B 2026",
     ],
     "fintech-saas": [
-        "SaaS billing subscription management statistics 2025",
-        "payment failure recovery dunning research report",
-        "subscription revenue churn statistics Recurly Baremetrics",
+        "SaaS billing subscription management B2B statistics 2026",
+        "payment failure recovery dunning market research report",
+        "subscription revenue churn statistics Recurly Baremetrics B2B survey",
     ],
     "hr-tech": [
-        "HR software adoption statistics 2025 Gartner",
-        "employee experience platform research report",
-        "workforce management automation survey",
+        "HR software B2B adoption statistics 2026 Gartner",
+        "employee experience platform market research report 2026",
+        "workforce management automation B2B industry survey 2026",
     ],
     "customer-support": [
-        "customer support automation statistics 2025",
-        "CRM adoption enterprise research Salesforce Gartner",
-        "customer experience ROI statistics report",
+        "customer support automation B2B statistics 2026",
+        "CRM adoption enterprise research Salesforce Gartner 2026",
+        "customer experience ROI B2B market research report 2026",
     ],
 }
+
+# Pain-first query tails — avoid defaulting every query to B2B + category.
+_NEUTRAL_RESEARCH_TAIL = "statistics survey research findings report 2025 2026"
+_ALT_RESEARCH_TAIL = "survey data prevalence study research report 2025 2026"
+
+
+def _is_likely_b2c(product: ProductKnowledge) -> bool:
+    """
+    Heuristic from scraped text only (no new schema).
+    When true, category anchor queries skip forced 'B2B' wording.
+    """
+    blob = " ".join(
+        filter(
+            None,
+            [
+                (product.target_customer or ""),
+                (product.tagline or ""),
+                product.description or "",
+            ],
+        )
+    ).lower()
+    hints = (
+        "consumer",
+        "b2c",
+        "patient",
+        "patients",
+        "mobile app",
+        "app users",
+        "wellness",
+        "personal health",
+        "google play",
+        "app store",
+        "everyday user",
+        "individual user",
+        "end user",
+        "health app",
+        "fitness app",
+    )
+    return any(h in blob for h in hints)
+
+
+def _trim_query_fragment(text: str, max_len: int = 90) -> str:
+    text = (text or "").strip()
+    if len(text) <= max_len:
+        return text
+    cut = text[:max_len].rsplit(" ", 1)[0]
+    return cut if cut else text[:max_len]
+
+
+def _pain_led_query(fragment: str, tail: str = _NEUTRAL_RESEARCH_TAIL) -> str:
+    frag = _trim_query_fragment(fragment, 90)
+    return f"{frag} {tail}".strip() if frag else tail
+
+
+def _first_pain_query(product: ProductKnowledge) -> str:
+    pains = product.pain_points or []
+    if pains:
+        return _pain_led_query(pains[0])
+    if product.tagline:
+        return _pain_led_query(product.tagline)
+    desc = (product.description or "").strip()
+    if desc:
+        return _pain_led_query(desc[:120])
+    return _pain_led_query(product.product_name)
+
+
+def _second_pain_query(product: ProductKnowledge) -> str:
+    pains = product.pain_points or []
+    if len(pains) >= 2:
+        return _pain_led_query(pains[1], _ALT_RESEARCH_TAIL)
+    if len(pains) == 1:
+        desc = (product.description or "").strip()
+        if len(desc) > 80:
+            mid = desc[40 : 40 + 120]
+            return _pain_led_query(mid, _ALT_RESEARCH_TAIL)
+        return _pain_led_query(pains[0], _ALT_RESEARCH_TAIL)
+    if product.tagline and (product.description or "").strip():
+        desc = (product.description or "").strip()
+        start = min(50, max(0, len(desc) // 3))
+        return _pain_led_query(desc[start : start + 100], _ALT_RESEARCH_TAIL)
+    if product.benefits:
+        return _pain_led_query(product.benefits[0], _ALT_RESEARCH_TAIL)
+    desc = (product.description or "").strip()
+    if len(desc) > 100:
+        return _pain_led_query(desc[90:200], _ALT_RESEARCH_TAIL)
+    return _pain_led_query(
+        f"{product.product_name} user challenges",
+        _ALT_RESEARCH_TAIL,
+    )
+
+
+def _category_anchor_query(
+    product: ProductKnowledge,
+    category: str,
+    override_first: str | None,
+) -> str:
+    if override_first:
+        return override_first.strip()
+    cat = category or "saas"
+    target = _trim_query_fragment(product.target_customer or "", 50)
+    b2c = _is_likely_b2c(product)
+    if b2c:
+        parts = [
+            f"{cat} consumer market research statistics 2026 industry report",
+        ]
+        if target:
+            parts.append(target)
+        return " ".join(parts).strip()
+    parts = [f"{cat} B2B market statistics 2026 market research report"]
+    if target:
+        parts.append(target)
+    return " ".join(parts).strip()
 
 
 def _build_queries(product: ProductKnowledge) -> list[str]:
     """
-    Build up to 3 targeted Tavily search queries from ProductKnowledge.
+    Build 3 Tavily queries: 2 pain/context-led, 1 category/industry anchor.
 
-    Q1 — Category-level industry stat: what is the market doing?
-    Q2 — Pain point validation: research proving the pain is real.
-    Q3 — Buyer behaviour: how do buyers in this space behave?
+    Pain-first (~2/3) avoids miscategorized B2C products (e.g. wellness apps
+    tagged vertical-saas) pulling only generic B2B SaaS corpus. Category
+    overrides supply the third query's anchor when mapped.
     """
     category = (product.product_category or "SaaS").lower().strip()
 
-    # Use category-specific overrides when available — much sharper than generic
-    if category in _CATEGORY_QUERY_OVERRIDES:
-        return _CATEGORY_QUERY_OVERRIDES[category]
+    q1 = _first_pain_query(product)
+    q2 = _second_pain_query(product)
 
-    # Generic fallback
-    pain = product.pain_points[0] if product.pain_points else ""
-    target = product.target_customer or "B2B software teams"
+    override_row = _CATEGORY_QUERY_OVERRIDES.get(category)
+    override_first = override_row[0].strip() if override_row else None
+    q3 = _category_anchor_query(product, category, override_first)
 
-    queries = [
-        f"{category} market statistics trends research 2024 2025",
-        (
-            f"{pain[:60]} industry data research report"
-            if pain
-            else f"{category} challenges problems survey 2024"
-        ),
-        f"{target} {category} adoption statistics research",
-    ]
+    queries = [q1, q2, q3]
 
     seen: set[str] = set()
     deduped: list[str] = []
@@ -208,13 +314,16 @@ _EXTRACTION_SYSTEM = """You extract statistics from research content.
 RULES — read carefully before responding:
 1. Extract ONE specific statistic, percentage, or data point from the content.
 2. The stat must appear in the content — do not invent or infer anything.
-3. The stat must be specific: "67% of B2B buyers" not "most buyers".
-4. If no specific stat exists in the content, return null for stat.
-5. Return ONLY valid JSON. No markdown. No preamble.
+3. The stat must be specific: "67% of B2B buyers consult AI before contacting a vendor" not "most buyers".
+4. The JSON "stat" value must be the full sentence or clause copied from the content that contains
+   the figure — at least 10 characters and at least 3 words. Never return only the naked number
+   (e.g. reject "54%", "20", "5% and 8%" alone).
+5. If no specific stat exists in the content, return null for stat.
+6. Return ONLY valid JSON. No markdown. No preamble.
 
-JSON format:
+JSON format (use null for stat when no qualifying statistic exists):
 {
-  "stat": "exact stat text from content, or null if none found",
+  "stat": "67% of B2B buyers consult AI search engines before contacting a vendor.",
   "source_name": "publication or organization name",
   "publication_year": 2024,
   "relevance_reason": "one sentence why this matters for the product",
@@ -246,6 +355,8 @@ def _extract_stat_from_result(
         f"Content to extract from:\n{content[:800]}\n\n"
         "Extract one specific statistic from this content that is "
         "relevant to the product category or pain points above. "
+        "Return the full source sentence or clause containing the stat (min 10 chars, at least 3 words), "
+        "never the number alone. "
         "Return null for stat if no specific statistic exists."
     )
 

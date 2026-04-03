@@ -1,12 +1,11 @@
 """
-Image Generation Agent — Phase 2.
+Image Generation Agent — Phase 2 / Phase 6.
 
-Calls Bannerbear API to produce brand-consistent carousel slides.
-Each slide is one Bannerbear API call. Returns a list of image URLs
-in slide order.
+- Bannerbear: branded carousel slides when IMAGE_GENERATION_ENABLED=true.
+- Hero background: text-to-image URL when HERO_IMAGE_ENABLED=true (Pollinations, Fal, …).
+  Uses image_prompt from visual_gen (passed as ``visual``).
 
-Only runs when IMAGE_GENERATION_ENABLED=true.
-Falls back gracefully when disabled or when API call fails.
+Falls back gracefully when disabled or when API calls fail.
 
 Consumed by: pipeline._run_entry(), pipeline.run_stream()
 """
@@ -18,6 +17,7 @@ import time
 
 import httpx
 
+from agents.hero_image_providers import fetch_hero_image
 from config import settings
 from schemas.brand_identity import BrandIdentity
 from schemas.formatted_content import FormattedContent
@@ -42,7 +42,34 @@ def _mock_result() -> dict:
         "template_uid": "mock",
         "generation_enabled": False,
         "error": None,
+        "background_hero_url": "https://mock.example.com/hero_bg.png",
+        "hero_generation_enabled": True,
+        "hero_error": None,
     }
+
+
+def _hero_fields(visual: dict | None) -> dict[str, object]:
+    """Run hero T2I when enabled. Always returns the three hero keys."""
+    visual = visual or {}
+    out: dict[str, object] = {
+        "background_hero_url": None,
+        "hero_generation_enabled": False,
+        "hero_error": None,
+    }
+    prov = (settings.HERO_IMAGE_PROVIDER or "none").strip().lower()
+    if not settings.HERO_IMAGE_ENABLED or prov in ("none", ""):
+        return out
+
+    prompt = (visual.get("image_prompt") or "").strip()
+    if not prompt:
+        out["hero_error"] = "no image_prompt from visual_gen"
+        return out
+
+    url, err = fetch_hero_image(prompt)
+    out["background_hero_url"] = url
+    out["hero_generation_enabled"] = url is not None
+    out["hero_error"] = err
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -333,28 +360,29 @@ def _poll_bannerbear(
 def run(
     formatted: FormattedContent,
     identity: BrandIdentity,
+    visual: dict | None = None,
 ) -> dict:
     """
-    Generate branded carousel slide images via Bannerbear.
+    Generate hero background (optional) and Bannerbear slides (optional).
 
     Returns dict with:
-      image_urls: list[str] — one URL per slide (empty when disabled)
-      slide_count: int
-      template_uid: str
-      generation_enabled: bool
-      error: str | None
+      image_urls, slide_count, template_uid, generation_enabled, error — Bannerbear
+      background_hero_url, hero_generation_enabled, hero_error — text-to-image hero
     """
     if settings.MOCK_MODE:
         return _mock_result()
 
+    hero = _hero_fields(visual)
+
     if not settings.IMAGE_GENERATION_ENABLED:
-        logger.info("[image_gen] IMAGE_GENERATION_ENABLED=false — skipping")
+        logger.info("[image_gen] IMAGE_GENERATION_ENABLED=false — skipping Bannerbear")
         return {
             "image_urls": [],
             "slide_count": 0,
             "template_uid": settings.BANNERBEAR_TEMPLATE_UID,
             "generation_enabled": False,
             "error": None,
+            **hero,
         }
 
     if not settings.BANNERBEAR_API_KEY:
@@ -365,6 +393,7 @@ def run(
             "template_uid": settings.BANNERBEAR_TEMPLATE_UID,
             "generation_enabled": False,
             "error": "BANNERBEAR_API_KEY not configured",
+            **hero,
         }
 
     slides = _split_into_slides(formatted)
@@ -394,4 +423,5 @@ def run(
         "template_uid": settings.BANNERBEAR_TEMPLATE_UID,
         "generation_enabled": True,
         "error": "; ".join(errors) if errors else None,
+        **hero,
     }

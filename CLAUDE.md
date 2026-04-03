@@ -6,34 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Single Source of Truth
 
-**Read `GENATE_CONTEXT.md` at the start of every session.** It is the authoritative reference for architecture decisions, stack choices, agent pipeline order, LLM routing rules, team ownership, and the build roadmap. This file supersedes anything written here.
+**Read `GENATE_CONTEXT.md` at the start of every session.** It is the authoritative reference for architecture decisions. 
+
+**Verification Step:** Before executing any code changes, briefly summarize the architectural rule from `GENATE_CONTEXT.md` that governs the component to prove you read it.
 
 ---
 
 ## Commands
 
 ```bash
-# Install dependencies (uses uv)
-uv sync
-
-# Run the API server (development)
-uvicorn api:app --reload
-
-# Run all fast (non-integration) tests
-pytest
-
-# Run a single test file
-pytest tests/test_image_gen.py
-
-# Run integration tests (real network, real LLM — mark explicitly)
-pytest -m integration
-
-# Lint
-ruff check .
-
-# Type-check
-pyright
-```
+uv sync                                    # Install dependencies
+uvicorn api:app --reload                   # Run API
+pytest                                     # Run all fast tests
+pytest tests/test_image_gen.py             # Run single test
+pytest -m integration                      # Run integration tests
+ruff check .                               # Lint
+pyright                                    # Type-check
+Before executing any code changes, briefly summarize the architectural rule from GENATE_CONTEXT.md that governs this component to prove you read it.
 
 ### Running the pipeline directly
 
@@ -111,6 +100,12 @@ Agents run in order. Steps 2+3 are parallel; steps 6+7 are parallel.
 `pipeline.run_linkedin(url)` — validation entry point (skips visual gen + image gen).
 `pipeline.run(url, platform=)` — full pipeline, returns dict with `evaluation`, `images`, `brand_identity`.
 `pipeline.run_stream(url, platform=)` — full SSE production chain, yields per-agent progress events.
+
+### Phase 7 — Interactive editor *(roadmap)*
+
+- Full pipeline output (`pipeline.run()` dict or persisted run JSON, e.g. `test_data/pipeline_real_*.json`) is the **project file** that should **hydrate** a Next.js canvas (Fabric.js or Konva.js): `brand_identity` → default colors/logo/fonts; `formatted_content` → text layers.
+- **Bannerbear** (Phase 2) stays the **automated** static path; Phase 7 is **human-in-the-loop** editing, live overrides, then **client-side flatten** to PNG / multi-page PDF.
+- Owner: Person C (`/frontend/`). Tasks **18–20** in [`agents/TODO.md`](agents/TODO.md); architecture in [`GENATE_CONTEXT.md`](GENATE_CONTEXT.md) **Phase 7**.
 
 ### LLM Abstraction Rule — Never Break This
 
@@ -207,12 +202,12 @@ Priority: fix after first successful Groq real-mode run.
 |---|---|---|---|
 | 1 | `apple-touch-icon` link tag | high | Most reliable — brand-controlled |
 | 2 | `<link rel="icon">` size ≥192px | high | |
-| 3 | `<img>` in `<header>` with "logo" in class/id/alt/src | high | |
-| 3.5 | SVG in header/nav matching brand color or aria-label | high | Added for Framer/Webflow sites |
-| 4 | `og:image` meta tag | medium | May be a marketing banner, not a logo |
-| 5 | Favicon | low | |
+| 3 | Local CLIP on header/nav element screenshots | high | Runs before header `img` and `og:image`; `agents/logo_clip.py`; `LOGO_CLIP_*` box filters |
+| 4 | `<img>` in `<header>` with "logo" in class/id/alt/src | high | |
+| 5 | `og:image` meta tag | medium | Default **`LOGO_OG_IMAGE_MAX_BYTES=500000`** skips hero-sized assets; **`LOGO_OG_IMAGE_MAX_EDGE_PX`** (>0) adds dimension guard |
+| 6 | Favicon | low | |
 
-**Priority 3.5 detail:** Queries `header svg, nav svg, [role="banner"] svg, .navbar svg, .nav svg, .header svg`. Matches on: brand color from `css_tokens` appearing in SVG fill; label match (`logo`, `brand`, `mark`, `icon`, `aria-label`, `title`); bounding box ≥24×24px; path-count heuristic fallback (≥2 `<path>` elements).
+**Priority 3 detail:** Playwright screenshots `header`/`nav`/`[role="banner"]` `img` and `svg`, plus scoped `header|nav|banner .logo img|svg`, using **`_LOGO_DEEP_QUERY_JS`** to run the same selector inside **open shadow roots** (Framer/Webflow components) before falling back to light-DOM `query_selector_all`. Closed shadow roots are not pierceable from page JS. Box size must fall in the logo-likely band (**`LOGO_CLIP_MIN_BOX_PX` default 24**, `LOGO_CLIP_MAX_BOX_W`, `LOGO_CLIP_MAX_BOX_H`, `LOGO_CLIP_MAX_ASPECT_RATIO`). CLIP scores PNGs against `"{product_name} official company logo"`. Optional **`LOGO_OCR_ENABLED`**: pytesseract soft bonus on logits when OCR text fuzzy-matches the inferred product name (`agents/logo_ocr.py`; install `uv sync --extra logo_ocr` + system tesseract). **`LOGO_BG_REMOVAL_ENABLED`**: Pillow heuristic removes uniform dark-plate backgrounds on PNG rasters before return (`agents/logo_postprocess.py`).
 
 **Validation results:**
 
@@ -223,7 +218,7 @@ Priority: fix after first successful Groq real-mode run.
 | razorpay.com | medium | og:image | 2.3 MB |
 | chargebee.com | high | apple-touch-icon | 4 KB |
 | freshworks.com | high | apple-touch-icon | 23 KB |
-| lemonhealth.ai | medium | og:image (snippet3.png) | — SVG priority 3.5 may improve this |
+| lemonhealth.ai | low | `favicon.png` | Deep + flat query still **0** `img`/`svg` matches on live page (closed shadow, non-raster mark, or timing); og guard skips hero. `scripts/debug_logo.py -v` |
 | browserstack.com | None | — | No qualifying source found |
 | moengage.com | None | — | No qualifying source found |
 
@@ -249,6 +244,8 @@ Word count targets (enforced by Copywriter prompt, reference values in `platform
 Copywriter prompt enforces depth via `CONTENT DEPTH RULE` section in `copywriting_v1.yaml` (v1.4). Never pads — `long_form` means more depth, not more repetition.
 
 In MOCK_MODE: `long_form` when `RESEARCH_AUGMENTATION_ENABLED=true` or `feature_count >= 4 AND proof_point_count >= 2`.
+
+**Known gap — `long_form` length is not Python-enforced (March 2026):** Side-by-side real captures (`test_data/pipeline_real_lemonhealth.ai_20260331T135439Z.json`, `test_data/pipeline_real_searchable.com_20260331T135642Z.json`) both have `content_depth: long_form`, yet Searchable’s `full_post` is much shorter than Lemon’s. The LLM follows the 600–900w user-message guidance unevenly; the Evaluator does not check minimum length, so short output can still pass. **Backlog:** Task 14 in [`agents/TODO.md`](agents/TODO.md).
 
 ## Research Augmentation (Step 3.5)
 
@@ -456,6 +453,8 @@ design_category consistent across all three runs: `minimal-saas` (was inconsiste
 
 ### IMPROVEMENT — Logo extraction priority 3.5 (SVG in header/nav)
 
+**Update (March 2026):** Priority 3.5 is now **CLIP on rasterized element screenshots** (see table above). The SVG-specific heuristics below were replaced; SVG elements are still captured when Playwright screenshots them as PNG.
+
 **Added:** Session after Phase 2 validation
 **Problem:** Sites built on Framer/Webflow/component frameworks render logos as inline SVGs inside JS components. The previous priority 4 (basic SVG extraction) only took the first SVG in `header` without any quality checks — it could grab a decorative icon instead of the logo. Confirmed affected: `lemonhealth.ai`, `browserstack.com`, `moengage.com`.
 
@@ -470,7 +469,7 @@ design_category consistent across all three runs: `minimal-saas` (was inconsiste
 Priority order in docstring updated: old priority 4 (inline SVG) is now labeled "Priority 3.5", og:image becomes "Priority 4".
 
 **Still deferred to Phase 3:**
-- Apple-touch-icon black background baked in — needs Pillow background removal before compositing on light backgrounds
+- Apple-touch-icon black background — optional **`LOGO_BG_REMOVAL_ENABLED`** heuristic exists; full-quality removal for all plates deferred
 - Font injection into Bannerbear — template uses default font, brand fonts not yet applied to text layers
 
 ---
@@ -547,8 +546,9 @@ The template UID (`BANNERBEAR_TEMPLATE_UID`) must expose these named layers:
 - Images are generated from the **first** formatted output, not the final evaluator-approved copy. If the evaluator triggers a retry and the second copy is used, the images correspond to copy v1. Fix: defer image generation to after the final evaluator approval. Deferred to Phase 3.
 - Bannerbear `synchronous=True` is not honored by all Bannerbear plan tiers. `_poll_bannerbear()` is the async fallback — called when the initial response has a `uid` but no `image_url`.
 - Instagram and Twitter content types are not yet split into slides — `_split_into_slides()` only handles `linkedin_content`. Instagram uses `preview_text` + `body` as a single slide.
-- **Apple-touch-icon black background** — icon files include a background fill; shows as a black box when composited on light-background brands. Fix requires Pillow background-removal before compositing. Deferred to Phase 3.
+- **Apple-touch-icon black background** — optional mitigated by **`LOGO_BG_REMOVAL_ENABLED=true`** (corner-based dark-plate transparency in `logo_postprocess.py`: charcoal/navy tiles, per-channel + Euclidean match). Gradients and complex plates may still need Phase 3 compositing or a heavier model (e.g. rembg).
 - ~~**primary_color == background_color**~~ — **Fixed** via `_pick_accent_color()`. See BUG-007.
+- Long-term, user-facing polish (colors, copy, logo) may land primarily in the **Phase 7 interactive editor** rather than only re-invoking Bannerbear.
 
 ---
 
@@ -562,6 +562,6 @@ The template UID (`BANNERBEAR_TEMPLATE_UID`) must expose these named layers:
 
 **Windows UTF-8:** The Windows terminal defaults to cp1252. `tests/conftest.py` reconfigures stdout/stderr to UTF-8. Any `print()` of scraped text in agents must use `sys.stdout.buffer.write(...encode('utf-8', errors='replace'))` or be removed.
 
-**Test suite:** 308 tests, all fast (no network calls — MOCK_MODE). Run with `pytest`. Key files: `test_image_gen.py` (27), `test_logo_extraction.py` (23), `test_color_normalisation.py` (29), `test_research_agent.py` (21), `test_content_depth.py` (17), `test_brand_identity.py`, `test_bug_fixes.py`, `test_platform_expansion.py`, `test_agents_llm_import_policy.py` (enforces LLM abstraction rule).
+**Test suite:** 370+ tests, all fast (no network calls — MOCK_MODE). Run with `pytest`. Key files: `test_image_gen.py`, `test_logo_extraction.py`, `test_logo_postprocess.py`, `test_logo_ocr.py`, `test_color_normalisation.py`, `test_research_agent.py`, `test_content_depth.py`, `test_brand_identity.py`, `test_bug_fixes.py`, `test_platform_expansion.py`, `test_agents_llm_import_policy.py` (enforces LLM abstraction rule).
 
 **`BrandIdentity` is the interface between pipeline and image generation.** Always construct via `pipeline.build_brand_identity()` — never construct directly. This ensures `_to_hex()` normalisation runs on all color fields before they reach `image_gen.py` or Bannerbear.

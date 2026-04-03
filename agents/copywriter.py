@@ -214,10 +214,17 @@ def run(
             + "\n".join(lines)
         )
 
+    linkedin_long_form_line = ""
+    if content_brief.platform == "linkedin" and content_brief.content_depth == "long_form":
+        linkedin_long_form_line = (
+            "linkedin_word_range: 600-900 (hard minimum 600 before finishing)\n"
+        )
+
     user_msg = (
         f"platform: {content_brief.platform}\n"
         f"narrative_arc: {strategy_brief.narrative_arc}\n"
         f"content_depth: {content_brief.content_depth}\n"
+        f"{linkedin_long_form_line}"
         f"lead_pain_point: {strategy_brief.lead_pain_point}\n"
         f"primary_claim: {strategy_brief.primary_claim}\n"
         f"proof_point: {strategy_brief.proof_point}\n"

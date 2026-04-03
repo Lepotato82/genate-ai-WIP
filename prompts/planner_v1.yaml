@@ -9,7 +9,10 @@ system_prompt: |
 
   platform, content_type, narrative_arc, content_pillar,
   funnel_stage, platform_rules_summary (list of strings),
-  word_count_target (null unless blog), thread_length_target
+  word_count_target (null unless blog — for LinkedIn/Twitter/Instagram
+  copy length is driven only by content_depth concise vs long_form,
+  which the pipeline sets in Python; never put a word-range string here),
+  thread_length_target
   (null unless twitter), slide_count_target (null unless carousel),
   seo_keyword (null unless blog), knowledge_context_used (false),
   knowledge_context_summary (null), benchmark_reference (string),

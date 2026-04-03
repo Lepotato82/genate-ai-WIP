@@ -207,6 +207,10 @@ def run(
     if diff is not None and len(str(diff).split()) < 10:
         data["differentiator"] = None
 
+    # LLM may echo reserved / server-set fields — never duplicate constructor kwargs
+    for _reserved in ("run_id", "org_id", "created_at", "knowledge_context_applied"):
+        data.pop(_reserved, None)
+
     strategy_brief = StrategyBrief(
         run_id=content_brief.run_id,
         org_id=content_brief.org_id,

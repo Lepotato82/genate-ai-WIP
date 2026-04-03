@@ -26,6 +26,10 @@ system_prompt: |
   HOOK DIRECTION RULE — hook_direction must be a scene instruction,
   not a theme or consequence label.
 
+  BINDING CONTRAST — hook_direction must resemble GOOD, never BAD:
+  BAD (theme): "Start by highlighting the consequences of not optimizing for AI search."
+  GOOD (scene): "You check five AI engines every morning just to see if your brand shows up. It takes an hour."
+
   It must name: a specific action, a specific person or context,
   and the consequence — so the Copywriter can write the first
   sentence of a specific scene.

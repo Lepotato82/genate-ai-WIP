@@ -21,6 +21,23 @@ SITES = [
 ]
 
 
+def _logo_diag(input_pkg) -> dict:
+    if input_pkg is None:
+        return {
+            "has_logo": False,
+            "logo_url": None,
+            "logo_confidence": None,
+            "clip_logo": False,
+        }
+    lu = input_pkg.logo_url
+    return {
+        "has_logo": input_pkg.has_logo,
+        "logo_url": lu,
+        "logo_confidence": input_pkg.logo_confidence,
+        "clip_logo": bool(lu and "clip-header-nav-logo" in lu),
+    }
+
+
 def main() -> None:
     settings.MOCK_MODE = False
 
@@ -57,12 +74,17 @@ def main() -> None:
             except Exception as exc:  # pragma: no cover - safety for real runs
                 scrape_error = (scrape_error + " | " if scrape_error else "") + f"product_analysis error: {exc}"
 
+        logo_diag = _logo_diag(input_pkg)
         input_package_json = {
             "css_token_count": len(input_pkg.css_tokens) if input_pkg else 0,
             "css_tokens": input_pkg.css_tokens if input_pkg else {},
             "scrape_word_count": input_pkg.scrape_word_count if input_pkg else 0,
             "has_screenshot": bool(input_pkg and input_pkg.screenshot_bytes is not None),
             "has_og_image": bool(input_pkg and input_pkg.og_image_bytes is not None),
+            "has_logo": logo_diag["has_logo"],
+            "logo_confidence": logo_diag["logo_confidence"],
+            "clip_logo": logo_diag["clip_logo"],
+            "logo_url": logo_diag["logo_url"],
             "scrape_error": scrape_error,
             "scraped_text_preview": (input_pkg.scraped_text[:500] if input_pkg else ""),
         }
@@ -76,12 +98,16 @@ def main() -> None:
             }
         )
 
+        lu = logo_diag["logo_url"] or ""
         summary_rows.append(
             {
                 "site": url.replace("https://", ""),
                 "tokens": input_package_json["css_token_count"],
                 "word_count": input_package_json["scrape_word_count"],
                 "has_og": "YES" if input_package_json["has_og_image"] else "NO",
+                "has_logo": "YES" if logo_diag["has_logo"] else "NO",
+                "clip": "YES" if logo_diag["clip_logo"] else "NO",
+                "logo_snip": (lu[:40] + "...") if len(lu) > 40 else lu,
                 "design_category": brand.design_category if brand else "ERROR",
                 "tone": brand.tone if brand else "ERROR",
                 "product_category": product.product_category if product else "ERROR",
@@ -94,14 +120,23 @@ def main() -> None:
     out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     print()
-    print("Site          | tokens | word_count | has_og | design_category    | tone      | product_category      | proof_points")
-    print("------------- | ------ | ---------- | ------ | ------------------ | --------- | --------------------- | ------------")
+    print(
+        "Site          | tokens | word_count | has_og | has_logo | clip | logo_snip            | "
+        "design_category    | tone      | product_category      | proof_points"
+    )
+    print(
+        "------------- | ------ | ---------- | ------ | -------- | ---- | -------------------- | "
+        "------------------ | --------- | --------------------- | ------------"
+    )
     for row in summary_rows:
         print(
             f"{row['site']:<13} | "
             f"{row['tokens']:>6} | "
             f"{row['word_count']:>10} | "
             f"{row['has_og']:^6} | "
+            f"{row['has_logo']:^8} | "
+            f"{row['clip']:^4} | "
+            f"{row['logo_snip']:<20} | "
             f"{row['design_category']:<18} | "
             f"{row['tone']:<9} | "
             f"{row['product_category']:<21} | "

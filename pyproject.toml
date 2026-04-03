@@ -38,8 +38,11 @@ dependencies = [
     "PyYAML",
     "httpx",
     "aiohttp",
-    "Pillow",
+    "pillow",
     "tavily-python>=0.7.23",
+    "transformers>=5.4.0",
+    "torch>=2.11.0",
+    "pytest>=9.0.2",
 ]
 
 [project.optional-dependencies]
@@ -48,6 +51,9 @@ dev = [
     "pytest-asyncio",
     "ruff",
     "pyright",
+]
+logo_ocr = [
+    "pytesseract>=0.3.10",
 ]
 
 [tool.pytest.ini_options]

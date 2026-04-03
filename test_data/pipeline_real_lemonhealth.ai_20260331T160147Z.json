@@ -1,0 +1,463 @@
+{
+  "captured_at": "2026-03-31T16:01:47.270541+00:00",
+  "url": "https://lemonhealth.ai",
+  "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+  "settings": {
+    "MOCK_MODE": false,
+    "IMAGE_GENERATION_ENABLED": false,
+    "HERO_IMAGE_ENABLED": true,
+    "HERO_IMAGE_PROVIDER": "pollinations",
+    "RESEARCH_AUGMENTATION_ENABLED": true,
+    "LLM_PROVIDER": "groq"
+  },
+  "input_package": {
+    "url": "https://lemonhealth.ai",
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "scraped_text": "Product\nHow it works\nArticles\nJoin Waitlist\nThe AI for\nyour health\nLemon helps you take action for your health - at the right time.\nApp Store\nGoogle Play\nOUR PRODUCT\nThe AI that turns insights\ninto action\nOne app for your health — meals, fitness, sleep, and more.\nApp Store\nGoogle Play\nLemon continuously learns from your lifestyle and data to give you real-time personalized guidance.\nHOW IT WORKS\nReady to start your\nhealth journey?\nSimplify your health journey with one app that does it all.\nTell us about yourself\n\nShare what matters to you. Your health goals, lifestyle and preferences.\n\nConnect your world\n\nDecide what you want to connect: your favorites apps, trackers, calendars and more.\n\nStart taking actions!\n\nLemon understands you and will have the best actions for you - at the right time - to achieve your goals.\n\nFAQ's\n\nYou've got question, we've got answers.\n\nGeneral\nSet up\nData Privacy & Security\nSupport\nWhat is Lemon?\n\nLemon is your personalized health companion that helps you take meaningful actions toward better well-being so you can live healthier, longer. It brings together your health data, daily habits, preferences, and goals to create a simple, guided plan with actionable steps toward better health.\n\nHow does Lemon work?\n\nLemon connects with your favorite health apps and wearable devices to understand your habits, routines, and goals. Using this information, it provides personalized insights and actionable recommendations that fit into your lifestyle — helping you make small, consistent changes that lead to lasting results.\n\nWhat makes Lemon different from others?\n\nMost health apps give you metrics and insights. Lemon helps you actually do what matters most. It brings together your real-time data including your location, your health data, your preferences, and even your calendar if you choose to, and turns it into one-tap actions so you can take better care of your health without overthinking it. Lemon learns from your activity and feedback, and continuously adapts, making it the ultimate companion for your health journey.\n\nWho is Lemon for?\n\nLemon is for anyone who wants to live healthier and longer — whether you're starting your wellness journey, balancing a busy schedule, or fine-tuning your fitness. If you use multiple apps or wearables and want a simple way to connect it all, Lemon is built for you.\n\nCan Lemon help with prescriptions, medications, and other treatment questions?\n\nLemon is designed for general health and wellness support — not medical treatment or diagnosis. While it can help you stay on top of healthy routines and reminders, it does not replace medical advice. For prescriptions or treatment-specific questions, always consult your healthcare provider.\n\nJoin the\nLemon Journey\nFinally take action to live healthier, longer.\nApp Store\nGoogle Play\n© 2025 Lemon Health\nPrivacy Policy\nTerms of Use\nContact us\nRead our articles",
+    "css_tokens": {
+      "--blue": "#1e70ff",
+      "--black": "#000000",
+      "--yellow": "#ffdc42",
+      "--white": "#ffffff",
+      "--light-gray": "#f9f9f9",
+      "--gray": "#999",
+      "--max-width": "1100px",
+      "--_font-family-h1": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-h1": "500",
+      "--_font-size-h1": "72px",
+      "--_color-h1": "rgb(0, 0, 0)",
+      "--_font-family-h2": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-h2": "500",
+      "--_font-size-h2": "56px",
+      "--_color-h2": "rgb(0, 0, 0)",
+      "--_font-family-h3": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-h3": "500",
+      "--_font-size-h3": "24px",
+      "--_color-h3": "rgb(0, 0, 0)",
+      "--_font-family-p": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-p": "400",
+      "--_font-size-p": "16px",
+      "--_color-p": "rgb(153, 153, 153)",
+      "--_font-family-a": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-a": "400",
+      "--_font-size-a": "16px",
+      "--_color-a": "rgb(0, 0, 0)",
+      "--_font-family-button": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-button": "400",
+      "--_font-size-button": "16px",
+      "--_color-button": "rgb(0, 0, 0)",
+      "--_bg-body": "rgb(255, 255, 255)",
+      "--_btn-bg-0": "rgb(255, 220, 66)",
+      "--_btn-color-0": "rgb(0, 0, 0)",
+      "--_btn-bg-1": "rgb(0, 0, 0)",
+      "--_btn-color-1": "rgb(255, 255, 255)",
+      "--_btn-bg-2": "rgb(255, 255, 255)",
+      "--_btn-color-2": "rgb(0, 0, 0)",
+      "--_btn-bg-3": "rgb(0, 0, 0)",
+      "--_btn-color-3": "rgb(255, 255, 255)",
+      "--_btn-bg-4": "rgb(255, 255, 255)",
+      "--_btn-color-4": "rgb(0, 0, 0)",
+      "--_btn-bg-5": "rgb(0, 0, 0)",
+      "--_btn-color-5": "rgb(255, 255, 255)",
+      "--_btn-bg-6": "rgb(255, 255, 255)",
+      "--_btn-color-6": "rgb(0, 0, 0)",
+      "--_btn-bg-7": "rgb(255, 255, 255)",
+      "--_btn-color-7": "rgb(0, 0, 0)",
+      "--_btn-bg-8": "rgb(255, 255, 255)",
+      "--_btn-color-8": "rgb(0, 0, 0)",
+      "--_btn-bg-9": "rgb(0, 0, 0)",
+      "--_btn-color-9": "rgb(255, 255, 255)"
+    },
+    "og_image_url": null,
+    "logo_url": "https://lemonhealth.ai/favicon.png",
+    "logo_confidence": "low",
+    "user_document": null,
+    "user_document_filename": null,
+    "scrape_error": null,
+    "scrape_word_count": 467,
+    "screenshot_bytes_len": 1053263,
+    "logo_bytes_len": 8849,
+    "og_image_bytes_len": 0,
+    "user_image_len": 0
+  },
+  "brand_profile": {
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "created_at": "2026-03-31T15:58:56.023615+00:00",
+    "design_category": "minimal-saas",
+    "primary_color": "rgb(0, 0, 0)",
+    "secondary_color": "rgb(255, 220, 66)",
+    "background_color": "rgb(255, 255, 255)",
+    "font_family": "Helvetica Neue",
+    "font_weights": [
+      400.0,
+      500.0
+    ],
+    "border_radius": "null",
+    "spacing_unit": "null",
+    "tone": "minimal",
+    "writing_instruction": "One idea per sentence. Use simple, direct language. Avoid using superlatives or overly technical jargon. The first line should be concise and informative, setting the stage for the rest of the content.",
+    "css_tokens": {
+      "--blue": "#1e70ff",
+      "--black": "#000000",
+      "--yellow": "#ffdc42",
+      "--white": "#ffffff",
+      "--light-gray": "#f9f9f9",
+      "--gray": "#999",
+      "--max-width": "1100px",
+      "--_font-family-h1": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-h1": "500",
+      "--_font-size-h1": "72px",
+      "--_color-h1": "rgb(0, 0, 0)",
+      "--_font-family-h2": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-h2": "500",
+      "--_font-size-h2": "56px",
+      "--_color-h2": "rgb(0, 0, 0)",
+      "--_font-family-h3": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-h3": "500",
+      "--_font-size-h3": "24px",
+      "--_color-h3": "rgb(0, 0, 0)",
+      "--_font-family-p": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-p": "400",
+      "--_font-size-p": "16px",
+      "--_color-p": "rgb(153, 153, 153)",
+      "--_font-family-a": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-a": "400",
+      "--_font-size-a": "16px",
+      "--_color-a": "rgb(0, 0, 0)",
+      "--_font-family-button": "\"Helvetica Neue\", sans-serif",
+      "--_font-weight-button": "400",
+      "--_font-size-button": "16px",
+      "--_color-button": "rgb(0, 0, 0)",
+      "--_bg-body": "rgb(255, 255, 255)",
+      "--_btn-bg-0": "rgb(255, 220, 66)",
+      "--_btn-color-0": "rgb(0, 0, 0)",
+      "--_btn-bg-1": "rgb(0, 0, 0)",
+      "--_btn-color-1": "rgb(255, 255, 255)",
+      "--_btn-bg-2": "rgb(255, 255, 255)",
+      "--_btn-color-2": "rgb(0, 0, 0)",
+      "--_btn-bg-3": "rgb(0, 0, 0)",
+      "--_btn-color-3": "rgb(255, 255, 255)",
+      "--_btn-bg-4": "rgb(255, 255, 255)",
+      "--_btn-color-4": "rgb(0, 0, 0)",
+      "--_btn-bg-5": "rgb(0, 0, 0)",
+      "--_btn-color-5": "rgb(255, 255, 255)",
+      "--_btn-bg-6": "rgb(255, 255, 255)",
+      "--_btn-color-6": "rgb(0, 0, 0)",
+      "--_btn-bg-7": "rgb(255, 255, 255)",
+      "--_btn-color-7": "rgb(0, 0, 0)",
+      "--_btn-bg-8": "rgb(255, 255, 255)",
+      "--_btn-color-8": "rgb(0, 0, 0)",
+      "--_btn-bg-9": "rgb(0, 0, 0)",
+      "--_btn-color-9": "rgb(255, 255, 255)"
+    },
+    "confidence": 0.8
+  },
+  "brand_identity": {
+    "product_name": "Lemon",
+    "product_url": "https://lemonhealth.ai",
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "logo_url": "https://lemonhealth.ai/favicon.png",
+    "logo_confidence": "low",
+    "og_image_url": null,
+    "primary_color": "#000000",
+    "secondary_color": "#ffdc42",
+    "accent_color": null,
+    "background_color": "#ffffff",
+    "foreground_color": null,
+    "font_family_heading": "Helvetica Neue",
+    "font_family_body": "Helvetica Neue",
+    "font_family_mono": null,
+    "font_weights": [
+      400.0,
+      500.0
+    ],
+    "border_radius": "null",
+    "spacing_unit": "null",
+    "design_category": "minimal-saas",
+    "tone": "minimal",
+    "writing_instruction": "One idea per sentence. Use simple, direct language. Avoid using superlatives or overly technical jargon. The first line should be concise and informative, setting the stage for the rest of the content.",
+    "logo_compositing_enabled": false
+  },
+  "product_knowledge": {
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "created_at": "2026-03-31T15:58:57.578461+00:00",
+    "product_name": "Lemon",
+    "product_url": "https://lemonhealth.ai",
+    "tagline": "The AI for your health",
+    "description": "Lemon is a personalized health companion that helps users take meaningful actions toward better well-being. It connects with favorite health apps and wearable devices to provide personalized insights and actionable recommendations. Lemon brings together health data, daily habits, preferences, and goals to create a simple, guided plan with actionable steps toward better health. It continuously learns from user activity and feedback, making it the ultimate companion for the health journey.",
+    "product_category": "vertical-saas",
+    "features": [
+      {
+        "name": "Personalized Guidance",
+        "description": "Lemon provides real-time personalized guidance based on user lifestyle and data"
+      },
+      {
+        "name": "Data Connection",
+        "description": "Lemon connects with favorite health apps and wearable devices to understand user habits, routines, and goals"
+      },
+      {
+        "name": "Actionable Recommendations",
+        "description": "Lemon provides actionable recommendations that fit into the user's lifestyle, helping them make small, consistent changes that lead to lasting results"
+      }
+    ],
+    "benefits": [
+      "Take meaningful actions toward better well-being",
+      "Live healthier, longer",
+      "Simplify health journey with one app that does it all",
+      "Make small, consistent changes that lead to lasting results"
+    ],
+    "proof_points": [
+      {
+        "text": "Lemon is your personalized health companion",
+        "proof_type": "stat",
+        "source": "scraped_page"
+      },
+      {
+        "text": "Lemon connects with your favorite health apps and wearable devices",
+        "proof_type": "integration_count",
+        "source": "scraped_page"
+      }
+    ],
+    "pain_points": [
+      "Difficulty taking action toward better health",
+      "Overwhelmed by multiple health apps and wearables",
+      "Struggling to make consistent changes that lead to lasting results"
+    ],
+    "messaging_angles": [
+      "Simplifying health journey",
+      "Taking action toward better well-being"
+    ],
+    "research_proof_points": [
+      {
+        "text": "Nearly two-thirds of consumers (63%) have used a health, fitness, or wearable app on their smartphone or wearable device, per our January 2026 Digital Health survey.",
+        "source_name": "eMarketer",
+        "source_url": "https://www.emarketer.com/content/ai-will-power-next-phase-of-health-app-growth",
+        "publication_year": 2026,
+        "relevance_reason": "This statistic matters for the product because it highlights the popularity of health and fitness apps, which is relevant to the vertical-saas product category and the pain point of being overwhelmed by multiple health apps.",
+        "proof_type": "survey_finding",
+        "credibility_tier": "tier_2",
+        "source_content_snippet": "Learn More →\n\nContact Us\n\nSpeak to a member of our team to learn more about EMARKETER.\n\nContact Us →\n\n# AI will power the next phase of health app growth\n\nArticle by Rajiv Leventhal  |  Mar 13, 2026\n\nDownload\n\nAI will power the next phase of health app growth\n\nShare\n\nTopics\n\nDigital Health\n\nMobile Apps\n\nUnited States\n\nThe trend: Nearly two-thirds of consumers (63%) have used a health, fitness, or "
+      },
+      {
+        "text": "Nearly half of Americans are feeling overwhelmed by the number of digital health tools they have",
+        "source_name": "New York Post",
+        "source_url": "https://nypost.com/2026/03/02/lifestyle/heres-how-much-time-americans-spend-logging-into-their-many-health-apps/",
+        "publication_year": 2026,
+        "relevance_reason": "This statistic matters for the product because it highlights the problem of health app overload that the product aims to solve.",
+        "proof_type": "industry_stat",
+        "credibility_tier": "tier_3",
+        "source_content_snippet": "##### Professor reveals the telltale sign students are using AI in...\n\nHow some Americans could qualify for a $1,000 'dog tax credit'\n\n##### How some Americans could qualify for a $1,000 'dog tax credit'\n\n#### Shop now\n\nOur 161+ best Amazon Big Spring Sale deals list is full of bestsellers and hidden gems\n\nLifestyle\n\n# Here’s how much time Americans spend logging into their many health apps\n\nBy\n\nV"
+      },
+      {
+        "text": "The global Wearable Technology market size is USD 117514.5 million in 2024.",
+        "source_name": "cognitivemarketresearch.com",
+        "source_url": "https://toolbox.google.com/datasetsearch/search?query=wearable%20technology",
+        "publication_year": 2025,
+        "relevance_reason": "This statistic indicates the large market size of wearable technology, which may contribute to the overwhelming number of health apps and wearables that users have to navigate.",
+        "proof_type": "industry_stat",
+        "credibility_tier": "tier_3",
+        "source_content_snippet": "scoop.market.us\n\n   Updated Jan 29, 2026\n9. G\n\n   # Wearable Technology Market Research Report 2033\n\n    growthmarketreports.com\n\n   csv, pdf, pptx\n\n   Updated Oct 6, 2025\n10. W\n\n    # Wearable Devices in Healthcare Report\n\n     archivemarketresearch.com\n\n    doc, pdf, ppt\n\n    Updated Dec 17, 2025\n11. m\n\n    # Wearable Technology Market Size, Share & Trends Report 2031\n\n     mordorintelligence.co"
+      },
+      {
+        "text": "With an annual growth rate of 19.50%, vertical SaaS outpaces the broader market.",
+        "source_name": "StartUs Insights",
+        "source_url": "https://www.startus-insights.com/innovators-guide/saas-industry-report/",
+        "publication_year": 2026,
+        "relevance_reason": "The growth rate indicates a rising demand for industry-specific software, which can help address the pain points of difficulty taking action toward better health and being overwhelmed by multiple health apps and wearables.",
+        "proof_type": "industry_stat",
+        "credibility_tier": "tier_3",
+        "source_content_snippet": "With an annual growth rate of 19.50%, vertical SaaS outpaces the broader market. This reflects increasing demand for industry-specific software that embeds domain workflows, regulatory requirements, and tailored analytics.\n\nEmbedded analytics counts 540+ companies, supported by a workforce of around 31 600 employees. The segment sees incremental growth aligned with integration-focused development."
+      },
+      {
+        "text": "Some AI-native software companies reach approximately $3M in annual recurring revenue within their first year and scale to roughly $100M by year four, exceeding typical early-stage SaaS growth timelines.",
+        "source_name": "Zylo",
+        "source_url": "https://zylo.com/blog/saas-statistics/",
+        "publication_year": 2026,
+        "relevance_reason": "The statistic highlights the potential for AI-native software companies, including those in the vertical SaaS category, to achieve significant revenue growth.",
+        "proof_type": "industry_stat",
+        "credibility_tier": "tier_3",
+        "source_content_snippet": "48. SaaS companies accounted for more than 2,600 global M&A transactions in 2025, reflecting renewed consolidation across the market.  \n 49. SaaS M&A activity increased year over year as buyers prioritized scale, vertical specialization, and AI capability.  \n 50. Vertical SaaS companies continue to outperform horizontal SaaS vendors in revenue efficiency and retention metrics.  \n 51. Some AI-nativ"
+      }
+    ],
+    "target_customer": "Anyone who wants to live healthier and longer",
+    "integrations": [
+      "Favorite health apps",
+      "Wearable devices"
+    ],
+    "pricing_mentioned": false,
+    "pricing_description": null,
+    "scrape_word_count": 467,
+    "user_document_filename": null,
+    "data_source": "scraped_only"
+  },
+  "content_brief": {
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "created_at": "2026-03-31T15:59:20.007754+00:00",
+    "platform": "linkedin",
+    "content_type": "carousel",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "content_pillar": "education_and_insight",
+    "funnel_stage": "tofu",
+    "content_depth": "long_form",
+    "posting_strategy": {
+      "recommended_frequency": "3x weekly",
+      "best_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "best_time_window": "10:00-12:00 IST"
+    },
+    "word_count_target": null,
+    "slide_count_target": 8,
+    "thread_length_target": null,
+    "platform_rules_summary": [
+      "Hook must be standalone in first 180 characters",
+      "3-5 hashtags at end only, never inline",
+      "Short paragraphs with blank line between each"
+    ],
+    "seo_keyword": null,
+    "knowledge_context_used": false,
+    "knowledge_context_summary": null,
+    "benchmark_reference": "Industry benchmarks for vertical SaaS companies on LinkedIn",
+    "reasoning": "With 3 distinct pain points and 3 features, a carousel is the best content type to showcase the product's capabilities. The minimal brand tone supports a straightforward, educational approach. The presence of 2 proof points and a strong stat also make a carousel a good fit. Given the feature count, pain point count, and proof point count, a carousel can effectively communicate the value proposition of Lemon. The brand tone being minimal and the presence of a strong stat further support this choice."
+  },
+  "strategy_brief": {
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "created_at": "2026-03-31T15:59:21.536055+00:00",
+    "lead_pain_point": "You spend hours tracking your health data across multiple apps and wearables, but struggle to make sense of it all and take meaningful action",
+    "primary_claim": "Lemon is a personalized health companion",
+    "proof_point": "Lemon connects with your favorite health apps and wearable devices",
+    "proof_point_type": "integration_count",
+    "cta_intent": "sign_up",
+    "appeal_type": "rational",
+    "narrative_arc": "pain-agitate-solve-cta",
+    "target_icp_role": "Health and Wellness Manager",
+    "differentiator": null,
+    "hook_direction": "Open with a health enthusiast checking multiple apps and wearables every morning, and name the frustration of not being able to take action toward better health",
+    "positioning_mode": "category_creation",
+    "messaging_angle_used": "Simplifying health journey",
+    "knowledge_context_applied": false,
+    "research_proof_point_used": null,
+    "research_source": null
+  },
+  "visual": {
+    "image_prompt": "Create an asymmetric composition with a calm, minimal environment, reserving roughly 60% of the frame on the left as a clean, low-detail zone with a soft white or light gray tone, suitable for overlaid text. The right side features a subtle glow with accents of #ffdc42, hinting at warmth and wellness, and incorporating abstract shapes or gentle gradients that evoke a sense of harmony and balance. A muted, darker tone, such as #000000, can be used sparingly to add depth or contrast without overwhelming the scene. The overall mood should be serene, with an emphasis on empty space and simplicity, reflecting the 'minimal-saas' aesthetic and the idea of clarity in health and wellness.",
+    "suggested_format": "carousel",
+    "video_script": null,
+    "video_hook": null
+  },
+  "raw_copy": "You start every morning by checking your fitness tracker, health app, and wearable device, but the more data you collect, the more overwhelmed you feel. \nYou spend hours tracking your health data across multiple apps and wearables, but struggle to make sense of it all and take meaningful action. \nThis daily routine is frustrated by the fact that you cannot seem to find a way to turn all this data into actionable steps towards better health.\n\nAs you try to piece together the information from various sources, you realize that the time spent on this task could be better utilized. \nThe constant switching between apps and devices is not only time-consuming but also leads to frustration and burnout. \neMarketer found that nearly two-thirds of consumers have used a health, fitness, or wearable app on their smartphone or wearable device, which highlights the complexity of the issue. \nThis statistic suggests that you are not alone in your struggle to manage health data, and the problem is widespread.\n\nThe inability to take meaningful action towards better health is a significant concern, as it can lead to a range of negative outcomes. \nWithout a clear understanding of your health data, you may struggle to identify areas for improvement, set realistic goals, or track progress over time. \nThis can result in a sense of disempowerment and frustration, making it even more challenging to maintain a healthy lifestyle. \nFurthermore, the lack of actionable insights can lead to poor decision-making, which can have long-term consequences for your overall well-being.\n\nIn an ideal world, you would have a personalized health companion that could help you make sense of your data and provide actionable recommendations. \nThis companion would connect with your favorite health apps and wearable devices, allowing you to access all your data in one place. \nIt would also provide personalized insights and guidance, enabling you to take meaningful action towards better health. \nThis is where Lemon comes in – a personalized health companion designed to simplify your health journey.\n\nLemon connects with your favorite health apps and wearable devices, allowing you to access all your data in one place. \nThis streamlined approach saves you time and reduces the frustration associated with switching between multiple apps and devices. \nWith Lemon, you can easily track your progress, identify areas for improvement, and receive personalized recommendations for achieving your health goals.\n\nThe benefits of using Lemon are numerous, from saving time to reducing stress and increasing motivation. \nBy providing a comprehensive view of your health data, Lemon enables you to make informed decisions and take control of your well-being. \nWhether you are looking to improve your physical health, mental well-being, or overall quality of life, Lemon is the perfect companion to help you achieve your goals.\n\nIn addition to its core features, Lemon is designed to be user-friendly and accessible. \nThe platform is easy to navigate, and the insights provided are clear and actionable. \nThis means that you can focus on what matters most – taking care of your health and well-being – without getting bogged down in complex data or technical jargon.\n\nIf you are tired of feeling overwhelmed by your health data and are looking for a personalized health companion to help you take control, sign up for Lemon today. \nWith its streamlined approach, personalized insights, and user-friendly design, Lemon is the perfect solution for anyone looking to simplify their health journey and achieve their wellness goals. \nBy joining the Lemon community, you will be taking the first step towards a healthier, happier you – so why wait, sign up now and start your journey towards better health.",
+  "formatted_content": {
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "created_at": "2026-03-31T15:59:26.891920+00:00",
+    "platform": "linkedin",
+    "linkedin_content": {
+      "hook": "You start every morning by checking your fitness tracker, health app, and wearable device, but the more data you collect, the more overwhelmed you feel.",
+      "body": "You spend hours tracking your health data across multiple apps and wearables, but struggle to make sense of it all and take meaningful action. This daily routine is frustrated by the fact that you cannot seem to find a way to turn all this data into actionable steps towards better health.\n\nAs you try to piece together the information from various sources, you realize that the time spent on this task could be better utilized. The constant switching between apps and devices is not only time-consuming but also leads to frustration and burnout.\n\nThe inability to take meaningful action towards better health is a significant concern, as it can lead to a range of negative outcomes. Without a clear understanding of your health data, you may struggle to identify areas for improvement, set realistic goals, or track progress over time.\n\nIn an ideal world, you would have a personalized health companion that could help you make sense of your data and provide actionable recommendations. This companion would connect with your favorite health apps and wearable devices, allowing you to access all your data in one place.\n\nLemon connects with your favorite health apps and wearable devices, allowing you to access all your data in one place. This streamlined approach saves you time and reduces the frustration associated with switching between multiple apps and devices.\n\nThe benefits of using Lemon are numerous, from saving time to reducing stress and increasing motivation. By providing a comprehensive view of your health data, Lemon enables you to make informed decisions and take control of your well-being.\n\nIf you are tired of feeling overwhelmed by your health data and are looking for a personalized health companion to help you take control, sign up for Lemon today. With its streamlined approach, personalized insights, and user-friendly design, Lemon is the perfect solution for anyone looking to simplify their health journey and achieve their wellness goals.",
+      "hashtags": [
+        "#HealthAndWellness",
+        "#PersonalizedHealth",
+        "#DigitalHealth",
+        "#HealthCompanion"
+      ],
+      "full_post": "You start every morning by checking your fitness tracker, health app, and wearable device, but the more data you collect, the more overwhelmed you feel.\n\nYou spend hours tracking your health data across multiple apps and wearables, but struggle to make sense of it all and take meaningful action. This daily routine is frustrated by the fact that you cannot seem to find a way to turn all this data into actionable steps towards better health.\n\nAs you try to piece together the information from various sources, you realize that the time spent on this task could be better utilized. The constant switching between apps and devices is not only time-consuming but also leads to frustration and burnout.\n\nThe inability to take meaningful action towards better health is a significant concern, as it can lead to a range of negative outcomes. Without a clear understanding of your health data, you may struggle to identify areas for improvement, set realistic goals, or track progress over time.\n\nIn an ideal world, you would have a personalized health companion that could help you make sense of your data and provide actionable recommendations. This companion would connect with your favorite health apps and wearable devices, allowing you to access all your data in one place.\n\nLemon connects with your favorite health apps and wearable devices, allowing you to access all your data in one place. This streamlined approach saves you time and reduces the frustration associated with switching between multiple apps and devices.\n\nThe benefits of using Lemon are numerous, from saving time to reducing stress and increasing motivation. By providing a comprehensive view of your health data, Lemon enables you to make informed decisions and take control of your well-being.\n\nIf you are tired of feeling overwhelmed by your health data and are looking for a personalized health companion to help you take control, sign up for Lemon today. With its streamlined approach, personalized insights, and user-friendly design, Lemon is the perfect solution for anyone looking to simplify their health journey and achieve their wellness goals.\n\n#HealthAndWellness #PersonalizedHealth #DigitalHealth #HealthCompanion"
+    },
+    "twitter_content": null,
+    "instagram_content": null,
+    "blog_content": null,
+    "image_prompt": null,
+    "suggested_format": null,
+    "video_script": null,
+    "video_hook": null,
+    "retry_count": 0,
+    "revision_hint_applied": null,
+    "approved": false,
+    "approved_at": null,
+    "user_edited_copy": null
+  },
+  "evaluation": {
+    "run_id": "a9e78cdc-08b3-4dac-b852-35a071ad2f54",
+    "org_id": null,
+    "created_at": "2026-03-31T16:01:47.270123+00:00",
+    "platform": "linkedin",
+    "clarity": 4,
+    "engagement": 4,
+    "tone_match": 5,
+    "accuracy": 5,
+    "overall_score": 4.5,
+    "passes": true,
+    "revision_hint": null,
+    "lowest_dimension": null,
+    "scores_rationale": "The copy is well-structured and easy to follow, with each sentence building on the previous one to create a clear narrative about the problem and the solution. The hook effectively identifies a specific daily friction that the target audience can relate to, and the copy maintains a consistent tone and pace to keep the reader engaged. The copy adheres to the writing instruction, using simple and direct language, avoiding superlatives and technical jargon, and presenting one idea per sentence. The copy accurately reflects the primary claim and proof point, stating that Lemon connects with favorite health apps and wearable devices, without introducing any fabricated statistics or claims.",
+    "retry_count": 0
+  },
+  "passes": true,
+  "overall_score": 4.5,
+  "images": {
+    "image_urls": [],
+    "slide_count": 0,
+    "template_uid": "YJBpekZX8X9wZ2XPnO",
+    "generation_enabled": false,
+    "error": null,
+    "background_hero_url": "https://image.pollinations.ai/prompt/Create%20an%20asymmetric%20composition%20with%20a%20calm%2C%20minimal%20environment%2C%20reserving%20roughly%2060%25%20of%20the%20frame%20on%20the%20left%20as%20a%20clean%2C%20low-detail%20zone%20with%20a%20soft%20white%20or%20light%20gray%20tone%2C%20suitable%20for%20overlaid%20text.%20The%20right%20side%20features%20a%20subtle%20glow%20with%20accents%20of%20%23ffdc42%2C%20hinting%20at%20warmth%20and%20wellness%2C%20and%20incorporating%20abstract%20shapes%20or%20gentle%20gradients%20that%20evoke%20a%20sense%20of%20harmony%20and%20balance.%20A%20muted%2C%20darker%20tone%2C%20such%20as%20%23000000%2C%20can%20be%20used%20sparingly%20to%20add%20depth%20or%20contrast%20without%20overwhelming%20the%20scene.%20The%20overall%20mood%20should%20be%20serene%2C%20with%20an%20emphasis%20on%20empty%20space%20and%20simplicity%2C%20reflecting%20the%20%27minimal-saas%27%20aesthetic%20and%20the%20idea%20of%20clarity%20in%20health%20and%20wellness.?width=768&height=432",
+    "hero_generation_enabled": true,
+    "hero_error": null
+  },
+  "research_proof_points": [
+    {
+      "text": "Nearly two-thirds of consumers (63%) have used a health, fitness, or wearable app on their smartphone or wearable device, per our January 2026 Digital Health survey.",
+      "source_name": "eMarketer",
+      "source_url": "https://www.emarketer.com/content/ai-will-power-next-phase-of-health-app-growth",
+      "publication_year": 2026,
+      "credibility_tier": "tier_2",
+      "proof_type": "survey_finding",
+      "relevance_reason": "This statistic matters for the product because it highlights the popularity of health and fitness apps, which is relevant to the vertical-saas product category and the pain point of being overwhelmed by multiple health apps."
+    },
+    {
+      "text": "Nearly half of Americans are feeling overwhelmed by the number of digital health tools they have",
+      "source_name": "New York Post",
+      "source_url": "https://nypost.com/2026/03/02/lifestyle/heres-how-much-time-americans-spend-logging-into-their-many-health-apps/",
+      "publication_year": 2026,
+      "credibility_tier": "tier_3",
+      "proof_type": "industry_stat",
+      "relevance_reason": "This statistic matters for the product because it highlights the problem of health app overload that the product aims to solve."
+    },
+    {
+      "text": "The global Wearable Technology market size is USD 117514.5 million in 2024.",
+      "source_name": "cognitivemarketresearch.com",
+      "source_url": "https://toolbox.google.com/datasetsearch/search?query=wearable%20technology",
+      "publication_year": 2025,
+      "credibility_tier": "tier_3",
+      "proof_type": "industry_stat",
+      "relevance_reason": "This statistic indicates the large market size of wearable technology, which may contribute to the overwhelming number of health apps and wearables that users have to navigate."
+    },
+    {
+      "text": "With an annual growth rate of 19.50%, vertical SaaS outpaces the broader market.",
+      "source_name": "StartUs Insights",
+      "source_url": "https://www.startus-insights.com/innovators-guide/saas-industry-report/",
+      "publication_year": 2026,
+      "credibility_tier": "tier_3",
+      "proof_type": "industry_stat",
+      "relevance_reason": "The growth rate indicates a rising demand for industry-specific software, which can help address the pain points of difficulty taking action toward better health and being overwhelmed by multiple health apps and wearables."
+    },
+    {
+      "text": "Some AI-native software companies reach approximately $3M in annual recurring revenue within their first year and scale to roughly $100M by year four, exceeding typical early-stage SaaS growth timelines.",
+      "source_name": "Zylo",
+      "source_url": "https://zylo.com/blog/saas-statistics/",
+      "publication_year": 2026,
+      "credibility_tier": "tier_3",
+      "proof_type": "industry_stat",
+      "relevance_reason": "The statistic highlights the potential for AI-native software companies, including those in the vertical SaaS category, to achieve significant revenue growth."
+    }
+  ],
+  "_artifact_paths": {
+    "json": "test_data\\pipeline_real_lemonhealth.ai_20260331T160147Z.json",
+    "logo": "test_data\\logo_lemonhealth.ai.png"
+  }
+}

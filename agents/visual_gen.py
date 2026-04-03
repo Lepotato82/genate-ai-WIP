@@ -8,13 +8,36 @@ visual format. Video script is Phase 3 — always None in this version.
 
 from __future__ import annotations
 
+import logging
+
 from llm.client import chat_completion
+from prompts.loader import load_prompt
 from config import settings
 from schemas.brand_identity import BrandIdentity
 from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.strategy_brief import StrategyBrief
 from agents._utils import parse_json_object
+
+logger = logging.getLogger(__name__)
+
+_FALLBACK_SYSTEM = (
+    "You are a visual direction agent for SaaS marketing. "
+    "Return ONLY valid JSON with these keys:\n"
+    "  image_prompt: detailed image generation prompt using exact brand colors and style\n"
+    "  suggested_format: one of static, carousel, video, ugc\n"
+    "  video_script: null\n"
+    "  video_hook: null"
+)
+
+
+def _system_prompt() -> str:
+    try:
+        spec = load_prompt("visual_gen_v1")
+        return spec.system_prompt.strip()
+    except (FileNotFoundError, ValueError) as exc:
+        logger.warning("visual_gen: falling back to inline system prompt: %s", exc)
+        return _FALLBACK_SYSTEM
 
 
 # ---------------------------------------------------------------------------
@@ -91,33 +114,35 @@ def run(
     if settings.MOCK_MODE:
         return _mock(strategy_brief, brand_profile, content_brief)
 
-    user_msg = (
+    lines = [
         f"brand: design_category={brand_profile.design_category}, "
         f"primary_color={brand_profile.primary_color}, "
         f"secondary_color={brand_profile.secondary_color}, "
-        f"font={brand_profile.font_family}, tone={brand_profile.tone}\n"
-        f"product: {strategy_brief.primary_claim}\n"
-        f"hook_direction: {strategy_brief.hook_direction}\n"
-        f"content_type: {content_brief.content_type}"
-    )
+        f"font={brand_profile.font_family}, tone={brand_profile.tone}",
+        f"platform: {content_brief.platform}, content_type: {content_brief.content_type}",
+        f"product: {strategy_brief.primary_claim}",
+        f"hook_direction: {strategy_brief.hook_direction}",
+        f"lead_pain_point: {strategy_brief.lead_pain_point}",
+    ]
+    if brand_identity is not None:
+        lines.append(
+            f"identity: product_name={brand_identity.product_name}, "
+            f"primary_hex={brand_identity.primary_color}, "
+            f"secondary_hex={brand_identity.secondary_color or 'none'}, "
+            f"background_hex={brand_identity.background_color or 'none'}, "
+            f"primary_font={brand_identity.primary_font or 'none'}"
+        )
+    user_msg = "\n".join(lines)
 
     raw = chat_completion(
         [
-            {
-                "role": "system",
-                "content": (
-                    "You are a visual direction agent for SaaS marketing. "
-                    "Return ONLY valid JSON with these keys:\n"
-                    "  image_prompt: detailed image generation prompt using exact brand colors and style\n"
-                    "  suggested_format: one of static, carousel, video, ugc\n"
-                    "  video_script: null\n"
-                    "  video_hook: null"
-                ),
-            },
+            {"role": "system", "content": _system_prompt()},
             {"role": "user", "content": user_msg},
         ]
     )
     data = parse_json_object(raw)
+    ip = data.get("image_prompt")
+    data["image_prompt"] = ip if isinstance(ip, str) else str(ip or "")
     # video is Phase 3 — always null regardless of LLM output
     data["video_script"] = None
     data["video_hook"] = None
