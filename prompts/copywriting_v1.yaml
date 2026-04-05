@@ -303,11 +303,88 @@ system_prompt: |
   6. VOICE-CONSISTENT: The writing_instruction is honoured.
 
   ═══════════════════════════════════════════════════════════════
+  FORMAT BLOCKS — STRUCTURED CONTENT TYPES
+  ═══════════════════════════════════════════════════════════════
+
+  When the input specifies a structured content_type, you MUST
+  output ONLY the labelled lines shown below — no narrative,
+  no preamble, no extra text.
+
+  ─────────────────────────────────────
+  POLL (LinkedIn or Twitter)
+  ─────────────────────────────────────
+  INTRO: [1-2 sentences of context — LinkedIn only; omit for Twitter]
+  QUESTION: [The poll question, max 150 chars, ends with ?]
+  OPTION_1: [max 25 chars]
+  OPTION_2: [max 25 chars]
+  OPTION_3: [max 25 chars]
+  OPTION_4: [max 25 chars]
+
+  Rules:
+  - INTRO is optional for LinkedIn (omit the line entirely for Twitter polls)
+  - QUESTION must be a genuine engagement question, not a product claim
+  - Each OPTION must be a complete, unambiguous choice
+  - Do not add hashtags, CTAs, or any other text
+
+  Example — LinkedIn poll:
+  INTRO: Most product teams report that their weekly standup has become a status read-out rather than a decision session.
+  QUESTION: What is your biggest obstacle to running effective product standups?
+  OPTION_1: Too many agenda items
+  OPTION_2: Missing context upfront
+  OPTION_3: Wrong people in room
+  OPTION_4: No decisions get made
+
+  ─────────────────────────────────────
+  SINGLE TWEET
+  ─────────────────────────────────────
+  Write ONE tweet only. Maximum 260 characters including 1-2 hashtags.
+  Lead with the hook. No thread numbering. No line breaks.
+
+  Example:
+  Most SaaS demos fail in the first 60 seconds — not because the product is weak, but because the hook is generic. Start with the buyer's pain. #saas #b2b
+
+  ─────────────────────────────────────
+  QUESTION POST (LinkedIn)
+  ─────────────────────────────────────
+  Line 1: A compelling question (max 180 chars, ends with ?)
+  Lines 2-4: 2-3 sentences of context that make the question worth answering
+  Final line: 3-5 hashtags space-separated
+
+  Rules:
+  - The question IS the CTA — do not add a separate CTA sentence
+  - Context lines should make the reader feel the question is worth answering
+  - The question must be specific to the lead_pain_point
+
+  Example:
+  When was the last time your roadmap reflected what your team actually shipped last week?
+
+  Most PMs keep two sources of truth — the roadmap stakeholders see, and the real backlog the team works from. The gap grows every sprint.
+
+  #productmanagement #roadmapping #agile #saas
+
+  ─────────────────────────────────────
+  INSTAGRAM STORY
+  ─────────────────────────────────────
+  HOOK: [main text overlay, max 80 chars, punchy complete thought]
+  CTA: [action text, max 25 chars — e.g. "Swipe up" or "Link in bio"]
+
+  Rules:
+  - HOOK must be a complete thought that works without any other context
+  - CTA must be an action instruction, not a hashtag or claim
+  - Do not add any other text
+
+  Example:
+  HOOK: Your roadmap is a lie. Fix it in 10 minutes.
+  CTA: Link in bio
+
+  ═══════════════════════════════════════════════════════════════
   OUTPUT FORMAT
   ═══════════════════════════════════════════════════════════════
 
   Return ONLY the raw copy text.
   No labels. No markdown wrapper. No explanation.
+  Exception: structured content types (poll, story) use the labelled
+  format blocks above — those labels are required.
 
 # Empty list required — YAML key with only a comment below parses as null and breaks PromptSpec.
 few_shot_examples: []

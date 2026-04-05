@@ -59,12 +59,86 @@ class LinkedInContent(BaseModel):
         return v
 
 
+class PollContent(BaseModel):
+    """Output for LinkedIn poll and Twitter poll content types."""
+
+    intro: str | None = Field(
+        None,
+        max_length=200,
+        description="Optional 1-2 sentence context. LinkedIn only — null for Twitter polls.",
+    )
+    question: str = Field(
+        ...,
+        max_length=150,
+        description="The poll question. Max 150 chars.",
+    )
+    options: list[str] = Field(
+        ...,
+        min_length=4,
+        max_length=4,
+        description="Exactly 4 poll options. Each option max 25 characters.",
+    )
+    duration: str | None = Field(
+        None,
+        description="Poll duration (LinkedIn only): '1 day' | '3 days' | '1 week' | '2 weeks'.",
+    )
+
+    @field_validator("options")
+    @classmethod
+    def validate_option_lengths(cls, v: list[str]) -> list[str]:
+        for i, opt in enumerate(v):
+            if len(opt) > 25:
+                raise ValueError(
+                    f"Poll option {i + 1} exceeds 25 characters ({len(opt)} chars): '{opt}'"
+                )
+        return v
+
+    @field_validator("question")
+    @classmethod
+    def validate_question_length(cls, v: str) -> str:
+        if len(v) > 150:
+            raise ValueError(f"Poll question must be ≤150 characters. Got {len(v)}.")
+        return v
+
+
+class InstagramStoryContent(BaseModel):
+    """Output for Instagram story content type."""
+
+    hook: str = Field(
+        ...,
+        max_length=80,
+        description="Main text overlay on the story slide. Max 80 chars — punchy, complete thought.",
+    )
+    cta_text: str = Field(
+        ...,
+        max_length=25,
+        description="Call-to-action text, e.g. 'Swipe up', 'Link in bio'. Max 25 chars.",
+    )
+
+    @field_validator("hook")
+    @classmethod
+    def validate_hook_length(cls, v: str) -> str:
+        if len(v) > 80:
+            raise ValueError(f"Story hook must be ≤80 characters. Got {len(v)}.")
+        return v
+
+    @field_validator("cta_text")
+    @classmethod
+    def validate_cta_length(cls, v: str) -> str:
+        if len(v) > 25:
+            raise ValueError(f"Story cta_text must be ≤25 characters. Got {len(v)}.")
+        return v
+
+
 class TwitterContent(BaseModel):
     tweets: list[str] = Field(
         ...,
-        min_length=4,
+        min_length=1,
         max_length=8,
-        description="4–8 tweet thread. Each tweet is a separate, self-contained idea.",
+        description=(
+            "Tweet thread (4–8 tweets) or single tweet (1 tweet). "
+            "Each tweet is a separate, self-contained idea."
+        ),
     )
     tweet_char_counts: list[int] = Field(
         ...,
@@ -104,8 +178,9 @@ class TwitterContent(BaseModel):
 
     @model_validator(mode="after")
     def validate_first_tweet_standalone(self) -> "TwitterContent":
-        """Tweet 1 must be at least 60 chars — proxy for a standalone complete thought."""
-        if self.tweets and len(self.tweets[0]) < 60:
+        """For threads, tweet 1 must be at least 60 chars — proxy for a standalone complete thought.
+        Single tweets (len==1) are exempt from this check."""
+        if len(self.tweets) > 1 and self.tweets and len(self.tweets[0]) < 60:
             raise ValueError(
                 "Tweet 1 must work as a standalone statement. "
                 f"Current length is only {len(self.tweets[0])} chars."
@@ -250,6 +325,10 @@ class FormattedContent(BaseModel):
     twitter_content: TwitterContent | None = None
     instagram_content: InstagramContent | None = None
     blog_content: BlogContent | None = None
+    # Structured content types (poll, story) — replace the main field for their platform
+    linkedin_poll_content: PollContent | None = None
+    twitter_poll_content: PollContent | None = None
+    instagram_story_content: InstagramStoryContent | None = None
 
     # Visual Gen outputs
     image_prompt: str | None = Field(
@@ -319,6 +398,9 @@ class FormattedContent(BaseModel):
             "twitter_content": self.twitter_content,
             "instagram_content": self.instagram_content,
             "blog_content": self.blog_content,
+            "linkedin_poll_content": self.linkedin_poll_content,
+            "twitter_poll_content": self.twitter_poll_content,
+            "instagram_story_content": self.instagram_story_content,
         }
         non_null = [k for k, v in content_fields.items() if v is not None]
 
@@ -336,18 +418,18 @@ class FormattedContent(BaseModel):
 
     @model_validator(mode="after")
     def enforce_platform_content_match(self) -> "FormattedContent":
-        """The non-null content field must match the platform field."""
-        platform_to_field = {
-            "linkedin": "linkedin_content",
-            "twitter": "twitter_content",
-            "instagram": "instagram_content",
-            "blog": "blog_content",
+        """The non-null content field must belong to the declared platform."""
+        platform_to_fields = {
+            "linkedin": ("linkedin_content", "linkedin_poll_content"),
+            "twitter": ("twitter_content", "twitter_poll_content"),
+            "instagram": ("instagram_content", "instagram_story_content"),
+            "blog": ("blog_content",),
         }
-        expected_field = platform_to_field[self.platform]
-        actual_value = getattr(self, expected_field)
-        if actual_value is None:
+        valid_fields = platform_to_fields[self.platform]
+        has_match = any(getattr(self, f) is not None for f in valid_fields)
+        if not has_match:
             raise ValueError(
-                f"platform='{self.platform}' but {expected_field} is null. "
+                f"platform='{self.platform}' but none of {valid_fields} is set. "
                 "The content field must match the platform."
             )
         return self

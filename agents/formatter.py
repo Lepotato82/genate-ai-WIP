@@ -23,7 +23,9 @@ from schemas.content_brief import ContentBrief
 from schemas.formatted_content import (
     FormattedContent,
     InstagramContent,
+    InstagramStoryContent,
     LinkedInContent,
+    PollContent,
     TwitterContent,
 )
 from schemas.strategy_brief import StrategyBrief
@@ -395,6 +397,174 @@ def _instagram_postprocess(
 
 
 # ---------------------------------------------------------------------------
+# Structured content type parsers + formatters
+# ---------------------------------------------------------------------------
+
+def _parse_poll_copy(raw_copy: str) -> dict:
+    """Extract INTRO/QUESTION/OPTION_1-4 labelled lines from copywriter poll output."""
+    result: dict = {}
+    for line in raw_copy.splitlines():
+        line = line.strip()
+        for key in ("INTRO", "QUESTION", "OPTION_1", "OPTION_2", "OPTION_3", "OPTION_4"):
+            prefix = f"{key}:"
+            if line.upper().startswith(prefix):
+                result[key.lower()] = line[len(prefix):].strip()
+                break
+    return result
+
+
+def _parse_story_copy(raw_copy: str) -> dict:
+    """Extract HOOK and CTA labelled lines from copywriter story output."""
+    result: dict = {}
+    for line in raw_copy.splitlines():
+        line = line.strip()
+        for key in ("HOOK", "CTA"):
+            prefix = f"{key}:"
+            if line.upper().startswith(prefix):
+                result[key.lower()] = line[len(prefix):].strip()
+                break
+    return result
+
+
+_FALLBACK_POLL_OPTIONS = [
+    "Lack of visibility",
+    "Manual processes",
+    "Tool fragmentation",
+    "Team alignment",
+]
+
+
+def _build_poll(parsed: dict, platform: str, strategy_brief: StrategyBrief) -> PollContent:
+    """Build a PollContent from parsed copywriter output, with fallbacks."""
+    question = parsed.get("question", "").strip()[:150]
+    if not question:
+        # Convert the lead_pain_point into a question if possible
+        pain = (strategy_brief.lead_pain_point or "").strip()
+        if pain and not pain.endswith("?"):
+            question = f"What is your biggest challenge with {pain.split()[0:4].__class__.__name__}?"
+            # More practical: just use a safe default question
+            question = "What is your biggest blocker right now?"
+        else:
+            question = pain[:150] or "What is your biggest blocker right now?"
+
+    raw_opts = [parsed.get(f"option_{i}", "") for i in range(1, 5)]
+    # Use fallback options instead of "Other" × 4 when the parsed output is empty
+    options = [
+        (o.strip()[:25] if o.strip() else _FALLBACK_POLL_OPTIONS[i])
+        for i, o in enumerate(raw_opts)
+    ]
+    while len(options) < 4:
+        options.append(_FALLBACK_POLL_OPTIONS[len(options) % len(_FALLBACK_POLL_OPTIONS)])
+
+    _intro_raw = (parsed.get("intro") or "").strip()
+    if len(_intro_raw) > 200:
+        # Truncate at last sentence boundary within 200 chars
+        _cut = _intro_raw[:200]
+        _last_end = max(_cut.rfind(". "), _cut.rfind("! "), _cut.rfind("? "))
+        _intro_raw = (_cut[:_last_end + 1] if _last_end > 50 else _cut).strip()
+    intro = _intro_raw or None
+    duration = "1 week" if platform == "linkedin" else None
+    return PollContent(
+        intro=intro,
+        question=question,
+        options=options[:4],
+        duration=duration,
+    )
+
+
+def _format_linkedin_poll(
+    raw_copy: str,
+    content_brief: ContentBrief,
+    strategy_brief: StrategyBrief,
+    retry_count: int,
+    revision_hint: str | None,
+) -> FormattedContent:
+    parsed = _parse_poll_copy(raw_copy)
+    poll = _build_poll(parsed, "linkedin", strategy_brief)
+    return FormattedContent(
+        run_id=content_brief.run_id,
+        org_id=content_brief.org_id,
+        created_at=utc_now_iso(),
+        platform="linkedin",
+        linkedin_poll_content=poll,
+        retry_count=retry_count,
+        revision_hint_applied=revision_hint,
+    )
+
+
+def _format_twitter_poll(
+    raw_copy: str,
+    content_brief: ContentBrief,
+    strategy_brief: StrategyBrief,
+    retry_count: int,
+    revision_hint: str | None,
+) -> FormattedContent:
+    parsed = _parse_poll_copy(raw_copy)
+    poll = _build_poll(parsed, "twitter", strategy_brief)
+    return FormattedContent(
+        run_id=content_brief.run_id,
+        org_id=content_brief.org_id,
+        created_at=utc_now_iso(),
+        platform="twitter",
+        twitter_poll_content=poll,
+        retry_count=retry_count,
+        revision_hint_applied=revision_hint,
+    )
+
+
+def _format_twitter_single_tweet(
+    raw_copy: str,
+    content_brief: ContentBrief,
+    retry_count: int,
+    revision_hint: str | None,
+) -> FormattedContent:
+    tweet = raw_copy.strip()
+    if len(tweet) > 280:
+        tweet = tweet[:277] + "..."
+    hashtags = [t for t in tweet.split() if t.startswith("#")]
+    if not hashtags:
+        hashtags = ["#saas"]
+    return FormattedContent(
+        run_id=content_brief.run_id,
+        org_id=content_brief.org_id,
+        created_at=utc_now_iso(),
+        platform="twitter",
+        twitter_content=TwitterContent(
+            tweets=[tweet],
+            tweet_char_counts=[len(tweet)],
+            hashtags=hashtags[:2],
+        ),
+        retry_count=retry_count,
+        revision_hint_applied=revision_hint,
+    )
+
+
+def _format_instagram_story(
+    raw_copy: str,
+    content_brief: ContentBrief,
+    strategy_brief: StrategyBrief,
+    retry_count: int,
+    revision_hint: str | None,
+) -> FormattedContent:
+    parsed = _parse_story_copy(raw_copy)
+    hook = parsed.get("hook", "").strip()[:80]
+    if not hook:
+        lines = [ln.strip() for ln in raw_copy.splitlines() if ln.strip()]
+        hook = lines[0][:80] if lines else (strategy_brief.lead_pain_point or "Take action today")[:80]
+    cta_text = parsed.get("cta", "").strip()[:25] or "Link in bio"
+    story = InstagramStoryContent(hook=hook, cta_text=cta_text)
+    return FormattedContent(
+        run_id=content_brief.run_id,
+        org_id=content_brief.org_id,
+        created_at=utc_now_iso(),
+        platform="instagram",
+        instagram_story_content=story,
+        retry_count=retry_count,
+        revision_hint_applied=revision_hint,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Mock
 # ---------------------------------------------------------------------------
 
@@ -568,12 +738,20 @@ def run(
     # ── Mock path ────────────────────────────────────────────────────────────
     if settings.MOCK_MODE:
         if platform == "linkedin":
+            if content_brief.content_type == "poll":
+                return _format_linkedin_poll(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
             return _mock_linkedin(raw_copy, content_brief, retry_count, revision_hint)
         if platform == "twitter":
+            if content_brief.content_type == "single_tweet":
+                return _format_twitter_single_tweet(raw_copy, content_brief, retry_count, revision_hint)
+            if content_brief.content_type == "poll":
+                return _format_twitter_poll(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
             return _mock_twitter(
                 raw_copy, content_brief, strategy_brief, retry_count, revision_hint
             )
         if platform == "instagram":
+            if content_brief.content_type == "story":
+                return _format_instagram_story(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
             return _mock_instagram(
                 raw_copy,
                 content_brief,
@@ -602,6 +780,9 @@ def run(
         )
 
     # ── Real mode: LinkedIn ──────────────────────────────────────────────────
+    if platform == "linkedin" and content_brief.content_type == "poll":
+        return _format_linkedin_poll(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
+
     if platform == "linkedin":
         system = _LINKEDIN_SYSTEM
         if revision_hint:
@@ -664,6 +845,12 @@ def run(
         )
 
     # ── Real mode: Twitter ───────────────────────────────────────────────────
+    if platform == "twitter" and content_brief.content_type == "single_tweet":
+        return _format_twitter_single_tweet(raw_copy, content_brief, retry_count, revision_hint)
+
+    if platform == "twitter" and content_brief.content_type == "poll":
+        return _format_twitter_poll(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
+
     if platform == "twitter":
         system = _TWITTER_SYSTEM
         if revision_hint:
@@ -708,6 +895,9 @@ def run(
         )
 
     # ── Real mode: Instagram ─────────────────────────────────────────────────
+    if platform == "instagram" and content_brief.content_type == "story":
+        return _format_instagram_story(raw_copy, content_brief, strategy_brief, retry_count, revision_hint)
+
     if platform == "instagram":
         system = _INSTAGRAM_SYSTEM
         if revision_hint:

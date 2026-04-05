@@ -5,10 +5,11 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from agents import input_processor, ui_analyzer
 from pipeline import RUN_REGISTRY, approve_run, run_stream
+from schemas.content_brief import PLATFORM_CONTENT_TYPES
 
 app = FastAPI(title="Genate API", version="0.1.0")
 
@@ -18,6 +19,19 @@ class GenerateRequest(BaseModel):
     platform: str = Field(default="linkedin")
     org_id: str | None = None
     user_document: str | None = None
+    content_type: str | None = None
+
+    @model_validator(mode="after")
+    def validate_content_type(self) -> "GenerateRequest":
+        if self.content_type is None:
+            return self
+        valid = PLATFORM_CONTENT_TYPES.get(self.platform, set())
+        if self.content_type not in valid:
+            raise ValueError(
+                f"content_type='{self.content_type}' is not valid for "
+                f"platform='{self.platform}'. Valid types: {sorted(valid)}"
+            )
+        return self
 
 
 class ApproveRequest(BaseModel):
@@ -45,6 +59,7 @@ def generate(req: GenerateRequest) -> StreamingResponse:
             platform=req.platform,
             org_id=req.org_id,
             user_document=req.user_document,
+            force_content_type=req.content_type,
         ):
             yield f"data: {json.dumps(evt)}\n\n"
 

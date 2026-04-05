@@ -123,6 +123,7 @@ def _run_stages_after_input(
     pkg: InputPackage,
     platform: str,
     started: float,
+    force_content_type: str | None = None,
 ) -> tuple[
     BrandProfile,
     ProductKnowledge,
@@ -154,7 +155,7 @@ def _run_stages_after_input(
         knowledge_context = query_context(org_id=org_id, query_text=query_text)
     _ = knowledge_context
 
-    content_brief = planner.run(brand, product, plat)
+    content_brief = planner.run(brand, product, plat, force_content_type=force_content_type)
     strategy_brief = strategy.run(content_brief, product, brand)
     with ThreadPoolExecutor(max_workers=2) as pool:
         f_copy = pool.submit(
@@ -289,6 +290,7 @@ def run_pipeline_artifacts(
     user_image: bytes | None = None,
     user_document: str | None = None,
     user_document_filename: str | None = None,
+    force_content_type: str | None = None,
 ) -> RunArtifacts:
     events = list(
         run_stream(
@@ -298,6 +300,7 @@ def run_pipeline_artifacts(
             user_image=user_image,
             user_document=user_document,
             user_document_filename=user_document_filename,
+            force_content_type=force_content_type,
         )
     )
     final = events[-1]
@@ -319,6 +322,7 @@ def run_stream(
     user_image: bytes | None = None,
     user_document: str | None = None,
     user_document_filename: str | None = None,
+    force_content_type: str | None = None,
 ) -> Generator[dict, None, None]:
     run_id = str(uuid.uuid4())
     started = perf_counter()
@@ -368,7 +372,7 @@ def run_stream(
 
     # Step 4 — Planner
     yield _event(4, "planner", "start", started, "Planning content")
-    content_brief = planner.run(brand, product, _norm_platform(platform))
+    content_brief = planner.run(brand, product, _norm_platform(platform), force_content_type=force_content_type)
     yield _event(4, "planner", "complete", started, "Content brief created")
 
     # Step 5 — Strategy
@@ -474,6 +478,8 @@ def run_stream(
     done = _event(10, "pipeline", "complete", started, "Pipeline complete")
     done["run_id"] = run_id
     done["passes"] = evaluated.passes
+    done["formatted_content"] = formatted.model_dump()
+    done["evaluator_output"] = evaluated.model_dump()
     yield done
 
 

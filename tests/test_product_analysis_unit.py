@@ -137,10 +137,21 @@ def test_parse_proof_points_non_string_coerced() -> None:
         ("security compliance audits", "security-compliance"),
         ("vertical saas for clinics", "vertical-saas"),
         ("random pizza shop", "other"),
+        ("wellness health app for personal health tracking", "health-wellness"),
+        ("mental health therapy meditation app", "health-wellness"),
+        ("sleep tracking nutrition fitness app", "health-wellness"),
     ],
 )
 def test_map_product_category_all_literals(raw: str, expected: str) -> None:
     assert product_analysis._map_product_category(raw) == expected
+
+
+def test_map_product_category_health_wins_over_vertical_saas() -> None:
+    """A consumer health/wellness app must not be swallowed by vertical-saas."""
+    result = product_analysis._map_product_category(
+        "wellness health app personal health tracking consumer healthcare"
+    )
+    assert result == "health-wellness"
 
 
 def test_proof_source_user_document_only() -> None:

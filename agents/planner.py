@@ -115,6 +115,7 @@ def _mock(
     brand_profile: BrandProfile,
     product_knowledge: ProductKnowledge,
     platform: str,
+    force_content_type: str | None = None,
 ) -> ContentBrief:
     signals = _planner_signals(brand_profile, product_knowledge)
     plat = platform if platform in ("linkedin", "twitter", "instagram", "blog") else "linkedin"
@@ -284,6 +285,7 @@ LinkedIn content_type rules:
 - text_post: opinion / thought leadership, founder voice, one sharp insight, contrarian takes. Prefer when brand_tone is technical or minimal and the story is one strong idea.
 - single_image: stat-led, before/after, customer quotes. Prefer when has_strong_stat OR has_customer_name supports a visual anchor.
 - poll: engagement / audience research ONLY if content_pillar is education_and_insight OR founder_team_voice. Use sparingly.
+- question_post: single compelling question + 2-3 sentences of context. ONLY if content_pillar is founder_team_voice OR education_and_insight. Creates discussion, not clicks.
 - short_video: not supported — if you would pick short_video, output content_type "carousel" instead.
 
 Also return: narrative_arc, content_pillar, funnel_stage, slide_count_target (6-10 only for carousel), reasoning, benchmark_reference.
@@ -294,20 +296,24 @@ Return ONLY valid JSON."""
 
 _SYSTEM_TWITTER = """You are a SaaS content strategist planning for Twitter/X.
 
-MANDATORY: content_type MUST be exactly "thread". No exceptions.
+Select content_type:
+- thread: narrative content, educational breakdowns, multi-point arguments. DEFAULT choice.
+- single_tweet: one sharp standalone insight that needs no explanation. Use ONLY when content_depth is "concise" AND the product has one clear proof point that fits in 260 chars. Rare.
+- poll: audience engagement question with 4 short answer options. Use ONLY when content_pillar is "education_and_insight" or "founder_team_voice" and the goal is discussion, not conversion.
 
 Return ONLY valid JSON with:
-- content_type: "thread"
+- content_type: "thread" | "single_tweet" | "poll"
 - narrative_arc, content_pillar, funnel_stage
-- thread_length_target: integer 4-8
+- thread_length_target: integer 4-8 (required for thread; omit for single_tweet and poll)
 - reasoning (must reference the numeric signals provided)
 - benchmark_reference"""
 
 _SYSTEM_INSTAGRAM = """You are a SaaS content strategist planning for Instagram.
 
 Select content_type:
-- carousel: step-by-step, educational, swipeable stories
-- single_image: stat-led, quote, one strong visual moment
+- carousel: step-by-step, educational, swipeable stories. DEFAULT for most content.
+- single_image: stat-led, quote, one strong visual moment.
+- story: very short punchy text overlay (max 80 chars). Use ONLY when content_depth is "concise" AND content_pillar is "pain_and_problem" or "social_proof" — TOFU awareness moments, not product detail.
 - reel: not supported — if you would pick reel, output "carousel" instead.
 
 Also return: narrative_arc, content_pillar, funnel_stage, slide_count_target (6-10, required for carousel only), reasoning, benchmark_reference.
@@ -342,6 +348,9 @@ def _apply_linkedin_post_rules(
     if ct == "poll" and pillar not in ("education_and_insight", "founder_team_voice"):
         data["content_type"] = "carousel"
         ct = "carousel"
+    if ct == "question_post" and pillar not in ("education_and_insight", "founder_team_voice", "social_proof"):
+        data["content_type"] = "text_post"
+        ct = "text_post"
 
     if ct not in _VALID_LINKEDIN_CONTENT_TYPES:
         data["content_type"] = "text_post"
@@ -379,13 +388,30 @@ def _normalize_thread_length(data: dict) -> None:
 # Public entry point
 # ---------------------------------------------------------------------------
 
+def _apply_force_content_type(brief: ContentBrief, force_content_type: str) -> ContentBrief:
+    """Return a new ContentBrief with content_type overridden, companion fields adjusted."""
+    data = brief.model_dump()
+    data["content_type"] = force_content_type
+    data.pop("slide_count_target", None)
+    data.pop("thread_length_target", None)
+    if force_content_type == "carousel":
+        data["slide_count_target"] = 8
+    elif force_content_type == "thread":
+        data["thread_length_target"] = 5
+    return ContentBrief(**data)
+
+
 def run(
     brand_profile: BrandProfile,
     product_knowledge: ProductKnowledge,
     platform: str = "linkedin",
+    force_content_type: str | None = None,
 ) -> ContentBrief:
     if settings.MOCK_MODE:
-        return _mock(brand_profile, product_knowledge, platform)
+        brief = _mock(brand_profile, product_knowledge, platform)
+        if force_content_type is not None:
+            brief = _apply_force_content_type(brief, force_content_type)
+        return brief
 
     signals = _planner_signals(brand_profile, product_knowledge)
     signal_text = _signal_block(signals)
@@ -423,17 +449,26 @@ def run(
 
     # --- Platform coercion ---
     if platform == "twitter":
-        data["content_type"] = "thread"
-        _normalize_thread_length(data)
+        ct = str(data.get("content_type", "thread"))
+        if ct in ("single_tweet", "poll"):
+            data["content_type"] = ct
+            data.pop("thread_length_target", None)
+        else:
+            data["content_type"] = "thread"
+            _normalize_thread_length(data)
     elif platform == "instagram":
         ct = str(data.get("content_type", "carousel"))
         if ct == "reel":
             ct = "carousel"
-        if ct not in ("carousel", "single_image"):
+        if ct not in ("carousel", "single_image", "story"):
             ct = "carousel"
         data["content_type"] = ct
     elif platform == "linkedin":
         _apply_linkedin_post_rules(data, signals)
+
+    # --- Force content_type override (must be after all platform coercions) ---
+    if force_content_type is not None:
+        data["content_type"] = force_content_type
 
     # carousel requires slide_count_target (6–10)
     if data.get("content_type") == "carousel":

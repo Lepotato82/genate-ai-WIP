@@ -202,11 +202,12 @@ class ContentBrief(BaseModel):
 
     @model_validator(mode="after")
     def enforce_twitter_thread(self) -> "ContentBrief":
-        """Twitter platform requires content_type='thread'. Mandatory constraint."""
-        if self.platform == "twitter" and self.content_type != "thread":
+        """Twitter platform requires content_type to be thread, single_tweet, or poll."""
+        _TWITTER_TYPES = {"thread", "single_tweet", "poll"}
+        if self.platform == "twitter" and self.content_type not in _TWITTER_TYPES:
             raise ValueError(
-                "Twitter platform requires content_type='thread'. "
-                "This is a mandatory constraint per pipeline design."
+                f"Twitter platform requires content_type in {sorted(_TWITTER_TYPES)}. "
+                f"Got '{self.content_type}'."
             )
         return self
 

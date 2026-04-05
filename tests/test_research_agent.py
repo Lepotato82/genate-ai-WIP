@@ -173,6 +173,42 @@ def test_extract_stat_returns_none_when_llm_returns_null_stat(monkeypatch):
     assert _extract_stat_from_result(result, product) is None
 
 
+def test_extract_stat_rejects_methodology_line(monkeypatch):
+    """Stat starting with 'Base:' is a survey footnote — must be rejected."""
+    settings.MOCK_MODE = False
+    methodology_stat = "Base: 12,000 adults; U.S.=4,000; India=2,000; China=2,000"
+    content = (
+        "Base: 12,000 adults; U.S.=4,000; India=2,000; China=2,000; Brazil=1,000. "
+        "Survey conducted in Q4 2025 across six markets. Findings show adoption varies."
+    )
+    monkeypatch.setattr(research_agent, "chat_completion", lambda *a, **kw: "{}")
+    monkeypatch.setattr(research_agent, "parse_json_object",
+                        lambda raw: {"stat": methodology_stat, "source_name": "ZS",
+                                     "publication_year": 2025, "relevance_reason": "survey scope",
+                                     "proof_type": "survey_finding"})
+    product = _make_product()
+    result = {"content": content, "url": "https://zs.com/report", "title": "ZS Future of Health"}
+    assert _extract_stat_from_result(result, product) is None
+
+
+def test_extract_stat_rejects_lowercase_fragment(monkeypatch):
+    """Stat starting with a lowercase letter is a fragment without a subject — must be rejected."""
+    settings.MOCK_MODE = False
+    fragment_stat = "be extremely or very worried about not being able to access health care (54% vs. 31%)"
+    content = (
+        "Respondents reported they would be extremely or very worried about not being able to "
+        "access health care (54% vs. 31%) and about losing health insurance (49% vs. 27%)."
+    )
+    monkeypatch.setattr(research_agent, "chat_completion", lambda *a, **kw: "{}")
+    monkeypatch.setattr(research_agent, "parse_json_object",
+                        lambda raw: {"stat": fragment_stat, "source_name": "AP-NORC",
+                                     "publication_year": 2026, "relevance_reason": "health concern",
+                                     "proof_type": "survey_finding"})
+    product = _make_product()
+    result = {"content": content, "url": "https://aapidata.com/survey", "title": "AP-NORC Survey"}
+    assert _extract_stat_from_result(result, product) is None
+
+
 def test_extract_stat_validation_rejects_fabricated_stat(monkeypatch):
     """Stat words not found in source content → fabrication prevention → None."""
     settings.MOCK_MODE = False
@@ -469,3 +505,48 @@ def test_build_queries_pain_first_not_all_vertical_saas_b2b_for_b2c_signals():
     )
     q3 = queries[2].lower()
     assert "consumer" in q3 or "vertical-saas" in q3
+
+
+def test_build_queries_health_wellness_category_uses_health_anchor():
+    """health-wellness category must produce consumer health anchor, not B2B SaaS terms."""
+    from schemas.product_knowledge import ProductKnowledge, Feature, ProofPoint
+
+    product = ProductKnowledge(
+        run_id="r",
+        org_id=None,
+        created_at="2026-01-01T00:00:00Z",
+        product_name="Lemon",
+        product_url="https://lemonhealth.ai",
+        tagline="Your health companion app",
+        description=(
+            "A consumer wellness mobile app that helps everyday users track sleep, "
+            "nutrition, and daily health habits with personalized insights and simple "
+            "goal-setting tools. Available on the App Store and Google Play."
+        ),
+        product_category="health-wellness",
+        features=[
+            Feature(name="Sleep tracking", description="Track sleep quality."),
+            Feature(name="Nutrition log", description="Log meals and macros."),
+        ],
+        benefits=["Better sleep", "Healthier habits"],
+        proof_points=[
+            ProofPoint(
+                text="Users report improved consistency after two weeks.",
+                proof_type="stat",
+                source="scraped_page",
+            )
+        ],
+        pain_points=[
+            "Overwhelmed by conflicting health advice from multiple apps",
+            "Hard to build consistent health habits",
+        ],
+        messaging_angles=["Clarity", "Simplicity"],
+        target_customer="Consumers wanting to improve personal health",
+    )
+    queries = _build_queries(product)
+    assert len(queries) == 3
+    q3 = queries[2].lower()
+    # Q3 anchor must be consumer/health-specific — never generic B2B SaaS terms
+    assert "health" in q3 or "wellness" in q3 or "consumer" in q3
+    assert "b2b" not in q3
+    assert "vertical-saas" not in q3

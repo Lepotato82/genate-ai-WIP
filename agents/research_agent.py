@@ -114,6 +114,11 @@ _CATEGORY_QUERY_OVERRIDES: dict[str, list[str]] = {
         "CRM adoption enterprise research Salesforce Gartner 2026",
         "customer experience ROI B2B market research report 2026",
     ],
+    "health-wellness": [
+        "consumer health app adoption wellness behavior statistics 2026 survey",
+        "mobile health app engagement personal health research report 2026",
+        "digital health consumer trends Pew Research CDC survey 2025 2026",
+    ],
 }
 
 # Pain-first query tails — avoid defaulting every query to B2B + category.
@@ -318,15 +323,24 @@ RULES — read carefully before responding:
 4. The JSON "stat" value must be the full sentence or clause copied from the content that contains
    the figure — at least 10 characters and at least 3 words. Never return only the naked number
    (e.g. reject "54%", "20", "5% and 8%" alone).
-5. If no specific stat exists in the content, return null for stat.
-6. Return ONLY valid JSON. No markdown. No preamble.
+5. The stat must DIRECTLY describe user behavior, user struggle, or a measurable outcome related
+   to one of the listed pain points. Being in the same broad topic area is NOT sufficient —
+   the stat must speak to the specific friction or outcome named in the pain points.
+6. Reject methodology and sample-size lines. Examples that must return null:
+   "Base: 12,000 adults; U.S.=4,000...", "n=500", "Sample: 2,000 respondents", or any line
+   that is a list of country/region sample counts. These are footnotes, not usable claims.
+7. The stat must be a grammatically complete sentence or clause that starts with a capital letter.
+   Fragments that begin mid-thought without a subject (e.g. "be extremely or very worried...",
+   "the time spent by individuals...") must return null.
+8. If no qualifying stat exists, return null for stat.
+9. Return ONLY valid JSON. No markdown. No preamble.
 
 JSON format (use null for stat when no qualifying statistic exists):
 {
   "stat": "67% of B2B buyers consult AI search engines before contacting a vendor.",
   "source_name": "publication or organization name",
   "publication_year": 2024,
-  "relevance_reason": "one sentence why this matters for the product",
+  "relevance_reason": "one sentence naming which specific pain point this stat directly quantifies",
   "proof_type": "industry_stat|survey_finding|academic|report|news_stat"
 }"""
 
@@ -353,11 +367,11 @@ def _extract_stat_from_result(
         f"Source title: {title}\n"
         f"Source URL: {url}\n\n"
         f"Content to extract from:\n{content[:800]}\n\n"
-        "Extract one specific statistic from this content that is "
-        "relevant to the product category or pain points above. "
-        "Return the full source sentence or clause containing the stat (min 10 chars, at least 3 words), "
-        "never the number alone. "
-        "Return null for stat if no specific statistic exists."
+        "Extract one specific statistic from this content that DIRECTLY quantifies one of the "
+        "pain points listed above — not just a stat in the same broad topic. "
+        "Return the full source sentence starting with a capital letter (min 10 chars, at least 3 words). "
+        "Return null for stat if no directly relevant statistic exists, or if the content only "
+        "contains methodology notes, sample size lines, or fragments without a subject."
     )
 
     try:
@@ -371,6 +385,17 @@ def _extract_stat_from_result(
             return None
 
         stat_text = str(data["stat"]).strip()
+
+        # Guard 1: reject methodology/sample-size lines (e.g. "Base: 12,000 adults; ...")
+        _METHODOLOGY_PREFIXES = ("base:", "n=", "n =", "sample:", "sample size:", "respondents:")
+        if stat_text.lower().startswith(_METHODOLOGY_PREFIXES):
+            logger.warning("[research_agent] rejected methodology line: '%s'", stat_text[:60])
+            return None
+
+        # Guard 2: reject fragments — a usable stat must start with a capital letter
+        if stat_text and stat_text[0].islower():
+            logger.warning("[research_agent] rejected lowercase fragment: '%s'", stat_text[:60])
+            return None
 
         # Validation: stat must be traceable to source content.
         # Short stats (< 3 words): require literal substring match.

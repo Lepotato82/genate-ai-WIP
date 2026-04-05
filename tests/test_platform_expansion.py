@@ -294,7 +294,8 @@ def test_planner_linkedin_strong_stat_prefers_single_image() -> None:
     assert brief.content_type == "single_image"
 
 
-def test_planner_twitter_forces_thread() -> None:
+def test_planner_twitter_allows_single_tweet() -> None:
+    """single_tweet is now a valid Twitter content type and passes through unchanged."""
     settings.MOCK_MODE = False
     llm = json.dumps(
         {
@@ -302,8 +303,27 @@ def test_planner_twitter_forces_thread() -> None:
             "narrative_arc": "pain-agitate-solve-cta",
             "content_pillar": "pain_and_problem",
             "funnel_stage": "tofu",
-            "thread_length_target": 6,
-            "reasoning": "ignored by coercion",
+            "reasoning": "concise TOFU hook for cold audience",
+            "benchmark_reference": "b",
+        }
+    )
+    with patch("agents.planner.chat_completion", return_value=llm):
+        brief = planner.run(_brand(), _product(), platform="twitter")
+    assert brief.content_type == "single_tweet"
+    assert brief.thread_length_target is None
+
+
+def test_planner_twitter_forces_thread_for_unknown_type() -> None:
+    """Unknown Twitter content types are coerced to thread."""
+    settings.MOCK_MODE = False
+    llm = json.dumps(
+        {
+            "content_type": "carousel",  # invalid for Twitter
+            "narrative_arc": "pain-agitate-solve-cta",
+            "content_pillar": "pain_and_problem",
+            "funnel_stage": "tofu",
+            "thread_length_target": 5,
+            "reasoning": "coercion test",
             "benchmark_reference": "b",
         }
     )

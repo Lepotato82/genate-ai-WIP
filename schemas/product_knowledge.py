@@ -98,6 +98,7 @@ class ProductKnowledge(BaseModel):
         "customer-success",
         "marketing-content",
         "security-compliance",
+        "health-wellness",
         "vertical-saas",
         "other",
     ]

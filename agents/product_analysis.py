@@ -28,6 +28,7 @@ _ProductCategory = Literal[
     "customer-success",
     "marketing-content",
     "security-compliance",
+    "health-wellness",
     "vertical-saas",
     "other",
 ]
@@ -81,6 +82,12 @@ _CATEGORY_KEYWORDS: list[tuple[str, list[str]]] = [
         "security-compliance",
         ["security", "compliance", "audit", "gdpr", "soc", "auth", "identity",
          "access", "permission", "encryption"],
+    ),
+    (
+        "health-wellness",
+        ["wellness", "health app", "mental health", "nutrition", "fitness app",
+         "sleep", "meditation", "therapy", "personal health", "wearable health",
+         "health coach", "health tracking", "telehealth", "telemedicine"],
     ),
     (
         "vertical-saas",
@@ -523,7 +530,7 @@ _SYSTEM_PROMPT = (
     '  "description": "2-4 sentences describing what the product does, minimum 30 words",\n'
     '  "product_category": "one of: developer-tool | project-management | fintech-saas | '
     "hr-people | data-analytics | customer-success | marketing-content | "
-    'security-compliance | vertical-saas | other",\n'
+    'security-compliance | health-wellness | vertical-saas | other",\n'
     '  "features": [{"name": "<feature name>", "description": "<what it does>"}],\n'
     '  "benefits": ["<user outcome 1>", "<user outcome 2>"],\n'
     '  "proof_points": [{"text": "<verbatim stat or claim>", "proof_type": '

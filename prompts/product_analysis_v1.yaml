@@ -26,9 +26,13 @@ system_prompt: |
 
   description: Two to four sentences describing what the product is and does.
 
-  product_category: ONE word or short hyphenated label for the category (e.g.
-  "devtools", "crm", "analytics"). The pipeline will map this later — stay close
-  to the page wording.
+  product_category: ONE of the following exact labels — choose the closest match:
+  developer-tool | project-management | fintech-saas | hr-people | data-analytics |
+  customer-success | marketing-content | security-compliance | health-wellness |
+  vertical-saas | other
+  Use health-wellness for consumer health, fitness, mental health, nutrition, sleep,
+  meditation, therapy, or personal wellness apps. Use vertical-saas for B2B industry
+  software (clinics, legal, retail, construction, field service).
 
   features vs benefits:
   - Feature = what the product DOES (mechanism, capability). Example: "Real-time

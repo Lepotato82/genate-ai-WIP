@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-space-grotesk: "Space Grotesk", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+body {
+  background-color: #fafafa;
+  font-family: var(--font-inter), sans-serif;
+  color: #000000;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #fafafa;
+  border-left: 1px solid #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #000;
+}
+
+@layer utilities {
+  .brutal-card {
+    @apply border-3 border-black shadow-brutal bg-white;
+  }
+  .brutal-card-yellow {
+    @apply border-3 border-black shadow-brutal bg-brutal-yellow;
+  }
+  .brutal-hover {
+    @apply transition-all duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-brutal-sm;
+  }
+}

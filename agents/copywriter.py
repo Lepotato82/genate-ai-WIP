@@ -128,6 +128,37 @@ def _mock_linkedin_post(strategy: StrategyBrief) -> str:
     )
 
 
+def _mock_poll(strategy: StrategyBrief, platform: str) -> str:
+    """Structured poll output in the INTRO/QUESTION/OPTION format the formatter expects."""
+    intro = (
+        "INTRO: Most SaaS teams face this exact friction every week - "
+        "we want to know where you stand.\n"
+        if platform == "linkedin" else ""
+    )
+    return (
+        f"{intro}"
+        f"QUESTION: What is your biggest obstacle right now?\n"
+        f"OPTION_1: Lack of visibility\n"
+        f"OPTION_2: Manual processes\n"
+        f"OPTION_3: Tool fragmentation\n"
+        f"OPTION_4: Team alignment\n"
+    )
+
+
+def _mock_single_tweet(strategy: StrategyBrief) -> str:
+    """Single-tweet output — under 260 chars, ends with a hashtag."""
+    claim = strategy.primary_claim or "Genate turns product truth into brand-native copy."
+    tweet = claim[:220].rstrip(".")
+    return f"{tweet}. See how it works → #saas #b2bmarketing"
+
+
+def _mock_story(strategy: StrategyBrief) -> str:
+    """Story output in HOOK/CTA format the formatter expects."""
+    pain = strategy.lead_pain_point or "Your copy doesn't sound like your brand."
+    hook = pain[:75].rstrip(".,;")
+    return f"HOOK: {hook}.\nCTA: Link in bio"
+
+
 def run(
     strategy_brief: StrategyBrief,
     content_brief: ContentBrief,
@@ -135,9 +166,17 @@ def run(
     research_proof_points: list | None = None,
 ) -> str:
     if settings.MOCK_MODE:
-        if content_brief.platform == "twitter":
+        ct = content_brief.content_type
+        platform = content_brief.platform
+        if ct == "poll":
+            return _mock_poll(strategy_brief, platform)
+        if ct == "single_tweet":
+            return _mock_single_tweet(strategy_brief)
+        if ct == "story":
+            return _mock_story(strategy_brief)
+        if platform == "twitter":
             return _mock_twitter(strategy_brief)
-        if content_brief.platform == "instagram":
+        if platform == "instagram":
             return _mock_instagram(strategy_brief)
         return _mock_linkedin_post(strategy_brief)
 
@@ -161,6 +200,50 @@ def run(
             f"\nslide_count_target: {content_brief.slide_count_target} "
             "(write a distinct slide heading + 2-3 lines per slide)"
         )
+
+    _STRUCTURED_TYPES = frozenset({"poll", "story"})
+
+    def _content_type_hint(brief: ContentBrief) -> str:
+        ct = brief.content_type
+        if ct == "poll":
+            intro_note = (
+                "INTRO line is optional — omit it entirely for Twitter polls."
+                if brief.platform == "twitter"
+                else "INTRO line is optional context before the question (LinkedIn only)."
+            )
+            return (
+                "\n\nFORMAT — POLL (write ONLY these lines, nothing else):\n"
+                f"INTRO: [1-2 sentence context — {intro_note}]\n"
+                "QUESTION: [poll question, max 150 chars]\n"
+                "OPTION_1: [max 25 chars]\n"
+                "OPTION_2: [max 25 chars]\n"
+                "OPTION_3: [max 25 chars]\n"
+                "OPTION_4: [max 25 chars]\n"
+                "No narrative. No hashtags. No other text."
+            )
+        if ct == "single_tweet":
+            return (
+                "\n\nFORMAT — SINGLE TWEET:\n"
+                "Write ONE tweet only. Maximum 260 characters including 1-2 hashtags at the end. "
+                "Lead with the hook. No thread numbering. No line breaks."
+            )
+        if ct == "question_post":
+            return (
+                "\n\nFORMAT — QUESTION POST:\n"
+                "Line 1: A compelling question (max 180 chars, ends with ?).\n"
+                "Lines 2-4: 2-3 sentences of context that make the question worth answering.\n"
+                "Do not write a CTA sentence — the question IS the engagement.\n"
+                "Final line: 3-5 hashtags space-separated."
+            )
+        if ct == "story":
+            return (
+                "\n\nFORMAT — INSTAGRAM STORY (write ONLY these two lines, nothing else):\n"
+                "HOOK: [main text overlay, max 80 chars, punchy complete thought]\n"
+                "CTA: [action text, max 25 chars — e.g. 'Swipe up' or 'Link in bio']"
+            )
+        return ""
+
+    ct_hint = _content_type_hint(content_brief)
     platform_hint = ""
     if content_brief.platform == "twitter":
         platform_hint = (
@@ -235,7 +318,8 @@ def run(
         + research_block
         + slide_hint
         + platform_hint
-        + _depth_instruction(content_brief.platform, content_brief.content_depth)
+        + ct_hint
+        + ("" if content_brief.content_type in _STRUCTURED_TYPES else _depth_instruction(content_brief.platform, content_brief.content_depth))
         + "\n\nWrite the copy. Return only the copy text. No JSON.\n"
         "No preamble. No explanation."
     )
@@ -246,8 +330,9 @@ def run(
     ]
     copy = chat_completion(messages).strip()
 
-    # FIX 2 — CTA validation: retry once with explicit injection if CTA signal absent
-    if not _validate_cta(copy, strategy_brief.cta_intent):
+    # FIX 2 — CTA validation: retry once with explicit injection if CTA signal absent.
+    # Skip for structured types (poll, story, question_post) which have no free-form CTA.
+    if content_brief.content_type not in _STRUCTURED_TYPES | {"question_post"} and not _validate_cta(copy, strategy_brief.cta_intent):
         logger.warning(
             "[copywriter] CTA signal absent for cta_intent=%s — retrying with explicit injection",
             strategy_brief.cta_intent,
