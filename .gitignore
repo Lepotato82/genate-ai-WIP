@@ -3,7 +3,6 @@
 
 # Environment secrets
 .env
-.env.example
 
 # Python bytecode
 __pycache__/
@@ -17,3 +16,21 @@ __pycache__/
 
 # Node.js dependencies
 node_modules/
+CLAUDE.md
+
+# Build artifacts
+frontend/.next/
+dist/
+build/
+
+# Local IDE/project settings
+.cursor/
+.claude/
+
+# Logs and runtime artifacts
+*.log
+logs.txt
+
+# OS junk
+.DS_Store
+Thumbs.db
