@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
+import time
 
 from llm.client import chat_completion
 from prompts.loader import load_prompt
@@ -24,6 +26,15 @@ from schemas.strategy_brief import StrategyBrief
 from agents._utils import parse_json_object, utc_now_iso
 
 logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[evaluator] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[evaluator] %s", msg)
 
 
 # ---------------------------------------------------------------------------
@@ -92,6 +103,7 @@ def _apply_engagement_generic_cap(copy_text: str, engagement: int) -> int:
 def _check_fabricated_stats(
     copy: str,
     strategy_brief: StrategyBrief,
+    research_proof_points: list | None = None,
 ) -> str | None:
     """Return a pre-built revision_hint if fabricated stats are detected.
 
@@ -100,6 +112,9 @@ def _check_fabricated_stats(
     """
     copy_numbers = set(re.findall(r"\b\d+(?:\.\d+)?(?:%|K|M|B)?\b", copy))
     permitted_text = strategy_brief.proof_point + " " + strategy_brief.primary_claim
+    # Research stats are third-party evidence — their numbers are legitimate
+    for rp in (research_proof_points or []):
+        permitted_text += " " + (getattr(rp, "text", "") or "")
     permitted_numbers = set(re.findall(r"\b\d+(?:\.\d+)?(?:%|K|M|B)?\b", permitted_text))
     fabricated = copy_numbers - permitted_numbers
     # Filter out year numbers (2020-2030) — these are not fabricated stats
@@ -115,14 +130,17 @@ def _check_fabricated_stats(
 
 
 def _apply_fabricated_stat_cap(
-    copy_text: str, proof_point: str, primary_claim: str, accuracy: int
+    copy_text: str, proof_point: str, primary_claim: str, accuracy: int,
+    research_proof_points: list | None = None,
 ) -> int:
     """Cap accuracy at 1 if copy contains a numeric stat not present in proof_point or primary_claim.
 
     A numeric stat is any token matching digits with optional % or x suffix (e.g. 63%, 2x, 40%).
-    Stats that appear verbatim in proof_point or primary_claim are allowed.
+    Stats that appear verbatim in proof_point, primary_claim, or research_proof_points are allowed.
     """
     allowed_text = (proof_point + " " + primary_claim).lower()
+    for rp in (research_proof_points or []):
+        allowed_text += " " + (getattr(rp, "text", "") or "").lower()
     allowed_stats = set(re.findall(r"\d+(?:\.\d+)?(?:%|x\b)", allowed_text))
     copy_stats = set(re.findall(r"\d+(?:\.\d+)?(?:%|x\b)", copy_text.lower()))
     fabricated = copy_stats - allowed_stats
@@ -145,6 +163,7 @@ def run(
     strategy_brief: StrategyBrief,
     brand_profile: BrandProfile,
     retry_count: int = 0,
+    research_proof_points: list | None = None,
 ) -> EvaluatorOutput:
     if settings.MOCK_MODE:
         return _mock(formatted_content, retry_count)
@@ -161,7 +180,7 @@ def run(
     copy_text = _extract_copy(formatted_content)
 
     # Pre-check for fabricated stats before calling LLM — inject violation into system prompt
-    pre_hint = _check_fabricated_stats(copy_text, strategy_brief)
+    pre_hint = _check_fabricated_stats(copy_text, strategy_brief, research_proof_points)
     if pre_hint:
         logger.warning("Evaluator pre-check: %s", pre_hint)
         system = f"PRE-DETECTED VIOLATION: {pre_hint}\n\n" + system
@@ -192,6 +211,11 @@ def run(
         f"{platform_note}"
     )
 
+    _progress(
+        f"calling LLM (platform={formatted_content.platform}, "
+        f"user_msg={len(user_msg)} chars, retry={retry_count})"
+    )
+    _t0 = time.time()
     raw = chat_completion(
         [
             {"role": "system", "content": system},
@@ -199,6 +223,7 @@ def run(
         ],
         temperature=0,
     )
+    _progress(f"LLM responded in {time.time() - _t0:.1f}s ({len(raw)} chars)")
 
     try:
         data = parse_json_object(raw)
@@ -248,7 +273,8 @@ def run(
 
     data["engagement"] = _apply_engagement_generic_cap(copy_text, data["engagement"])
     data["accuracy"] = _apply_fabricated_stat_cap(
-        copy_text, strategy_brief.proof_point, strategy_brief.primary_claim, data["accuracy"]
+        copy_text, strategy_brief.proof_point, strategy_brief.primary_claim, data["accuracy"],
+        research_proof_points=research_proof_points,
     )
 
     # Determine if copy passes (all scores >= 3)

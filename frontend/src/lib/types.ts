@@ -92,6 +92,12 @@ export interface SSEEvent {
   passes?: boolean;
   formatted_content?: FormattedContentRaw;
   evaluator_output?: EvaluatorOutput;
+  composed_images?: CompositorResult;
+  // Diagnostic fields
+  content_type?: string;
+  logo_confidence?: string | null;
+  logo_compositing_enabled?: boolean;
+  design_category?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -156,6 +162,63 @@ export interface EvaluatorOutput {
 }
 
 // ---------------------------------------------------------------------------
+// Compositor output types
+// ---------------------------------------------------------------------------
+
+export type LayoutArchetype =
+  | "typographic"
+  | "bold_block"
+  | "sidebar"
+  | "frame"
+  | "hero_text"
+  | "split_field"
+  | "diagonal_split"
+  | "editorial_photo"
+  | "photo_overlay"
+  | "risograph"
+  | "soft_card"
+  | "stat_hero";
+
+export interface ComposedImage {
+  slide_index: number;
+  /** Base64-encoded PNG bytes. Render as: <img src={`data:image/png;base64,${png_b64}`} /> */
+  png_b64: string;
+  width: number;
+  height: number;
+  layout: LayoutArchetype;
+  /** Source text used when compositing — enables the slide editor to pre-populate inputs */
+  headline?: string;
+  body_text?: string;
+  slide_label?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Slide re-render (canvas editor)
+// ---------------------------------------------------------------------------
+
+export interface RerenderRequest {
+  run_id: string;
+  slide_index: number;
+  headline: string;
+  body_text: string;
+  layout: string;
+  slide_label?: string | null;
+}
+
+export interface RerenderResponse {
+  png_b64: string;
+  layout: string;
+}
+
+export interface CompositorResult {
+  composed_images: ComposedImage[];
+  layout: LayoutArchetype | null;
+  slide_count: number;
+  compositor_enabled: boolean;
+  error: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // App-level result type assembled from the final SSE event
 // ---------------------------------------------------------------------------
 
@@ -166,6 +229,11 @@ export interface GenerateResult {
   formatted_content: FormattedContentRaw;
   evaluator_output: EvaluatorOutput;
   passes: boolean;
+  composed_images?: CompositorResult;
+  // Diagnostic fields from the pipeline done event
+  logo_confidence?: string | null;
+  logo_compositing_enabled?: boolean;
+  design_category?: string;
 }
 
 // ---------------------------------------------------------------------------

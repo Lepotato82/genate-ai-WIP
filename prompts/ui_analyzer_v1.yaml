@@ -1,8 +1,8 @@
 # =============================================================================
 # ui_analyzer_v1.yaml — UI / brand analysis (flat JSON)
 # =============================================================================
-# Version:      2.1
-# Last updated: March 2026
+# Version:      2.3
+# Last updated: April 2026
 # Owner:        Person B
 # Agent:        UI Analyzer (Step 2 — parallel with Product Analysis)
 # Purpose:      Classify a SaaS brand's design category and extract brand
@@ -22,6 +22,9 @@
 #   2.1  March 2026  Added six few-shot examples covering all five design
 #                    categories plus one contested/borderline case. All
 #                    examples validated against real Indian SaaS companies.
+#   2.3  April 2026  Added CSS NAMING CONVENTIONS block to system_prompt — guides
+#                    the LLM to prefer --primary/--ring over --foreground for
+#                    primary_color on Shadcn/Radix/Tailwind-based SaaS sites.
 #   2.2  March 2026  FIX 4 — Rewrote writing_instruction rule and all six
 #                    few-shot writing_instruction values. Previous output read
 #                    like a design system doc (font names, hex colors, spacing).
@@ -45,13 +48,25 @@ system_prompt: |
   - "developer-tool" — monospace, APIs, dark UI, technical density
   - "minimal-saas" — lots of whitespace, thin type, restrained palette
   - "bold-enterprise" — strong contrast, large headlines, trust / scale cues
-  - "consumer-friendly" — rounded shapes, friendly illustrations, soft colors
+  - "consumer-friendly" — rounded shapes, friendly illustrations, soft colors,
+    OR any B2C product targeting end consumers (health, wellness, fitness,
+    food, lifestyle, mobile app with App Store / Google Play links)
   - "data-dense" — tables, charts, compact UI, analytics feel
 
   tone MUST be exactly one of: "technical", "playful", "corporate", "minimal", "bold"
 
   primary_color, secondary_color, background_color: hex or rgb strings from the
   tokens or image. Use null only when truly unknown.
+
+  CSS NAMING CONVENTIONS — read before choosing colors:
+  Modern SaaS design systems (Shadcn, Radix, Tailwind) use semantic variable names:
+  - "--foreground", "--muted-foreground", "--card-foreground" are text/decoration colors.
+    Do NOT use these as primary_color.
+  - "--primary", "--ring", "--brand", "--interactive" are interactive/action colors.
+    Prefer these for primary_color when they have meaningful contrast against background.
+  - "--background", "--card", "--popover" are surface colors. Use for background_color only.
+  Rule: primary_color must be the color used for buttons, links, and CTAs — not body text.
+  If "--primary" and "--foreground" both exist, always choose "--primary" for primary_color.
 
   font_family: the first font family name only (e.g. "Inter"), not the full CSS stack.
 

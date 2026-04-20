@@ -32,7 +32,7 @@ ProofPointType = Literal[
     "user_count",
 ]
 
-CtaIntent = Literal["start_trial", "learn_more", "book_demo", "sign_up"]
+CtaIntent = Literal["start_trial", "learn_more", "book_demo", "sign_up", "engage"]
 
 AppealType = Literal["rational", "emotional", "mixed"]
 

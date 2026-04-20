@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from typing import Any
 
@@ -7,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 
-from agents import input_processor, ui_analyzer
+from agents import compositor, input_processor, ui_analyzer
 from pipeline import RUN_REGISTRY, approve_run, run_stream
 from schemas.content_brief import PLATFORM_CONTENT_TYPES
 
@@ -38,6 +39,15 @@ class ApproveRequest(BaseModel):
     edited_copy: str | None = None
 
 
+class RerenderRequest(BaseModel):
+    run_id: str
+    slide_index: int
+    headline: str
+    body_text: str
+    layout: str
+    slide_label: str | None = None
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -64,6 +74,43 @@ def generate(req: GenerateRequest) -> StreamingResponse:
             yield f"data: {json.dumps(evt)}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/rerender-slide")
+def rerender_slide(req: RerenderRequest) -> dict[str, Any]:
+    """Re-render a single slide with edited headline/body text.
+
+    Looks up the BrandIdentity from RUN_REGISTRY so the compositor can apply
+    the correct colors, fonts, and logo.  Returns a fresh base64 PNG.
+    """
+    if req.run_id not in RUN_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Run '{req.run_id}' not found in registry")
+
+    artifacts = RUN_REGISTRY[req.run_id]
+    if artifacts.brand_identity is None:
+        raise HTTPException(status_code=422, detail="Brand identity not stored for this run")
+
+    # Resolve canvas size from the stored composed images (fall back to default)
+    canvas_size: tuple[int, int] = (1080, 1080)
+    stored = artifacts.composed_images or {}
+    slides_list = stored.get("composed_images", [])
+    if slides_list:
+        first = slides_list[0]
+        canvas_size = (first.get("width", 1080), first.get("height", 1080))
+
+    png_bytes = compositor._compose_slide(
+        headline=req.headline,
+        subtext=req.body_text,
+        slide_label=req.slide_label,
+        identity=artifacts.brand_identity,
+        layout=req.layout,
+        canvas_size=canvas_size,
+    )
+
+    return {
+        "png_b64": base64.b64encode(png_bytes).decode("ascii"),
+        "layout": req.layout,
+    }
 
 
 @app.post("/runs/{run_id}/approve")

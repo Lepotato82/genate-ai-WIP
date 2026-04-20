@@ -1,0 +1,104 @@
+{
+  "captured_at": "2026-04-06T17:17:37.860691+00:00",
+  "url": "https://searchable.com",
+  "platform": "linkedin",
+  "run_id": null,
+  "elapsed_seconds": 79.8,
+  "settings": {
+    "MOCK_MODE": false,
+    "RESEARCH_AUGMENTATION_ENABLED": false,
+    "HERO_IMAGE_ENABLED": true,
+    "HERO_IMAGE_PROVIDER": "pollinations",
+    "COMPOSITOR_ENABLED": true,
+    "LLM_PROVIDER": "groq",
+    "LLM_TEXT_MODEL": "llama-3.3-70b-versatile",
+    "LLM_VISION_PROVIDER": "ollama"
+  },
+  "events": [
+    {
+      "step": 1,
+      "agent": "input_processor",
+      "status": "start",
+      "elapsed": 0.0,
+      "message": "Collecting inputs"
+    },
+    {
+      "step": 1,
+      "agent": "input_processor",
+      "status": "complete",
+      "elapsed": 10.205,
+      "message": "Input package ready"
+    },
+    {
+      "step": 2,
+      "agent": "ui_analyzer",
+      "status": "start",
+      "elapsed": 10.205,
+      "message": "Analyzing brand visuals"
+    },
+    {
+      "step": 3,
+      "agent": "product_analysis",
+      "status": "start",
+      "elapsed": 10.205,
+      "message": "Analyzing product text"
+    },
+    {
+      "step": 2,
+      "agent": "ui_analyzer",
+      "status": "complete",
+      "elapsed": 12.889,
+      "message": "Brand profile extracted"
+    },
+    {
+      "step": 3,
+      "agent": "product_analysis",
+      "status": "complete",
+      "elapsed": 12.889,
+      "message": "Product knowledge extracted"
+    },
+    {
+      "step": 4,
+      "agent": "planner",
+      "status": "start",
+      "elapsed": 12.89,
+      "message": "Planning content"
+    },
+    {
+      "step": 4,
+      "agent": "planner",
+      "status": "complete",
+      "elapsed": 14.316,
+      "message": "Content brief created"
+    },
+    {
+      "step": 5,
+      "agent": "strategy",
+      "status": "start",
+      "elapsed": 14.316,
+      "message": "Building strategy"
+    },
+    {
+      "step": 5,
+      "agent": "strategy",
+      "status": "complete",
+      "elapsed": 15.625,
+      "message": "Strategy brief created"
+    },
+    {
+      "step": 6,
+      "agent": "copywriting",
+      "status": "start",
+      "elapsed": 15.625,
+      "message": "Generating raw copy"
+    },
+    {
+      "step": 7,
+      "agent": "visual_gen",
+      "status": "start",
+      "elapsed": 15.625,
+      "message": "Building image prompt"
+    }
+  ],
+  "done": {}
+}

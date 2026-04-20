@@ -194,12 +194,24 @@ class BrandIdentity(BaseModel):
     @model_validator(mode="after")
     def set_compositing_flag(self) -> "BrandIdentity":
         """
-        Enable logo compositing only when confidence is high.
-        medium = og:image used (may be marketing graphic not logo)
-        low    = favicon only (too small to composite)
+        Enable logo compositing when confidence is high or low (favicon that is a proper raster).
+        low    = favicon — may be a clean app icon (e.g. lemonhealth.ai); composite if bytes look valid
+        medium = og:image — wide marketing graphic, skip (letterboxing risk)
         None   = no logo found
         """
-        self.logo_compositing_enabled = self.logo_confidence == "high"
+        if self.logo_confidence in ("high", "low") and self.logo_bytes:
+            lb = self.logo_bytes
+            # Skip ICO files — they are tiny system icons not suitable for compositing
+            is_ico = lb[:4] == b"\x00\x00\x01\x00"
+            # Accept PNG, JPEG, WebP regardless of byte size
+            is_raster = (
+                lb[:4] == b"\x89PNG"   # PNG
+                or lb[:2] == b"\xff\xd8"  # JPEG
+                or lb[:4] == b"RIFF"    # WebP
+            )
+            self.logo_compositing_enabled = is_raster and not is_ico
+        else:
+            self.logo_compositing_enabled = False
         return self
 
     @model_validator(mode="after")

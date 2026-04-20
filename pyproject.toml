@@ -55,6 +55,9 @@ dev = [
 logo_ocr = [
     "pytesseract>=0.3.10",
 ]
+vision = [
+    "rembg",
+]
 
 [tool.pytest.ini_options]
 markers = ["integration: real network calls, run explicitly only"]

@@ -119,6 +119,11 @@ _CATEGORY_QUERY_OVERRIDES: dict[str, list[str]] = {
         "mobile health app engagement personal health research report 2026",
         "digital health consumer trends Pew Research CDC survey 2025 2026",
     ],
+    "health-wellness-clinical": [
+        "[pain_point] clinical study research findings CDC WHO 2024 2025",
+        "[pain_point] health risk medical research JAMA Lancet PubMed 2024 2025",
+        "[pain_point] prevalence statistics health survey NIH CDC data 2024 2025",
+    ],
 }
 
 # Pain-first query tails — avoid defaulting every query to B2B + category.
@@ -247,8 +252,14 @@ def _build_queries(product: ProductKnowledge) -> list[str]:
     q1 = _first_pain_query(product)
     q2 = _second_pain_query(product)
 
-    override_row = _CATEGORY_QUERY_OVERRIDES.get(category)
-    override_first = override_row[0].strip() if override_row else None
+    # B2C health brands get clinical research queries instead of market stats
+    if category == "health-wellness" and _is_likely_b2c(product):
+        clinical_templates = _CATEGORY_QUERY_OVERRIDES["health-wellness-clinical"]
+        pain = (product.pain_points[0] if product.pain_points else product.tagline or "")[:60]
+        override_first = clinical_templates[hash(pain) % len(clinical_templates)].replace("[pain_point]", pain)
+    else:
+        override_row = _CATEGORY_QUERY_OVERRIDES.get(category)
+        override_first = override_row[0].strip() if override_row else None
     q3 = _category_anchor_query(product, category, override_first)
 
     queries = [q1, q2, q3]
@@ -276,12 +287,12 @@ def _search_tavily(query: str) -> list[dict]:
         client = TavilyClient(api_key=settings.TAVILY_API_KEY)
         response = client.search(
             query=query,
-            search_depth="advanced",
+            search_depth="basic",
             max_results=settings.TAVILY_MAX_RESULTS,
             include_raw_content=False,
         )
         results = response.get("results", [])
-        logger.info("[research_agent] query '%s' → %d results", query[:50], len(results))
+        logger.info("[research_agent] query '%s' -> %d results", query[:50], len(results))
         return results
     except Exception as exc:
         logger.error("[research_agent] Tavily search failed: %s", exc)

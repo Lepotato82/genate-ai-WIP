@@ -55,9 +55,11 @@ system_prompt: |
   Use exact brand hex colors only as atmosphere (sky glow, accent light, shapes) — not as UI chrome.
 
   Output format: Return ONLY valid JSON with exactly these keys:
-    "image_prompt": string — full T2I prompt, 2–6 short sentences, comma-friendly for APIs;
-      MUST weave in the negative-space / left-overlay layout requirements above verbatim in spirit
-      (e.g. mention left side clear, ~60% negative space, asymmetry).
+    "image_prompt": string — T2I prompt, MAXIMUM 80 words, written as 3–5 SHORT comma-separated
+      phrases or sentences (NOT one long run-on sentence). Lead with the visual style and mood.
+      Mention: (1) left 60% clean negative space for text overlay, (2) the accent_color as the
+      dominant hue for any shapes/light on the right, (3) the design_category aesthetic in plain
+      art-direction words. Do NOT write long subordinate clauses or repeat the same idea twice.
     "suggested_format": one of "static", "carousel", "video", "ugc"
     "video_script": null
     "video_hook": null

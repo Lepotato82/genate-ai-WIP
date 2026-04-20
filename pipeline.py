@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+import sys
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Generator, Literal, cast
 
+
+def _step(msg: str) -> None:
+    """Write a pipeline step marker straight to stdout (bypasses buffering)."""
+    try:
+        sys.stdout.buffer.write(f"[pipeline] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        print(f"[pipeline] {msg}", flush=True)
+
 from agents import (
+    compositor,
     copywriter,
     evaluator,
     formatter,
@@ -58,6 +69,8 @@ class RunArtifacts:
     evaluator_output: EvaluatorOutput
     images: dict | None = None
     visual: dict | None = None
+    composed_images: dict | None = None
+    brand_identity: BrandIdentity | None = None
 
 
 RUN_REGISTRY: dict[str, RunArtifacts] = {}
@@ -90,6 +103,24 @@ def build_brand_identity(
                 mono_font = val.split(",")[0].strip().strip("\"'")
                 break
 
+    # Extract accent color from css_tokens — prefer interactive/brand colors over text colors.
+    # Shadcn/Radix/Tailwind SaaS sites use --primary for the interactive brand color;
+    # --foreground is always body text (near-black) and must NOT be used as accent.
+    _ACCENT_TOKEN_PRIORITY = [
+        "--primary", "--ring", "--chart-1", "--sidebar-primary", "--sidebar-ring",
+    ]
+    accent_color: str | None = None
+    if brand.css_tokens:
+        from agents.image_gen import _contrast_ratio
+        bg_hex = _to_hex(brand.background_color) or "#ffffff"
+        for key in _ACCENT_TOKEN_PRIORITY:
+            raw = brand.css_tokens.get(key)
+            if raw:
+                hex_val = _to_hex(str(raw))
+                if hex_val and _contrast_ratio(hex_val, bg_hex) > 1.5:
+                    accent_color = hex_val
+                    break
+
     return BrandIdentity(
         product_name=product.product_name or "Unknown",
         product_url=str(pkg.url),
@@ -101,7 +132,7 @@ def build_brand_identity(
         og_image_bytes=None,
         primary_color=_to_hex(brand.primary_color) or "#000000",
         secondary_color=_to_hex(brand.secondary_color),
-        accent_color=None,
+        accent_color=accent_color,
         background_color=_to_hex(brand.background_color) or "#ffffff",
         foreground_color=None,
         font_family_heading=brand.font_family,
@@ -137,15 +168,19 @@ def _run_stages_after_input(
 ]:
     plat = _norm_platform(platform)
 
+    _step("Step 2+3 — ui_analyzer + product_analysis (parallel)")
     with ThreadPoolExecutor(max_workers=2) as pool:
         f_ui = pool.submit(ui_analyzer.run, pkg)
         f_pa = pool.submit(product_analysis.run, pkg)
         brand = f_ui.result()
         product = f_pa.result()
+    _step("Step 2+3 done")
 
     # Step 3.5 — Research augmentation (gated by RESEARCH_AUGMENTATION_ENABLED)
+    _step(f"Step 3.5 — research_agent (enabled={settings.RESEARCH_AUGMENTATION_ENABLED})")
     research_points = research_agent.run(product)
     product.research_proof_points = research_points
+    _step(f"Step 3.5 done ({len(research_points or [])} proof points)")
 
     brand_identity = build_brand_identity(pkg, brand, product)
 
@@ -155,8 +190,18 @@ def _run_stages_after_input(
         knowledge_context = query_context(org_id=org_id, query_text=query_text)
     _ = knowledge_context
 
+    _step("Step 4 — planner")
     content_brief = planner.run(brand, product, plat, force_content_type=force_content_type)
-    strategy_brief = strategy.run(content_brief, product, brand)
+    _step(f"Step 4 done (content_type={content_brief.content_type})")
+
+    _step("Step 5 — strategy")
+    strategy_brief = strategy.run(
+        content_brief, product, brand,
+        research_proof_points=product.research_proof_points or [],
+    )
+    _step("Step 5 done")
+
+    _step("Step 6+7 — copywriter + visual_gen (parallel)")
     with ThreadPoolExecutor(max_workers=2) as pool:
         f_copy = pool.submit(
             copywriter.run,
@@ -174,7 +219,9 @@ def _run_stages_after_input(
         )
         raw_copy = f_copy.result()
         visual_out = f_visual.result()
+    _step(f"Step 6+7 done (raw_copy={len(raw_copy)} chars)")
 
+    _step("Step 8 — formatter (initial)")
     formatted = formatter.run(
         raw_copy,
         content_brief,
@@ -184,10 +231,17 @@ def _run_stages_after_input(
         retry_count=0,
         product_knowledge=product,
     )
+    _step("Step 8 done")
+
     retry = 0
-    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+    research_points = product.research_proof_points or []
+    _step("Step 9 — evaluator (initial)")
+    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry,
+                              research_proof_points=research_points)
+    _step(f"Step 9 done (passes={evaluated.passes}, score={getattr(evaluated, 'overall_score', '?')})")
     while not evaluated.passes and retry < MAX_EVAL_RETRIES:
         retry += 1
+        _step(f"Step 8 — formatter (retry {retry})")
         formatted = formatter.run(
             raw_copy,
             content_brief,
@@ -197,7 +251,10 @@ def _run_stages_after_input(
             retry_count=retry,
             product_knowledge=product,
         )
-        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+        _step(f"Step 9 — evaluator (retry {retry})")
+        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry,
+                                  research_proof_points=research_points)
+        _step(f"Step 9 done (passes={evaluated.passes})")
 
     return (
         brand,
@@ -224,6 +281,7 @@ def run_pipeline(
     """
     run_id = str(uuid.uuid4())
     started = perf_counter()
+    _step(f"Step 1 — input_processor (url={url})")
     pkg = input_processor.run(
         url=url,
         run_id=run_id,
@@ -231,6 +289,7 @@ def run_pipeline(
         user_image=user_image,
         user_document=user_document,
     )
+    _step(f"Step 1 done (run_id={run_id})")
     (
         brand,
         product,
@@ -248,7 +307,15 @@ def run_pipeline(
         platform=platform,
         started=started,
     )
-    images = image_gen.run(formatted, brand_identity, visual=visual_out)
+    _step(
+        f"Step 7.5 — image_gen (IMAGE_GENERATION_ENABLED={settings.IMAGE_GENERATION_ENABLED}, "
+        f"HERO_IMAGE_ENABLED={settings.HERO_IMAGE_ENABLED}, provider={settings.HERO_IMAGE_PROVIDER})"
+    )
+    images = image_gen.run(
+        formatted, brand_identity, visual=visual_out,
+        pain_point=strategy_brief.lead_pain_point,
+    )
+    _step("Step 7.5 done")
     artifacts = RunArtifacts(
         run_id=run_id,
         org_id=None,
@@ -328,6 +395,7 @@ def run_stream(
     started = perf_counter()
 
     # Step 1 — Input Processor
+    _step(f"Step 1 — input_processor (url={url})")
     yield _event(1, "input_processor", "start", started, "Collecting inputs")
     input_pkg = input_processor.run(
         url=url,
@@ -337,9 +405,11 @@ def run_stream(
         user_document=user_document,
         user_document_filename=user_document_filename,
     )
+    _step("Step 1 done")
     yield _event(1, "input_processor", "complete", started, "Input package ready")
 
     # Steps 2+3 — UI Analyzer + Product Analysis (parallel)
+    _step("Step 2+3 — ui_analyzer + product_analysis (parallel)")
     yield _event(2, "ui_analyzer", "start", started, "Analyzing brand visuals")
     yield _event(3, "product_analysis", "start", started, "Analyzing product text")
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -347,14 +417,17 @@ def run_stream(
         f_pa = pool.submit(product_analysis.run, input_pkg)
         brand = f_ui.result()
         product = f_pa.result()
+    _step("Step 2+3 done")
     yield _event(2, "ui_analyzer", "complete", started, "Brand profile extracted")
     yield _event(3, "product_analysis", "complete", started, "Product knowledge extracted")
 
     # Step 3.5 — Research augmentation (gated by RESEARCH_AUGMENTATION_ENABLED)
+    _step(f"Step 3.5 — research_agent (enabled={settings.RESEARCH_AUGMENTATION_ENABLED})")
     if settings.RESEARCH_AUGMENTATION_ENABLED:
         yield _event(0, "research_agent", "start", started, "Searching for research stats")
     research_points = research_agent.run(product)
     product.research_proof_points = research_points
+    _step(f"Step 3.5 done ({len(research_points or [])} proof points)")
     if settings.RESEARCH_AUGMENTATION_ENABLED:
         yield _event(0, "research_agent", "complete", started,
                      f"Found {len(research_points)} research proof points")
@@ -371,16 +444,24 @@ def run_stream(
     _ = knowledge_context
 
     # Step 4 — Planner
+    _step("Step 4 — planner")
     yield _event(4, "planner", "start", started, "Planning content")
     content_brief = planner.run(brand, product, _norm_platform(platform), force_content_type=force_content_type)
+    _step(f"Step 4 done (content_type={content_brief.content_type})")
     yield _event(4, "planner", "complete", started, "Content brief created")
 
     # Step 5 — Strategy
+    _step("Step 5 — strategy")
     yield _event(5, "strategy", "start", started, "Building strategy")
-    strategy_brief = strategy.run(content_brief, product, brand)
+    strategy_brief = strategy.run(
+        content_brief, product, brand,
+        research_proof_points=product.research_proof_points or [],
+    )
+    _step("Step 5 done")
     yield _event(5, "strategy", "complete", started, "Strategy brief created")
 
     # Steps 6+7 — Copywriter + Visual Gen (parallel)
+    _step("Step 6+7 — copywriter + visual_gen (parallel)")
     yield _event(6, "copywriting", "start", started, "Generating raw copy")
     yield _event(7, "visual_gen", "start", started, "Building image prompt")
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -400,9 +481,11 @@ def run_stream(
         )
         raw_copy = f_copy.result()
         visual_out = f_visual.result()
+    _step(f"Step 6+7 done (raw_copy={len(raw_copy)} chars)")
     yield _event(6, "copywriting", "complete", started, "Raw copy generated")
     yield _event(7, "visual_gen", "complete", started, "Image prompt ready")
 
+    _step("Step 8 — formatter (initial)")
     yield _event(8, "formatter", "start", started, "Applying platform formatting")
     formatted = formatter.run(
         raw_copy,
@@ -413,10 +496,19 @@ def run_stream(
         retry_count=0,
         product_knowledge=product,
     )
+    _step("Step 8 done")
     yield _event(8, "formatter", "complete", started, "Formatting complete")
 
     # Phase 2 — Image generation (Bannerbear slides + optional hero T2I)
-    images = image_gen.run(formatted, brand_identity, visual=visual_out)
+    _step(
+        f"Step 7.5 — image_gen (IMAGE_GENERATION_ENABLED={settings.IMAGE_GENERATION_ENABLED}, "
+        f"HERO_IMAGE_ENABLED={settings.HERO_IMAGE_ENABLED}, provider={settings.HERO_IMAGE_PROVIDER})"
+    )
+    images = image_gen.run(
+        formatted, brand_identity, visual=visual_out,
+        pain_point=strategy_brief.lead_pain_point,
+    )
+    _step("Step 7.5 done")
     if images.get("generation_enabled") or images.get("hero_generation_enabled"):
         parts: list[str] = []
         if images.get("generation_enabled"):
@@ -427,12 +519,17 @@ def run_stream(
 
     # Steps 8+9 — Formatter → Evaluator with retry loop
     retry = 0
+    research_points = product.research_proof_points or []
+    _step("Step 9 — evaluator (initial)")
     yield _event(9, "evaluator", "start", started, "Evaluating quality gate")
-    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+    evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry,
+                              research_proof_points=research_points)
+    _step(f"Step 9 done (passes={evaluated.passes})")
     yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
 
     while not evaluated.passes and retry < MAX_EVAL_RETRIES:
         retry += 1
+        _step(f"Step 8 — formatter (retry {retry})")
         yield _event(8, "formatter", "start", started, "Applying revision")
         formatted = formatter.run(
             raw_copy,
@@ -443,10 +540,30 @@ def run_stream(
             retry_count=retry,
             product_knowledge=product,
         )
+        _step(f"Step 8 done (retry {retry})")
         yield _event(8, "formatter", "complete", started, "Formatting complete")
+        _step(f"Step 9 — evaluator (retry {retry})")
         yield _event(9, "evaluator", "start", started, "Re-evaluating")
-        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry)
+        evaluated = evaluator.run(formatted, strategy_brief, brand, retry_count=retry,
+                                  research_proof_points=research_points)
+        _step(f"Step 9 done (passes={evaluated.passes})")
         yield _event(9, "evaluator", "complete", started, f"Evaluation pass={evaluated.passes}")
+
+    # Step 8.5 — Compositor (local Pillow — no external API, no credentials)
+    _empty_composed: dict = {
+        "composed_images": [], "layout": None,
+        "slide_count": 0, "compositor_enabled": False, "error": None,
+    }
+    composed_result: dict = _empty_composed
+    if settings.COMPOSITOR_ENABLED and content_brief.content_type in compositor.VISUAL_CONTENT_TYPES:
+        _step(f"Step 8.5 — compositor (content_type={content_brief.content_type})")
+        yield _event(12, "compositor", "start", started, "Compositing brand images")
+        composed_result = compositor.run(formatted, brand_identity, content_brief, images=images)
+        _step(f"Step 8.5 done ({composed_result.get('slide_count', 0)} slides)")
+        n = composed_result["slide_count"]
+        lay = composed_result["layout"] or "n/a"
+        yield _event(12, "compositor", "complete", started,
+                     f"Composed {n} image(s) · layout: {lay}")
 
     artifacts = RunArtifacts(
         run_id=run_id,
@@ -460,6 +577,8 @@ def run_stream(
         evaluator_output=evaluated,
         images=images,
         visual=visual_out,
+        composed_images=composed_result,
+        brand_identity=brand_identity,
     )
     RUN_REGISTRY[run_id] = artifacts
 
@@ -480,6 +599,17 @@ def run_stream(
     done["passes"] = evaluated.passes
     done["formatted_content"] = formatted.model_dump()
     done["evaluator_output"] = evaluated.model_dump()
+    done["composed_images"] = composed_result
+    # Diagnostic fields — visible in captures and frontend without schema changes
+    done["content_type"] = content_brief.content_type
+    done["logo_confidence"] = brand_identity.logo_confidence
+    done["logo_compositing_enabled"] = brand_identity.logo_compositing_enabled
+    done["design_category"] = brand_identity.design_category
+    # Expose visual_gen output so captures and frontend can inspect the image prompt
+    done["image_prompt"] = (visual_out or {}).get("image_prompt")
+    done["suggested_format"] = (visual_out or {}).get("suggested_format")
+    done["background_hero_url"] = (images or {}).get("background_hero_url")
+    done["hero_error"] = (images or {}).get("hero_error")
     yield done
 
 
@@ -504,7 +634,10 @@ def _run_entry(
 
     brand_identity = build_brand_identity(pkg, brand, product)
     brief = planner.run(brand, product, platform=plat)
-    strategy_brief = strategy.run(brief, product, brand)
+    strategy_brief = strategy.run(
+        brief, product, brand,
+        research_proof_points=product.research_proof_points or [],
+    )
     with ThreadPoolExecutor(max_workers=2) as pool:
         f_copy = pool.submit(
             copywriter.run,
@@ -533,10 +666,15 @@ def _run_entry(
     )
 
     # Phase 2 — Image generation (runs on first formatted output, before retry loop)
-    images = image_gen.run(formatted, brand_identity, visual=visual_out)
+    images = image_gen.run(
+        formatted, brand_identity, visual=visual_out,
+        pain_point=strategy_brief.lead_pain_point,
+    )
 
+    research_points = product.research_proof_points or []
     for attempt in range(max_retries + 1):
-        evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt)
+        evaluation = evaluator.run(formatted, strategy_brief, brand, retry_count=attempt,
+                                   research_proof_points=research_points)
         if evaluation.passes or attempt == max_retries:
             break
         formatted = formatter.run(

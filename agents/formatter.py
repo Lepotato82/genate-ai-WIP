@@ -14,6 +14,8 @@ from __future__ import annotations
 import json
 import logging
 import re
+import sys
+import time
 from pathlib import Path
 
 from llm.client import chat_completion
@@ -33,6 +35,16 @@ from schemas.product_knowledge import ProductKnowledge
 from agents._utils import parse_json_object, utc_now_iso
 
 logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[formatter] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[formatter] %s", msg)
+
 
 _HASHTAG_TOKEN = re.compile(r"#\w[\w]*", re.UNICODE)
 
@@ -785,6 +797,12 @@ def run(
 
     if platform == "linkedin":
         system = _LINKEDIN_SYSTEM
+        if content_brief.content_type == "carousel":
+            system = system + (
+                "\n\nCAROUSEL MODE: The body field MUST contain 3-5 distinct paragraphs "
+                "separated by a blank line (\\n\\n). Each paragraph becomes one carousel slide. "
+                "Do NOT merge them into a single block of text."
+            )
         if revision_hint:
             system = (
                 f"REVISION REQUIRED: {revision_hint}\n"
@@ -796,6 +814,8 @@ def run(
             + "\n---\nFormat this copy for LinkedIn:\n\n"
             + raw_copy
         )
+        _progress(f"calling LLM (linkedin, user_msg={len(user_msg)} chars, retry={retry_count})")
+        _t0 = time.time()
         raw_response = chat_completion(
             [
                 {"role": "system", "content": system},
@@ -803,6 +823,7 @@ def run(
             ],
             temperature=0,
         )
+        _progress(f"linkedin LLM responded in {time.time() - _t0:.1f}s ({len(raw_response)} chars)")
         try:
             data = parse_json_object(raw_response)
         except ValueError:
@@ -861,6 +882,8 @@ def run(
             "Preserve substance from the strategy block; do not drift to a different product story.\n\n"
             + raw_copy
         )
+        _progress(f"calling LLM (twitter, user_msg={len(user_msg)} chars, retry={retry_count})")
+        _t0 = time.time()
         raw_response = chat_completion(
             [
                 {"role": "system", "content": system},
@@ -868,6 +891,7 @@ def run(
             ],
             temperature=0,
         )
+        _progress(f"twitter LLM responded in {time.time() - _t0:.1f}s ({len(raw_response)} chars)")
         try:
             data = parse_json_object(raw_response)
         except ValueError:
@@ -907,6 +931,8 @@ def run(
             + "\n---\nFormat this Instagram caption from raw copy:\n\n"
             + raw_copy
         )
+        _progress(f"calling LLM (instagram, user_msg={len(user_msg)} chars, retry={retry_count})")
+        _t0 = time.time()
         raw_response = chat_completion(
             [
                 {"role": "system", "content": system},
@@ -914,6 +940,7 @@ def run(
             ],
             temperature=0,
         )
+        _progress(f"instagram LLM responded in {time.time() - _t0:.1f}s ({len(raw_response)} chars)")
         try:
             data = parse_json_object(raw_response)
         except ValueError:

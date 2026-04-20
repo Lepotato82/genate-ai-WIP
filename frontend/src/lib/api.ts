@@ -1,7 +1,10 @@
 import type {
+  CompositorResult,
   GenerateRequest,
   GenerateResult,
   Platform,
+  RerenderRequest,
+  RerenderResponse,
   SSEEvent,
 } from "./types";
 
@@ -86,10 +89,14 @@ export async function streamGenerate(
             const result: GenerateResult = {
               run_id: event.run_id,
               platform: req.platform,
-              content_type: req.content_type ?? "auto",
+              content_type: event.content_type ?? req.content_type ?? "auto",
               formatted_content: event.formatted_content,
               evaluator_output: event.evaluator_output,
               passes: event.passes ?? false,
+              composed_images: event.composed_images as CompositorResult | undefined,
+              logo_confidence: event.logo_confidence,
+              logo_compositing_enabled: event.logo_compositing_enabled,
+              design_category: event.design_category,
             };
             onComplete(result);
           }
@@ -101,6 +108,23 @@ export async function streamGenerate(
   } finally {
     reader.releaseLock();
   }
+}
+
+/**
+ * Re-render a single carousel slide with edited text.
+ * Calls POST /api/rerender-slide → FastAPI → compositor._compose_slide().
+ */
+export async function rerenderSlide(req: RerenderRequest): Promise<RerenderResponse> {
+  const response = await fetch("/api/rerender-slide", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Rerender failed ${response.status}: ${text}`);
+  }
+  return response.json() as Promise<RerenderResponse>;
 }
 
 /** Human-readable agent name from snake_case identifier. */

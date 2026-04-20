@@ -1,7 +1,11 @@
 """
-Text-to-image providers for hero / background layers (not LLM — HTTP only).
+Text-to-image / stock-photo providers for hero / background layers (not LLM — HTTP only).
 
-Pollinations: zero API key. Fal: uses settings.FAL_API_KEY.
+Pollinations: zero API key, generative.
+Fal: uses settings.FAL_API_KEY, generative.
+Pexels: uses settings.PEXELS_API_KEY, real stock photos — best for consumer-friendly brands.
+  Free tier: 200 req/hr, 20K/month, commercial use OK.
+  Recommended over generative options for health/wellness/lifestyle brands.
 """
 
 from __future__ import annotations
@@ -106,9 +110,115 @@ def fetch_fal(prompt: str) -> tuple[str | None, str | None]:
     return image_url, None
 
 
-def fetch_hero_image(prompt: str) -> tuple[str | None, str | None]:
+def fetch_pexels(query: str) -> tuple[str | None, str | None]:
+    """
+    Search Pexels for a real lifestyle/stock photo matching `query`.
+
+    Returns the `src.large2x` URL of the best-matching square-oriented photo,
+    or the first landscape photo if no square is found.
+
+    Requires settings.PEXELS_API_KEY.  Free tier: 200 req/hr, 20K/month.
+    All Pexels photos are free for commercial use (Pexels License).
+    """
+    if not settings.PEXELS_API_KEY:
+        return None, "PEXELS_API_KEY not configured"
+
+    params = {
+        "query": query,
+        "per_page": settings.PEXELS_RESULTS_PER_QUERY,
+        "orientation": "square",
+        "size": "large",
+    }
+    try:
+        with httpx.Client(timeout=20.0) as client:
+            resp = client.get(
+                "https://api.pexels.com/v1/search",
+                params=params,
+                headers={"Authorization": settings.PEXELS_API_KEY},
+            )
+    except Exception as exc:
+        logger.error("[hero_image] Pexels request failed: %s", exc)
+        return None, f"pexels request failed: {exc}"
+
+    if resp.status_code != 200:
+        return None, f"pexels HTTP {resp.status_code}: {resp.text[:200]}"
+
+    try:
+        data = resp.json()
+    except Exception:
+        return None, "pexels response is not JSON"
+
+    photos = data.get("photos") or []
+    if not photos:
+        # No square results — retry without orientation constraint
+        logger.info("[hero_image] Pexels: no square photos for %r, retrying without orientation", query)
+        try:
+            with httpx.Client(timeout=20.0) as client:
+                resp2 = client.get(
+                    "https://api.pexels.com/v1/search",
+                    params={"query": query, "per_page": settings.PEXELS_RESULTS_PER_QUERY, "size": "large"},
+                    headers={"Authorization": settings.PEXELS_API_KEY},
+                )
+            photos = resp2.json().get("photos") or []
+        except Exception:
+            pass
+
+    if not photos:
+        return None, f"pexels returned no photos for query: {query!r}"
+
+    # Prefer photos with people / subjects (higher avg_color contrast)
+    photo = photos[0]
+    url = (photo.get("src") or {}).get("large2x") or (photo.get("src") or {}).get("large")
+    if not url:
+        return None, "pexels photo missing src.large2x"
+
+    logger.info("[hero_image] Pexels photo selected: %s (photographer: %s)",
+                url[:60], photo.get("photographer", "unknown"))
+    return url, None
+
+
+def _build_pexels_query(image_prompt: str, pain_point: str = "", design_category: str = "") -> str:
+    """
+    Build a Pexels search query from pipeline context.
+
+    Pexels works best with concrete subject queries ("person running outside",
+    "healthy food bowl") rather than abstract prompts. This function extracts
+    the most concrete noun phrase from the image_prompt and adds context.
+    """
+    # Strip common generative-prompt boilerplate that Pexels can't use
+    strip_phrases = [
+        "flat vector", "illustration", "minimalist", "gradient background",
+        "no text", "no people", "clean background", "transparent background",
+        "60% negative space", "asymmetric", "corporate style",
+    ]
+    query = image_prompt
+    for phrase in strip_phrases:
+        query = query.replace(phrase, "")
+
+    # Trim to first 60 chars and clean up
+    query = " ".join(query.split())[:60].strip(", .")
+
+    # Add design-category-appropriate subject modifiers for better results
+    if design_category == "consumer-friendly":
+        if not any(w in query.lower() for w in ["person", "people", "woman", "man", "health", "food"]):
+            query = f"healthy lifestyle {query}"
+    elif design_category == "bold-enterprise":
+        if "office" not in query.lower() and "business" not in query.lower():
+            query = f"business professional {query}"
+
+    return query.strip()
+
+
+def fetch_hero_image(
+    prompt: str,
+    pain_point: str = "",
+    design_category: str = "",
+) -> tuple[str | None, str | None]:
     """
     Dispatch by HERO_IMAGE_PROVIDER. Returns (image_url, error_message).
+
+    For consumer-friendly brands, Pexels (real photography) is strongly
+    preferred over generative options — set HERO_IMAGE_PROVIDER=pexels.
     """
     provider = (settings.HERO_IMAGE_PROVIDER or "none").strip().lower()
     if provider in ("none", ""):
@@ -117,4 +227,7 @@ def fetch_hero_image(prompt: str) -> tuple[str | None, str | None]:
         return fetch_pollinations(prompt)
     if provider == "fal":
         return fetch_fal(prompt)
+    if provider == "pexels":
+        query = _build_pexels_query(prompt, pain_point=pain_point, design_category=design_category)
+        return fetch_pexels(query)
     return None, f"unknown HERO_IMAGE_PROVIDER: {provider!r}"

@@ -131,6 +131,7 @@ system_prompt: |
   - If cta_intent = "learn_more": use "learn", "read", "find out", "discover", "see how", "explore", or "more"
   - If cta_intent = "book_demo": use "demo", "book", "schedule", "call", "talk", or "meet"
   - If cta_intent = "sign_up": use "sign up", "register", "join", "create account", or "get access"
+  - If cta_intent = "engage": use "comment", "share", "tag", "tell us", "what do you think", "reply", or "let us know"
 
   ═══════════════════════════════════════════════════════════════
   VOICE INJECTION RULE  (non-negotiable — most common failure mode)
@@ -211,6 +212,32 @@ system_prompt: |
   If no — rewrite the hook. Do not proceed to the body.
 
   ═══════════════════════════════════════════════════════════════
+  HOOK SPECIFICITY SELF-CHECK  (run this before writing copy)
+  ═══════════════════════════════════════════════════════════════
+
+  Before you write your first sentence, answer these privately:
+
+    A) Who is the specific person? (job title, company stage, team size)
+    B) What are they doing at a specific moment? (task, tool, time of day)
+    C) What is the exact cost of the problem? (minutes, money, consequence)
+
+  Your first sentence must contain the answers to B and C.
+  It must NOT contain generic nouns like:
+    "teams", "businesses", "companies", "challenges", "inefficiency",
+    "processes", "workflows", "solutions", "productivity", "growth"
+
+  Score your hook on this scale before committing to it:
+    SCORE 5 — names a specific action + specific cost: "Priya spends 40 min
+              every Tuesday re-exporting the same Notion table to Google Sheets."
+    SCORE 4 — specific action + vague cost: "Your lead list gets stale every
+              weekend — and nobody tells you."
+    SCORE 3 — category of pain + no cost: "Managing payments is complicated."
+              ← DO NOT submit a score-3 hook. Rewrite until you reach score 4+.
+
+  A score-3 hook earns an ENGAGEMENT score of 3/5 from the Evaluator.
+  A score-4 or score-5 hook earns 4–5/5. Always aim for score 5.
+
+  ═══════════════════════════════════════════════════════════════
   PLATFORM AWARENESS
   ═══════════════════════════════════════════════════════════════
 
@@ -271,6 +298,32 @@ system_prompt: |
       in the first 3 seconds — never a product introduction
     - Distinguish text-on-screen and voiceover explicitly in every section
     - CTA must direct to "link in bio" — no external URLs in the script
+
+  ═══════════════════════════════════════════════════════════════
+  CAROUSEL SLIDE WORD BUDGET  (binding when content_type = carousel)
+  ═══════════════════════════════════════════════════════════════
+
+  When writing carousel content, each paragraph you write becomes one slide.
+  Respect these word budgets per slide:
+
+    Slide 1 (hook):    ≤ 20 words. One punchy statement or stat. No warm-up.
+    Slides 2–N (body): ≤ 40 words each. One idea per slide.
+    Last slide (CTA):  ≤ 15 words. One clear action.
+
+  Separate slides with a blank line (\n\n). Do NOT merge slides.
+
+  COMPLIANT (3 slides, 18 + 35 + 12 words):
+    78% want to share wearable data with doctors — but only 27% do.
+
+    Your bloodwork tells a story your doctor never sees.
+    Lemon connects the dots between your daily habits and your lab results.
+
+    Start your free trial today.
+
+  NON-COMPLIANT (1 slide, 80 words):
+    In today's healthcare landscape, many people want to share their
+    wearable data with doctors but face significant barriers...
+    [continues as a single block]
 
   ═══════════════════════════════════════════════════════════════
   CONTENT DEPTH RULE  (set by Planner — follow exactly)

@@ -9,6 +9,8 @@ visual format. Video script is Phase 3 — always None in this version.
 from __future__ import annotations
 
 import logging
+import sys
+import time
 
 from llm.client import chat_completion
 from prompts.loader import load_prompt
@@ -20,6 +22,16 @@ from schemas.strategy_brief import StrategyBrief
 from agents._utils import parse_json_object
 
 logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[visual_gen] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[visual_gen] %s", msg)
+
 
 _FALLBACK_SYSTEM = (
     "You are a visual direction agent for SaaS marketing. "
@@ -114,10 +126,17 @@ def run(
     if settings.MOCK_MODE:
         return _mock(strategy_brief, brand_profile, content_brief)
 
+    # Prefer accent_color for visual interest — it's the interactive brand color
+    # (extracted from --primary/--ring css tokens). primary_color is often a text color.
+    accent_hex = (
+        (brand_identity.accent_color if brand_identity else None)
+        or brand_profile.primary_color
+    )
     lines = [
         f"brand: design_category={brand_profile.design_category}, "
-        f"primary_color={brand_profile.primary_color}, "
+        f"accent_color={accent_hex}, "
         f"secondary_color={brand_profile.secondary_color}, "
+        f"background_color={brand_profile.background_color}, "
         f"font={brand_profile.font_family}, tone={brand_profile.tone}",
         f"platform: {content_brief.platform}, content_type: {content_brief.content_type}",
         f"product: {strategy_brief.primary_claim}",
@@ -127,19 +146,21 @@ def run(
     if brand_identity is not None:
         lines.append(
             f"identity: product_name={brand_identity.product_name}, "
-            f"primary_hex={brand_identity.primary_color}, "
-            f"secondary_hex={brand_identity.secondary_color or 'none'}, "
+            f"accent_hex={brand_identity.accent_color or accent_hex}, "
             f"background_hex={brand_identity.background_color or 'none'}, "
             f"primary_font={brand_identity.primary_font or 'none'}"
         )
     user_msg = "\n".join(lines)
 
+    _progress(f"calling LLM (user_msg={len(user_msg)} chars)")
+    _t0 = time.time()
     raw = chat_completion(
         [
             {"role": "system", "content": _system_prompt()},
             {"role": "user", "content": user_msg},
         ]
     )
+    _progress(f"LLM responded in {time.time() - _t0:.1f}s ({len(raw)} chars)")
     data = parse_json_object(raw)
     ip = data.get("image_prompt")
     data["image_prompt"] = ip if isinstance(ip, str) else str(ip or "")

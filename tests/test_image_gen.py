@@ -418,7 +418,7 @@ def test_hero_image_invokes_provider(monkeypatch):
     monkeypatch.setattr(settings, "HERO_IMAGE_ENABLED", True)
     monkeypatch.setattr(settings, "HERO_IMAGE_PROVIDER", "pollinations")
 
-    def fake_fetch(prompt: str):
+    def fake_fetch(prompt: str, pain_point: str = "", design_category: str = ""):
         assert "abstract" in prompt
         return ("https://hero.test/out.png", None)
 

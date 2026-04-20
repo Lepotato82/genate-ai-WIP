@@ -138,10 +138,13 @@ def test_build_brand_identity_no_logo() -> None:
 # ---------------------------------------------------------------------------
 
 
+_VALID_PNG = b"\x89PNG" + b"\x00" * 600   # ≥500 bytes, PNG header → compositable
+
+
 def test_compositing_enabled_high() -> None:
     bi = BrandIdentity(
         product_name="X", product_url="https://x.com", run_id="r",
-        logo_bytes=b"\x89PNG" + b"\x00" * 100,
+        logo_bytes=_VALID_PNG,
         logo_url="https://x.com/logo.png",
         logo_confidence="high",
         primary_color="#000", background_color="#fff",
@@ -152,9 +155,10 @@ def test_compositing_enabled_high() -> None:
 
 
 def test_compositing_disabled_medium() -> None:
+    """og:image (medium confidence) is skipped — may be a wide marketing graphic."""
     bi = BrandIdentity(
         product_name="X", product_url="https://x.com", run_id="r",
-        logo_bytes=b"\x89PNG" + b"\x00" * 100,
+        logo_bytes=_VALID_PNG,
         logo_url="https://x.com/logo.png",
         logo_confidence="medium",
         primary_color="#000", background_color="#fff",
@@ -164,11 +168,41 @@ def test_compositing_disabled_medium() -> None:
     assert bi.logo_compositing_enabled is False
 
 
-def test_compositing_disabled_low() -> None:
+def test_compositing_enabled_low_valid_png() -> None:
+    """Favicon that is a clean raster PNG (≥500 bytes) is composited."""
     bi = BrandIdentity(
         product_name="X", product_url="https://x.com", run_id="r",
-        logo_bytes=b"\x89PNG" + b"\x00" * 100,
-        logo_url="https://x.com/logo.png",
+        logo_bytes=_VALID_PNG,
+        logo_url="https://x.com/favicon.png",
+        logo_confidence="low",
+        primary_color="#000", background_color="#fff",
+        design_category="minimal-saas", tone="technical",
+        writing_instruction="x " * 20,
+    )
+    assert bi.logo_compositing_enabled is True
+
+
+def test_compositing_disabled_low_ico() -> None:
+    """ICO favicon is skipped — too small/compressed for compositing."""
+    ico_bytes = b"\x00\x00\x01\x00" + b"\x00" * 600
+    bi = BrandIdentity(
+        product_name="X", product_url="https://x.com", run_id="r",
+        logo_bytes=ico_bytes,
+        logo_url="https://x.com/favicon.ico",
+        logo_confidence="low",
+        primary_color="#000", background_color="#fff",
+        design_category="minimal-saas", tone="technical",
+        writing_instruction="x " * 20,
+    )
+    assert bi.logo_compositing_enabled is False
+
+
+def test_compositing_disabled_low_unknown_format() -> None:
+    """Favicon with unrecognised header (e.g. SVG text) is skipped."""
+    bi = BrandIdentity(
+        product_name="X", product_url="https://x.com", run_id="r",
+        logo_bytes=b"<svg" + b"\x00" * 10,
+        logo_url="https://x.com/favicon.svg",
         logo_confidence="low",
         primary_color="#000", background_color="#fff",
         design_category="minimal-saas", tone="technical",

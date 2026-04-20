@@ -6,10 +6,22 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
+import time
 
 from llm.client import chat_completion
 
 logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[ui_analyzer] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[ui_analyzer] %s", msg)
+
 from prompts.loader import load_prompt
 from config import settings
 from schemas.brand_profile import BrandProfile
@@ -296,6 +308,19 @@ def _normalize_design_category(value: object, pkg: InputPackage) -> str:
         "consumer-friendly",
         "data-dense",
     }
+
+    # B2C content override: page text with strong consumer signals should be
+    # consumer-friendly even if the CSS looks like minimal-saas.
+    if category in ("minimal-saas", "") or category not in allowed:
+        page_text = (pkg.scraped_text or "").lower()
+        b2c_signals = (
+            "app store", "google play", "download the app",
+            "your health", "wellness", "fitness", "lifestyle",
+            "personal finance", "recipes", "meal plan",
+        )
+        if sum(1 for s in b2c_signals if s in page_text) >= 2:
+            return "consumer-friendly"
+
     if category in allowed:
         return category
 
@@ -415,7 +440,10 @@ def run(input_package: InputPackage) -> BrandProfile:
         {"role": "user", "content": user_content},
     ]
 
+    _progress(f"calling LLM (css_tokens={len(pkg.css_tokens)}, user_msg={len(user_content)} chars)")
+    _t0 = time.time()
     raw = chat_completion(messages)
+    _progress(f"LLM responded in {time.time() - _t0:.1f}s ({len(raw)} chars)")
 
     try:
         parsed = parse_json_object(raw)

@@ -9,6 +9,8 @@ StrategyBrief consumed by the Copywriting agent.
 from __future__ import annotations
 
 import logging
+import sys
+import time
 
 from llm.client import chat_completion
 from prompts.loader import load_prompt
@@ -20,6 +22,16 @@ from schemas.strategy_brief import StrategyBrief, _NO_PROOF_FALLBACK
 from agents._utils import parse_json_object, utc_now_iso
 
 logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[strategy] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[strategy] %s", msg)
+
 
 _NO_PROOF_FALLBACK = "No verified proof points available for this product"
 
@@ -113,6 +125,7 @@ def run(
     content_brief: ContentBrief,
     product_knowledge: ProductKnowledge,
     brand_profile: BrandProfile,
+    research_proof_points: list | None = None,
 ) -> StrategyBrief:
     if settings.MOCK_MODE:
         return _mock(content_brief, product_knowledge, brand_profile)
@@ -144,6 +157,20 @@ def run(
         f"writing_instruction: {brand_profile.writing_instruction}"
     )
 
+    if content_brief.content_type == "carousel" and research_proof_points:
+        best_stat = research_proof_points[0].text
+        user_msg += (
+            f"\n\nCAROUSEL HOOK RULE: A research stat is available — use it as "
+            f"the hook. Set hook_direction to instruct the copywriter to open "
+            f'slide 1 with this stat as the headline: "{best_stat}"\n'
+            f"Frame it as a question the reader hasn't considered."
+        )
+
+    _progress(
+        f"calling LLM (platform={content_brief.platform}, "
+        f"type={content_brief.content_type}, user_msg={len(user_msg)} chars)"
+    )
+    _t0 = time.time()
     raw = chat_completion(
         [
             {"role": "system", "content": _get_system_prompt()},
@@ -151,6 +178,7 @@ def run(
         ],
         temperature=0,
     )
+    _progress(f"LLM responded in {time.time() - _t0:.1f}s ({len(raw)} chars)")
     data = parse_json_object(raw)
 
     # Enforce narrative_arc must match content_brief — override in code, not just prompt

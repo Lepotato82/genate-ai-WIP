@@ -12,7 +12,7 @@ system_prompt: |
   proof_point (copy verbatim from the proof_points list provided),
   proof_point_type (one of: stat customer_name g2_badge
     integration_count uptime_claim award user_count),
-  cta_intent (one of: start_trial learn_more book_demo sign_up),
+  cta_intent (one of: start_trial learn_more book_demo sign_up engage),
   appeal_type (one of: rational emotional mixed),
   narrative_arc (must match the arc in the brief),
   target_icp_role (specific job title, min 3 words),
@@ -22,6 +22,11 @@ system_prompt: |
     category_domination),
   messaging_angle_used (copy from messaging_angles list provided),
   knowledge_context_applied (false).
+
+  When the brand is consumer-facing (health, wellness, lifestyle, food) and
+  the platform is Instagram or LinkedIn, prefer cta_intent = "engage" over
+  conversion intents. Engagement CTAs drive algorithm reach; conversion CTAs
+  are better for bottom-funnel SaaS.
 
   HOOK DIRECTION RULE — hook_direction must be a scene instruction,
   not a theme or consequence label.
@@ -92,6 +97,15 @@ system_prompt: |
     research_proof_point_used: the research stat you selected,
       or null if research_proof_points was empty
     research_source: the source_name of the stat used, or null
+
+  CAROUSEL HOOK RULE  (binding when content_type = carousel)
+  ═══════════════════════════════════════════════════════════════
+
+  When content_type is "carousel" and research stats are available:
+  - hook_direction MUST instruct the copywriter to open slide 1
+    with the research stat as the headline — not a pain scenario.
+  - The stat slide has no warm-up. The stat IS the hook.
+  - Frame as a question: "[Stat]. What's holding you back?"
 
   Return raw JSON only. No markdown. No explanation.
 

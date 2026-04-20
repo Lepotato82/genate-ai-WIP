@@ -5,6 +5,8 @@ Step 6: Copywriter — raw copy from strategy + brief + brand (no structural for
 from __future__ import annotations
 
 import logging
+import sys
+import time
 
 from llm.client import chat_completion
 from prompts.loader import load_prompt
@@ -16,11 +18,21 @@ from schemas.strategy_brief import StrategyBrief
 logger = logging.getLogger(__name__)
 
 
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[copywriter] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[copywriter] %s", msg)
+
+
 CTA_SIGNALS: dict[str, list[str]] = {
     "start_trial": ["trial", "try", "start", "free", "sign up", "get started"],
     "learn_more": ["learn", "read", "find out", "discover", "see how", "explore", "more"],
     "book_demo": ["demo", "book", "schedule", "call", "talk", "meet"],
     "sign_up": ["sign up", "register", "join", "create account", "get access"],
+    "engage": ["comment", "share", "tag", "tell us", "what do you think", "reply", "let us know"],
 }
 
 
@@ -197,8 +209,10 @@ def run(
     slide_hint = ""
     if content_brief.content_type == "carousel" and content_brief.slide_count_target:
         slide_hint = (
-            f"\nslide_count_target: {content_brief.slide_count_target} "
-            "(write a distinct slide heading + 2-3 lines per slide)"
+            f"\nslide_count_target: {content_brief.slide_count_target} slides. "
+            "CRITICAL: Hook slide (first paragraph) must be ≤ 20 words. "
+            "Body slides ≤ 40 words each. CTA slide ≤ 15 words. "
+            "Separate every slide with a blank line."
         )
 
     _STRUCTURED_TYPES = frozenset({"poll", "story"})
@@ -328,14 +342,19 @@ def run(
         {"role": "system", "content": system},
         {"role": "user", "content": user_msg},
     ]
+    _progress(
+        f"calling LLM (first attempt, platform={content_brief.platform}, "
+        f"type={content_brief.content_type}, user_msg={len(user_msg)} chars)"
+    )
+    _t0 = time.time()
     copy = chat_completion(messages).strip()
+    _progress(f"LLM responded in {time.time() - _t0:.1f}s ({len(copy)} chars)")
 
     # FIX 2 — CTA validation: retry once with explicit injection if CTA signal absent.
     # Skip for structured types (poll, story, question_post) which have no free-form CTA.
     if content_brief.content_type not in _STRUCTURED_TYPES | {"question_post"} and not _validate_cta(copy, strategy_brief.cta_intent):
-        logger.warning(
-            "[copywriter] CTA signal absent for cta_intent=%s — retrying with explicit injection",
-            strategy_brief.cta_intent,
+        _progress(
+            f"CTA signal absent for cta_intent={strategy_brief.cta_intent} — retrying with explicit injection"
         )
         signals = CTA_SIGNALS.get(strategy_brief.cta_intent, [])
         cta_retry_msg = (
@@ -345,35 +364,25 @@ def run(
             f"The final section MUST include at least one of: {signals}. "
             f"Place it in the last 20% of the copy."
         )
+        _progress("calling LLM (CTA retry)")
+        _t1 = time.time()
         copy = chat_completion(
             [{"role": "system", "content": system}, {"role": "user", "content": cta_retry_msg}]
         ).strip()
+        _progress(f"CTA retry responded in {time.time() - _t1:.1f}s ({len(copy)} chars)")
 
-    # FIX 3 — Research validation: retry once with explicit stat if research stat absent
+    # Research validation: warn but do NOT retry — a paraphrased stat is acceptable,
+    # and the extra LLM call burns quota on rate-limited free tiers (Groq 100K/day).
     if active_research and not _validate_research_usage(copy, active_research):
         tier_order = {"tier_1": 0, "tier_2": 1, "tier_3": 2}
         best = sorted(
             active_research,
             key=lambda p: tier_order.get(getattr(p, "credibility_tier", "tier_3"), 2),
         )[0]
-        best_src = getattr(best, "source_name", "Research")
         best_text = getattr(best, "text", "")
         logger.warning(
-            "[copywriter] Research stat absent — retrying with explicit stat injection: %s",
+            "[copywriter] Research stat not detected verbatim (may be paraphrased): %s",
             best_text[:80],
         )
-        research_retry_msg = (
-            user_msg
-            + f"\n\nCRITICAL: You MUST include this research stat in the AGITATE section. "
-            f"Copy this exact phrase verbatim: "
-            f"\"{best_src} found that {best_text}\" "
-            f"Do not paraphrase. Do not omit it."
-        )
-        copy = chat_completion(
-            [
-                {"role": "system", "content": system},
-                {"role": "user", "content": research_retry_msg},
-            ]
-        ).strip()
 
     return copy

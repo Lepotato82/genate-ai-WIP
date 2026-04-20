@@ -338,10 +338,6 @@ class FormattedContent(BaseModel):
             "Output of Visual Gen agent (Step 7)."
         ),
     )
-    suggested_format: Literal["static", "carousel", "video", "ugc"] | None = Field(
-        None,
-        description="Suggested visual format from Visual Gen agent.",
-    )
     video_script: str | None = Field(
         None,
         description=(

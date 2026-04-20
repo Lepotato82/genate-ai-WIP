@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     LLM_TEXT_MODEL: str = "llama-3.2-90b-text-preview"   # Groq/OpenAI model name
     LLM_VISION_MODEL: str = "claude-haiku-4-5"           # Anthropic model name
     OLLAMA_BASE_URL: str = "http://localhost:11434/v1"  # must include /v1 for OpenAI SDK compat
+    LLM_REQUEST_TIMEOUT: int = 90   # seconds — HTTP timeout per LLM call (prevents indefinite hangs)
     OLLAMA_TEXT_MODEL: str = "llama3.2:latest"    # Ollama model name for text agents
     OLLAMA_VISION_MODEL: str = "llava:latest"     # Ollama model name for vision (UI Analyzer)
 
@@ -70,6 +71,26 @@ class Settings(BaseSettings):
     POLLINATIONS_HEIGHT: int = 0
     POLLINATIONS_MODEL: str = ""  # optional model query param for Pollinations
     IDEOGRAM_API_KEY: str = ""
+
+    # Stock photo provider for hero images (consumer-friendly brands)
+    # Pexels: free 200 req/hr, 20K/month, commercial use OK. Needs PEXELS_API_KEY.
+    PEXELS_API_KEY: str = ""
+    PEXELS_RESULTS_PER_QUERY: int = 5  # fetch N candidates, pick first usable
+
+    # ─── Compositor (Pillow, fully local — no external API) ───────────────
+    # Produces branded PNG images from brand colors + logo + copy text.
+    # True by default: no credentials required, zero cost.
+    COMPOSITOR_ENABLED: bool = True
+    # Apply brand-color duotone to hero photos in photo_overlay / editorial_photo.
+    # Desaturates the photo then tints with the brand primary — matches Lemon Health-style posts.
+    COMPOSITOR_DUOTONE_ENABLED: bool = True
+    # Halftone dot overlay on hero photos — editorial/risograph print feel.
+    COMPOSITOR_PHOTO_TEXTURE_ENABLED: bool = True
+    # Background removal on hero photos for cutout compositing (requires rembg).
+    COMPOSITOR_CUTOUT_ENABLED: bool = True
+    # Paste curated decorative illustrations (botanicals, geometric motifs) onto
+    # opted-in layouts. Ships with assets/decorations/; no network calls.
+    COMPOSITOR_DECORATIONS_ENABLED: bool = True
 
     # ─── Video Generation ─────────────────────────────────────────────────
     ELEVENLABS_API_KEY: str = ""

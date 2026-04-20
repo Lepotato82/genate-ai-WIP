@@ -1,7 +1,15 @@
 # /llm/client.py — the ONLY place that knows which provider is in use.
 # No agent should import any LLM provider SDK directly.
 
+import logging
+import time
+
 from config import settings
+
+logger = logging.getLogger(__name__)
+
+_RATE_LIMIT_RETRIES = 4        # max attempts before giving up
+_RATE_LIMIT_BACKOFF = 2.0      # seconds for first wait; doubles each retry
 
 
 def _ollama_openai_base_url() -> str:
@@ -12,39 +20,51 @@ def _ollama_openai_base_url() -> str:
 
 def get_text_client():
     """Returns the configured text LLM client. Swap provider here only."""
+    timeout = settings.LLM_REQUEST_TIMEOUT
     if settings.LLM_PROVIDER == "groq":
         from groq import Groq
-        return Groq(api_key=settings.GROQ_API_KEY)
+        return Groq(api_key=settings.GROQ_API_KEY, timeout=timeout)
     elif settings.LLM_PROVIDER == "openai":
         from openai import OpenAI
-        return OpenAI(api_key=settings.OPENAI_API_KEY)
+        return OpenAI(api_key=settings.OPENAI_API_KEY, timeout=timeout)
     elif settings.LLM_PROVIDER == "anthropic":
         import anthropic
-        return anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        return anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY, timeout=timeout)
     elif settings.LLM_PROVIDER == "ollama":
         # OpenAI-compatible client pointed at local Ollama instance
         from openai import OpenAI
-        return OpenAI(base_url=_ollama_openai_base_url(), api_key="ollama")
+        return OpenAI(base_url=_ollama_openai_base_url(), api_key="ollama", timeout=timeout)
     else:
         raise ValueError(f"Unknown LLM_PROVIDER: {settings.LLM_PROVIDER}")
 
 
 def get_vision_client():
     """Returns the configured vision LLM client. Swap provider here only."""
+    timeout = settings.LLM_REQUEST_TIMEOUT
     if settings.LLM_VISION_PROVIDER == "anthropic":
         import anthropic
-        return anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        return anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY, timeout=timeout)
     elif settings.LLM_VISION_PROVIDER == "groq":
         from groq import Groq
-        return Groq(api_key=settings.GROQ_API_KEY)
+        return Groq(api_key=settings.GROQ_API_KEY, timeout=timeout)
     elif settings.LLM_VISION_PROVIDER == "openai":
         from openai import OpenAI
-        return OpenAI(api_key=settings.OPENAI_API_KEY)
+        return OpenAI(api_key=settings.OPENAI_API_KEY, timeout=timeout)
     elif settings.LLM_VISION_PROVIDER == "ollama":
         from openai import OpenAI
-        return OpenAI(base_url=_ollama_openai_base_url(), api_key="ollama")
+        return OpenAI(base_url=_ollama_openai_base_url(), api_key="ollama", timeout=timeout)
     else:
         raise ValueError(f"Unknown LLM_VISION_PROVIDER: {settings.LLM_VISION_PROVIDER}")
+
+
+def _is_rate_limit(exc: Exception) -> bool:
+    """Return True if the exception is a provider 429 / rate-limit error."""
+    name = type(exc).__name__
+    if "RateLimit" in name:
+        return True
+    # openai / groq both set a status_code attribute on HTTP errors
+    code = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+    return code == 429
 
 
 def _default_text_model() -> str:
@@ -58,6 +78,7 @@ def chat_completion(messages: list[dict], model: str = None, **kwargs) -> str:
     Unified interface for all text agents.
     Returns the response text as a string.
     Handles provider-specific differences internally.
+    Retries automatically on rate-limit (429) errors with exponential backoff.
     """
     client = get_text_client()
     if settings.LLM_PROVIDER == "ollama":
@@ -65,12 +86,25 @@ def chat_completion(messages: list[dict], model: str = None, **kwargs) -> str:
         kwargs.setdefault("max_tokens", 2048)
     else:
         model = model or settings.LLM_TEXT_MODEL
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        **kwargs,
-    )
-    return response.choices[0].message.content
+
+    wait = _RATE_LIMIT_BACKOFF
+    for attempt in range(_RATE_LIMIT_RETRIES):
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                **kwargs,
+            )
+            return response.choices[0].message.content
+        except Exception as exc:
+            if _is_rate_limit(exc) and attempt < _RATE_LIMIT_RETRIES - 1:
+                logger.warning("[llm] rate limit hit, waiting %.1fs (attempt %d/%d)",
+                               wait, attempt + 1, _RATE_LIMIT_RETRIES)
+                time.sleep(wait)
+                wait = min(wait * 2, 30)
+                client = get_text_client()  # fresh client in case of state issues
+            else:
+                raise
 
 
 def vision_completion(
@@ -164,9 +198,21 @@ def vision_completion(
         else:
             oai_messages = messages
 
-        response = client.chat.completions.create(
-            model=model,
-            messages=oai_messages,
-            **kwargs,
-        )
-        return response.choices[0].message.content
+        wait = _RATE_LIMIT_BACKOFF
+        for attempt in range(_RATE_LIMIT_RETRIES):
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=oai_messages,
+                    **kwargs,
+                )
+                return response.choices[0].message.content
+            except Exception as exc:
+                if _is_rate_limit(exc) and attempt < _RATE_LIMIT_RETRIES - 1:
+                    logger.warning("[llm/vision] rate limit hit, waiting %.1fs (attempt %d/%d)",
+                                   wait, attempt + 1, _RATE_LIMIT_RETRIES)
+                    time.sleep(wait)
+                    wait = min(wait * 2, 30)
+                    client = get_vision_client()
+                else:
+                    raise

@@ -13,6 +13,7 @@ Consumed by: pipeline._run_entry(), pipeline.run_stream()
 from __future__ import annotations
 
 import logging
+import sys
 import time
 
 import httpx
@@ -23,6 +24,16 @@ from schemas.brand_identity import BrandIdentity
 from schemas.formatted_content import FormattedContent
 
 logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long API calls."""
+    try:
+        sys.stdout.buffer.write(f"[image_gen] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[image_gen] %s", msg)
+
 
 BANNERBEAR_API_BASE = "https://api.bannerbear.com/v2"
 
@@ -48,8 +59,12 @@ def _mock_result() -> dict:
     }
 
 
-def _hero_fields(visual: dict | None) -> dict[str, object]:
-    """Run hero T2I when enabled. Always returns the three hero keys."""
+def _hero_fields(
+    visual: dict | None,
+    pain_point: str = "",
+    design_category: str = "",
+) -> dict[str, object]:
+    """Run hero T2I/stock-photo fetch when enabled. Always returns the three hero keys."""
     visual = visual or {}
     out: dict[str, object] = {
         "background_hero_url": None,
@@ -65,7 +80,16 @@ def _hero_fields(visual: dict | None) -> dict[str, object]:
         out["hero_error"] = "no image_prompt from visual_gen"
         return out
 
-    url, err = fetch_hero_image(prompt)
+    _progress(
+        f"fetching hero image (provider={prov}, prompt={len(prompt)} chars, "
+        f"pollinations_timeout={settings.POLLINATIONS_TIMEOUT_SECONDS}s)"
+    )
+    _t0 = time.time()
+    url, err = fetch_hero_image(prompt, pain_point=pain_point, design_category=design_category)
+    _progress(
+        f"hero image fetch done in {time.time() - _t0:.1f}s "
+        f"(url={'yes' if url else 'no'}, err={err or 'none'})"
+    )
     out["background_hero_url"] = url
     out["hero_generation_enabled"] = url is not None
     out["hero_error"] = err
@@ -361,6 +385,7 @@ def run(
     formatted: FormattedContent,
     identity: BrandIdentity,
     visual: dict | None = None,
+    pain_point: str = "",
 ) -> dict:
     """
     Generate hero background (optional) and Bannerbear slides (optional).
@@ -372,7 +397,11 @@ def run(
     if settings.MOCK_MODE:
         return _mock_result()
 
-    hero = _hero_fields(visual)
+    hero = _hero_fields(
+        visual,
+        pain_point=pain_point,
+        design_category=identity.design_category or "",
+    )
 
     if not settings.IMAGE_GENERATION_ENABLED:
         logger.info("[image_gen] IMAGE_GENERATION_ENABLED=false — skipping Bannerbear")
@@ -408,7 +437,10 @@ def run(
 
     for i, slide in enumerate(slides):
         mods = _build_modifications(slide, identity)
+        _progress(f"calling Bannerbear slide {i + 1}/{len(slides)}")
+        _t0 = time.time()
         url = _call_bannerbear(mods)
+        _progress(f"slide {i + 1}/{len(slides)} done in {time.time() - _t0:.1f}s (url={'yes' if url else 'no'})")
 
         if url:
             image_urls.append(url)

@@ -168,7 +168,12 @@ system_prompt: |
       learn_more   → "learn", "read", "find out", "discover", "see how", "explore", "more"
       book_demo    → "demo", "book", "schedule", "call", "talk", "meet"
       sign_up      → "sign up", "register", "join", "create account", "get access"
+      engage       → "comment", "share", "tag", "tell us", "what do you think", "reply", "let us know"
     One matching signal word in the final 20% satisfies this rule.
+
+  Note: "engage" is a valid cta_intent for consumer-facing brands.
+  Engagement CTAs ("Comment below", "Tag someone") score at parity
+  with conversion CTAs — do not penalise for lacking "trial" or "demo".
 
   linkedin:
     - Hook must work as a standalone statement in the first 180 characters

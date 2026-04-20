@@ -8,6 +8,9 @@ Returns a ContentBrief consumed by the Strategy agent.
 from __future__ import annotations
 
 import json
+import logging
+import sys
+import time
 from pathlib import Path
 
 from llm.client import chat_completion
@@ -17,6 +20,17 @@ from schemas.brand_profile import BrandProfile
 from schemas.content_brief import ContentBrief
 from schemas.product_knowledge import ProductKnowledge
 from agents._utils import parse_json_object, utc_now_iso
+
+logger = logging.getLogger(__name__)
+
+
+def _progress(msg: str) -> None:
+    """Write a progress line straight to stdout so it appears during long LLM calls."""
+    try:
+        sys.stdout.buffer.write(f"[planner] {msg}\n".encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
+    except Exception:
+        logger.info("[planner] %s", msg)
 
 
 # ---------------------------------------------------------------------------
@@ -438,6 +452,8 @@ def run(
         "deeper treatment. Select 'concise' for single-insight posts."
     )
 
+    _progress(f"calling LLM (platform={platform}, user_msg={len(user_msg)} chars)")
+    _t0 = time.time()
     raw = chat_completion(
         [
             {"role": "system", "content": system},
@@ -445,6 +461,7 @@ def run(
         ],
         temperature=0,
     )
+    _progress(f"LLM responded in {time.time() - _t0:.1f}s ({len(raw)} chars)")
     data = parse_json_object(raw)
 
     # --- Platform coercion ---

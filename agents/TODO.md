@@ -140,3 +140,125 @@
   - **Context (March 2026 real runs):** Both `lemonhealth.ai` and `searchable.com` recorded `content_depth == "long_form"`, but full post lengths diverged sharply. The Evaluator scores clarity/accuracy/engagement/tone_match only — **no minimum word count**.
   - **Action:** Add Python-enforced gates for `platform == linkedin` and `content_depth == long_form` (e.g. count words on raw or formatted body; if under threshold, retry Copywriter once with explicit expansion instruction, or cap `engagement` / fail a dedicated length check in Evaluator).
   - **Status:** BACKLOG
+
+- [ ] **Task 23: Verify and fix new structured content types in real-mode LLM runs**
+  - **Target Files:** `prompts/copywriting_v1.yaml`, `agents/copywriter.py`, `agents/formatter.py`, `agents/evaluator.py`
+  - **Context (April 2026):** LinkedIn Poll, Twitter Poll, Twitter Single Tweet, Instagram Story, and LinkedIn Question Post content types were wired into the pipeline (formatter dispatch + `force_content_type` API param). All 454 tests pass in mock mode, but **real-mode LLM output quality has not been validated** — only LinkedIn text posts and carousels have been tested against real SaaS URLs. Known concerns: (a) real LLM may not reliably output `INTRO/QUESTION/OPTION_1-4` labels for polls; (b) formatter real-mode early-return branches for structured types are untested end-to-end; (c) Evaluator short-form types (story = 2 fields, single tweet = 1 tweet) may receive unfair low engagement/clarity scores calibrated for long-form.
+  - **Action:**
+    1. Run `pipeline.py` in real mode (`MOCK_MODE=false`) with `force_content_type` set for each new type against 2–3 real Indian SaaS URLs (Razorpay, Freshworks, Chargebee).
+    2. If copywriter does not emit structured labels, tighten the FORMAT BLOCKS in `prompts/copywriting_v1.yaml` and add a retry hint in `copywriter.py` (similar to CTA retry logic).
+    3. Confirm formatter real-mode dispatch fires the right early-return branch for each structured type.
+    4. Review Evaluator scores — if short-form types consistently fail `passes` due to length-related low engagement, add a `content_type`-aware scoring note to `prompts/evaluator_v1.yaml`.
+    5. Update the relevant real-mode test data snapshots in `test_data/` once verified.
+  - **Status:** BACKLOG
+
+## Phase 9: Brand Post Quality — Lemon Health Parity
+
+**Context (April 2026):** Analysis of `sample_posts/` (Lemon Health carousel samples) identified three layers of gap vs. current Genate output: (1) no real photography — Pollinations AI art doesn't match editorial lifestyle photos; (2) copy structure mismatch — research stat is placed mid-narrative instead of on the hook slide; (3) engagement CTAs ("Comment below") blocked by the CTA validator which only accepts conversion intents.
+
+All six tasks are achievable with free tools. Tasks 24–26 close the visual gap. Tasks 27–29 close the copy/structure gap. Task 30 closes the research quality gap for B2C health brands.
+
+- [x] **Task 24: Pexels Stock Photo Provider**
+  - **Target Files:** `agents/hero_image_providers.py`, `config/settings.py`
+  - **Context:** Current `HERO_IMAGE_PROVIDER` options are Pollinations and Fal — both generative. For `consumer-friendly` brands (health, wellness, lifestyle), real stock photography looks more authentic than AI art. Pexels API is free (200 req/hour, 20K/month), all images commercially licensed.
+  - **Action:**
+    1. Add `HERO_IMAGE_PROVIDER=pexels` option to `config/settings.py` with `PEXELS_API_KEY` env var.
+    2. Implement `PexelsProvider` in `agents/hero_image_providers.py`: build query from `pain_point` + product keywords; fetch `orientation=square`, `size=large`; return `src.large2x` URL.
+    3. In `pipeline.py`, when `identity.design_category == "consumer-friendly"` and `HERO_IMAGE_ENABLED=true`, default to Pexels provider.
+    4. Add `PEXELS_API_KEY` to `.env.example`.
+  - **Status:** BACKLOG
+
+- [x] **Task 25: Duotone Photo Treatment in Compositor**
+  - **Target File:** `agents/compositor.py`
+  - **Context:** Lemon's photo slides apply a brand-color duotone — desaturate the image, tint with primary brand color. Makes any stock photo feel on-brand instantly. Currently `photo_overlay` applies a dark gradient only; no brand-color tinting.
+  - **Action:**
+    1. Add `_duotone(img: Image.Image, dark_color: tuple, light_color: tuple) -> Image.Image` helper using `ImageOps.colorize(img.convert("L"), black=dark_color, white=light_color)`.
+    2. In `_layout_photo_overlay`, apply `_duotone(hero, dark=_darken(primary_rgb, 0.5), light=primary_rgb)` before compositing text, when `hero_bytes` present.
+    3. Add `COMPOSITOR_DUOTONE_ENABLED` flag (default `true`).
+  - **Status:** BACKLOG
+
+- [x] **Task 26: PlayfairDisplay-Italic Font + `stat_hero` Layout**
+  - **Target Files:** `assets/fonts/`, `agents/compositor.py`, `frontend/src/lib/types.ts`
+  - **Context:** Lemon uses italic + regular weight contrast for headlines ("*Viceral Fat:* The Invisible danger"). We have `PlayfairDisplay-Bold.ttf` but no italic. `stat_hero` is a new layout for research-stat hook slides: flat brand-color bg (no gradient), massive italic first line, regular weight second line.
+  - **Action:**
+    1. Download `PlayfairDisplay-Italic.ttf` from Google Fonts GitHub (`ofl/playfairdisplay/static/`) into `assets/fonts/`.
+    2. Add `"display_italic": "PlayfairDisplay-Italic.ttf"` to `_FONT_FILES`.
+    3. Implement `_layout_stat_hero`: flat `primary_color` fill, italic display font for headline (max_size=140), `display_bold` for second line, body below separator.
+    4. Add `"stat_hero"` to `_LAYOUT_FNS`, `LayoutArchetype` in `frontend/src/lib/types.ts`, and `DESIGN_CATEGORY_LAYOUTS` for `consumer-friendly` + `data-dense`.
+  - **Status:** BACKLOG
+
+- [x] **Task 27: Carousel Per-Slide Word Budget**
+  - **Target Files:** `prompts/copywriting_v1.yaml`, `agents/image_gen.py` (`_split_into_slides`)
+  - **Context:** Copywriter writes one continuous narrative block; formatter splits arbitrarily. No per-slide word budget. Lemon's hook slides ≤ 20 words; body slides ≤ 40 words. Long paragraphs look bad at 1080×1080.
+  - **Action:**
+    1. Add `CAROUSEL SLIDE WORD BUDGET` block to `copywriting_v1.yaml`: hook slide ≤ 20 words, body slides ≤ 40 words, CTA slide ≤ 15 words. Include compliant/non-compliant examples.
+    2. Update `_split_into_slides` in `agents/image_gen.py` to prefer double-newline then sentence-ending splits over character-count splits.
+  - **Status:** BACKLOG
+
+- [x] **Task 28: Engagement CTA Type for B2C Brands**
+  - **Target Files:** `agents/copywriter.py`, `prompts/copywriting_v1.yaml`, `prompts/evaluator_v1.yaml`
+  - **Context:** Lemon's CTAs are engagement triggers: "Comment below", "What's holding you back?", "Tag someone who needs this." These fail our CTA validator which only accepts conversion intents. Consumer-friendly brands are penalised for natural engagement CTAs.
+  - **Action:**
+    1. Add `engagement_cta` as a valid `cta_intent` value in `schemas/content_brief.py`.
+    2. Add `CTA_SIGNALS["engagement_cta"]` in `copywriter.py`: `["comment", "share", "tag", "tell us", "what do you think", "reply"]`.
+    3. Update CTA ENFORCEMENT block in `copywriting_v1.yaml` to document `engagement_cta` signals.
+    4. Add note to `evaluator_v1.yaml`: engagement CTAs score at parity with conversion CTAs for `consumer-friendly` brands.
+  - **Status:** BACKLOG
+
+- [x] **Task 29: Stat-on-Hook Routing for Carousels**
+  - **Target Files:** `prompts/strategy_v1.yaml`, `agents/strategy.py`
+  - **Context:** Strategy currently places research stats in AGITATE (mid-narrative). For carousels, the stat should be the hook slide — it's the first thing visible. Lemon's hook slide is one stat + one question. No warm-up.
+  - **Action:**
+    1. In `prompts/strategy_v1.yaml`, add a `CAROUSEL HOOK RULE`: when `content_type == carousel` and a `research_proof_point` is available, `hook_direction` must instruct the copywriter to open with the stat as the headline.
+    2. In `agents/strategy.py`, inject a carousel hook hint into the strategy user message when `brief.content_type == "carousel"` and `research_proof_points` is non-empty.
+  - **Status:** BACKLOG
+
+- [x] **Task 30: Medical Research Query Tier for B2C Health Brands**
+  - **Target File:** `agents/research_agent.py`
+  - **Context:** For B2C health/wellness brands, the research agent pulls market adoption stats ("72% of consumers use health apps") not clinical research ("visceral fat linked to insulin resistance in lean adults"). Clinical stats give posts the authority Lemon's content has.
+  - **Action:**
+    1. Add a `health-wellness-clinical` tier to `CATEGORY_QUERY_OVERRIDES` with tails targeting CDC, WHO, JAMA, Lancet, PubMed: `"[pain_point] clinical study CDC WHO JAMA 2024 2025"`.
+    2. When `design_category == "consumer-friendly"` and product keywords include health/wellness signals, use the clinical tier for at least one of the three Tavily queries.
+    3. Validate extracted stats pass the `ResearchProofPoint` text validator (≥ 10 chars, ≥ 3 words).
+  - **Status:** BACKLOG
+
+---
+
+## Phase 10: Carousel Visual Quality — Photo Textures + Role Mapping
+
+Closes the visual gap vs Lemon Health. No new dependencies, no API cost.
+
+- [x] **Task 31: Photo Texture on Hero Images**
+  - Added `_apply_photo_texture()` — halftone dot overlay on hero photos for editorial/risograph feel
+  - Integrated into `photo_overlay`, `editorial_photo` layouts
+  - Gated by `COMPOSITOR_PHOTO_TEXTURE_ENABLED` (default `true`)
+
+- [x] **Task 32: Cutout Hero Layout**
+  - New `_layout_cutout_hero()` — removes photo background via rembg, composites subject onto solid brand primary
+  - Matches Lemon Health lemon1.png style (person cutout on flat blue)
+  - Gated by `COMPOSITOR_CUTOUT_ENABLED` (default `true`), graceful fallback without rembg
+  - Added to `consumer-friendly` family + `_PHOTO_LAYOUTS`
+
+- [x] **Task 33: Photo-Bottom Hook Layout**
+  - New `_layout_photo_bottom_text()` — photo fills top 60%, solid brand panel at bottom with italic+bold headline
+  - Matches lemonresearch1hook.png style. Duotone + halftone applied to photo.
+  - Added to `consumer-friendly` and `bold-enterprise` families + `_PHOTO_LAYOUTS`
+
+- [x] **Task 34: Slide-Role Layout Mapping**
+  - Replaced blind `slide_index % len(family)` rotation with role-based selection
+  - `_assign_slide_role()` → hook/body/cta based on slide position
+  - `_select_role_layout()` → picks from `ROLE_LAYOUT_MAP` per design category and role
+  - Hook slides get photo-heavy layouts, body slides get text-only, CTA slides get bold/simple
+
+- [x] **Task 35: Logo Position + Visual Polish**
+  - Logo placement: top-right for photo/hook layouts (`cutout_hero`, `photo_bottom_text`, `photo_overlay`, `stat_hero`)
+  - Added decorative accent circle to `stat_hero` bottom-left corner
+
+### Known Issues from Real-Mode Testing (2026-04-12)
+
+Issues observed during Lemon Health pipeline runs. Not blocking — pipeline passes at 4.25/5.0 — but worth fixing for quality.
+
+- [ ] **Body paragraph word budget not enforced**: Copywriter LLM writes 40–77 word paragraphs despite CAROUSEL SLIDE WORD BUDGET prompt (≤40 words). The prompt instruction exists but the LLM doesn't comply. May need a Python-level paragraph splitter in `_split_into_slides()` or a post-copy validator that rejects over-budget paragraphs.
+- [ ] **CTA retry fires every run for `engage` intent**: The copywriter never produces engagement CTA words ("comment", "share", "tag") on the first attempt — always needs the explicit injection retry. The `engage` signals need stronger presence in the system prompt or few-shot examples.
+- [ ] **Research agent token cost**: 8–10 Groq LLM calls for stat extraction from 3 Tavily queries. Each query result gets a separate extraction call. On the free tier (100K TPD), research alone uses ~30K tokens. Consider batching extraction (multiple results → one LLM call) or caching Tavily results.
+- [ ] **Groq SDK internal retry conflicts with our retry**: Groq SDK has its own 429 retry (`Retrying request ... in N seconds`) that runs *before* our `_RATE_LIMIT_RETRIES` loop in `llm/client.py`. Total retry time = Groq SDK retries + our retries. Consider disabling Groq SDK auto-retry via `max_retries=0` on client init.

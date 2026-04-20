@@ -482,8 +482,8 @@ def _extract_logo(
 
             if clip_dependencies_available():
                 shots = _collect_header_nav_screenshots(page)
-                logger.debug(
-                    "logo: CLIP candidate screenshots collected: %s for %s",
+                logger.info(
+                    "logo[P3]: CLIP collected %d header/nav candidate screenshot(s) for %s",
                     len(shots),
                     base_url,
                 )
@@ -495,21 +495,27 @@ def _extract_logo(
                         if len(png_bytes) >= 200 and png_bytes.startswith(b"\x89PNG"):
                             clip_url = f"{base_url}#clip-header-nav-logo"
                             logger.info(
-                                "logo: CLIP-selected header/nav screenshot for %s (%s)",
-                                base_url,
-                                product_name or "unknown name",
+                                "logo[P3]: CLIP selected header/nav screenshot -> high confidence (%s)",
+                                product_name or "unknown",
                             )
                             return _finalize_raster_logo_bytes(png_bytes), clip_url, "high"
-                        logger.debug(
-                            "logo: CLIP pick invalid PNG or too small (%s bytes), skipping",
+                        logger.info(
+                            "logo[P3]: CLIP pick invalid or too small (%d bytes) — skipping",
                             len(png_bytes),
                         )
+                    else:
+                        logger.info("logo[P3]: CLIP returned no pick for %s", base_url)
+                else:
+                    logger.info("logo[P3]: no header/nav screenshots collected for %s", base_url)
+            else:
+                logger.info("logo[P3]: CLIP dependencies unavailable, skipping")
         except Exception as exc:
-            logger.debug("logo: CLIP extraction failed: %s", exc)
+            logger.info("logo[P3]: CLIP extraction failed: %s", exc)
 
     # ── Priority 4: <img> in <header> with logo in class/id/alt ──
     try:
         imgs = page.query_selector_all('header img, [role="banner"] img')
+        logger.info("logo[P4]: found %d <img> in header/banner", len(imgs))
         for img in imgs:
             cls = (img.get_attribute("class") or "").lower()
             id_ = (img.get_attribute("id") or "").lower()
@@ -517,11 +523,14 @@ def _extract_logo(
             src = img.get_attribute("src") or ""
             if any("logo" in x for x in [cls, id_, alt, src.lower()]):
                 resolved = urljoin(base_url, src)
+                logger.info("logo[P4]: trying header img src=%s", resolved[:80])
                 data = _download_logo(resolved)
                 if data and _is_valid_image(data):
+                    logger.info("logo[P4]: header img matched -> high confidence")
                     return _finalize_raster_logo_bytes(data), resolved, "high"
+        logger.info("logo[P4]: no header img with 'logo' in attrs for %s", base_url)
     except Exception as exc:
-        logger.debug("logo: header img failed: %s", exc)
+        logger.info("logo[P4]: header img scan failed: %s", exc)
 
     # ── Priority 5: og:image ─────────────────────────────────────
     try:
@@ -532,21 +541,25 @@ def _extract_logo(
                 resolved = urljoin(base_url, content)
                 data = _download_logo(resolved)
                 if data and _is_valid_image(data) and _og_image_passes_size_guard(data):
+                    logger.info("logo[P5]: og:image passed size guard -> medium confidence")
                     return _finalize_raster_logo_bytes(data), resolved, "medium"
                 if data and _is_valid_image(data):
-                    logger.debug(
-                        "logo: og:image skipped by size guard (%s bytes) for %s",
+                    logger.info(
+                        "logo[P5]: og:image skipped by size guard (%d bytes) for %s",
                         len(data),
-                        resolved,
+                        resolved[:80],
                     )
+        else:
+            logger.info("logo[P5]: no og:image meta tag found for %s", base_url)
     except Exception as exc:
-        logger.debug("logo: og:image failed: %s", exc)
+        logger.info("logo[P5]: og:image failed: %s", exc)
 
     # ── Priority 6: any favicon (last resort) ────────────────────
     try:
         favicon_url = urljoin(base_url, "/favicon.ico")
         data = _download_logo(favicon_url)
         if data and _is_valid_image(data):
+            logger.info("logo[P6]: favicon.ico found -> low confidence")
             return _finalize_raster_logo_bytes(data), favicon_url, "low"
 
         el = page.query_selector('link[rel~="icon"]')
@@ -556,11 +569,12 @@ def _extract_logo(
                 resolved = urljoin(base_url, href)
                 data = _download_logo(resolved)
                 if data and _is_valid_image(data):
+                    logger.info("logo[P6]: declared icon found -> low confidence")
                     return _finalize_raster_logo_bytes(data), resolved, "low"
     except Exception as exc:
-        logger.debug("logo: favicon failed: %s", exc)
+        logger.info("logo[P6]: favicon failed: %s", exc)
 
-    logger.info("logo: no logo found for %s", base_url)
+    logger.info("logo: all priorities exhausted, no logo found for %s", base_url)
     return None, None, None
 
 

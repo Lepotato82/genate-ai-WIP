@@ -1,7 +1,7 @@
 # Genate — Full Project Context
-**Version:** 2.4
-**Last updated:** March 2026
-**Status:** Core 9-agent pipeline complete and validated. Phase 2 (Bannerbear image generation) shipped. Transitioning to Composite AI architecture (Deterministic Routing + Local ViT). **Phase 7 (interactive Canva-style editor)** is on the roadmap — see below; not yet shipped.
+**Version:** 2.5
+**Last updated:** April 2026
+**Status:** Core 9-agent pipeline complete and validated. Phase 2 (Bannerbear image generation) shipped. Composite AI architecture (Deterministic Routing + Local ViT) live. Neo Brutalism frontend (Next.js) shipped. New structured content types (poll, single_tweet, story) wired and mock-tested — real-mode quality validation pending (Task 23). **Phase 7 (interactive Canva-style editor)** on roadmap.
 
 ---
 
@@ -72,6 +72,7 @@ Queries Qdrant for semantically relevant context from previous approved runs.
 
 ### Step 4 — Planner
 Selects content type, narrative arc, content pillar, and platform-specific strategy. Returns a `ContentBrief`.
+`POST /generate` accepts an optional `content_type` parameter that pins the planned type before strategy runs; validated against `PLATFORM_CONTENT_TYPES` in `schemas/content_brief.py`. The override is applied in `agents/planner.py` after all platform coercions so the forced type is never silently overwritten.
 
 ### Step 5 — Strategy
 Selects the specific pain point to lead with, the primary claim, and exactly which proof point from `ProductKnowledge.proof_points` to use. Returns a `StrategyBrief`.
@@ -88,8 +89,12 @@ Generates an image generation prompt and a `suggested_format`.
 Converts LinkedIn carousel copy into Bannerbear API calls. Returns branded slide image URLs using exact hex codes.
 
 ### Step 8 — Formatter
-Applies platform-specific structural rules. 
-*Note:* Twitter, Instagram, and Blog are formatted *programmatically* via Python string manipulation. Only LinkedIn utilizes an LLM for formatting.
+Applies platform-specific structural rules.
+- **LinkedIn text post / carousel:** LLM formatting (system prompt inline in `formatter.py`).
+- **LinkedIn poll, Twitter poll, Twitter single tweet, Instagram story:** dedicated Python formatters (`_format_linkedin_poll`, `_format_twitter_poll`, `_format_twitter_single_tweet`, `_format_instagram_story`). Copywriter outputs structured labels (`INTRO:`, `QUESTION:`, `OPTION_1:` … `OPTION_4:`, `HOOK:`, `CTA:`) which `_parse_poll_copy` / `_parse_story_copy` extract.
+- **Twitter thread, Instagram, Blog:** pure Python string manipulation.
+
+**Verification status (April 2026):** LinkedIn text post and carousel have real-mode quality validation. Poll, single_tweet, story, and question_post were wired and are mock-tested (454 tests pass) but **not yet validated in real LLM runs**. See Task 23 in [`agents/TODO.md`](agents/TODO.md).
 
 ### Step 9 — Evaluator (with retry loop)
 Scores the formatted output on four dimensions (1-5 each). Python post-processes scores (e.g., capping accuracy to 1 if hallucinated numbers are detected). `passes` is computed deterministically.
